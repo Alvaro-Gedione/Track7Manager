@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track7 - Gerenciamento de Ativos</title>
+    <link rel="icon" type="image/png" href="../../public/img/meet360.png">
+    <link rel="stylesheet" href="../global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../../components/topnav.js"></script>
+    <style>
+        /* Animações específicas para a página de ativos */
+        .assets-page {
+            max-width: 1600px;
+            margin: 0 auto;
+            animation: fadeInScale 0.5s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .layout {
+            display: flex;
+            height: calc(100vh - 180px);
+            gap: 15px;
+            position: relative;
+            align-items: stretch;
+            margin-left: 30px;
+        }
+
+        /* Sidebar de Filtros - igual ao configuration */
+        .filters-panel {
+            width: 350px;
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .filters-panel:hover {
+            border-color: rgba(242, 101, 34, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Área rolável da sidebar */
+        .filters-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-bottom: 16px;
+        }
+
+        .filters-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .filters-content::-webkit-scrollbar-track {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .filters-content::-webkit-scrollbar-thumb {
+            background: var(--brand-orange);
+            border-radius: 4px;
+        }
+
+        .search-box {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            animation: fadeIn 0.7s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-box i {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+            outline: none;
+        }
+
+
+        .search-box .btn-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--brand-orange);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .search-box .btn-icon:hover {
+            background: #d45512;
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 0 15px rgba(242, 101, 34, 0.5);
+        }
+
+        .search-box .btn-icon {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 50% !important;
+            background: var(--brand-orange) !important;
+            color: white !important;
+            border: none !important;
+            cursor: pointer !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .search-box .btn-icon:hover {
+            background: #d45512 !important;
+            transform: scale(1.1) rotate(90deg) !important;
+            box-shadow: 0 0 15px rgba(242, 101, 34, 0.5) !important;
+        }
+
+        .search-box .btn-icon i {
+            color: white !important;
+            font-size: 14px !important;
+        }
+
+        /* Seções de filtro */
+        .filters-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--brand-orange);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            font-size: 12px;
+        }
+
+        /* Componentes de filtro */
+        .filter-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23BE6004' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--brand-orange);
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--brand-orange);
+        }
+
+        /* Radio Group para status */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 6px 0;
+            transition: all 0.3s ease;
+        }
+
+        .radio-item:hover {
+            color: var(--brand-orange);
+            transform: translateX(5px);
+        }
+
+        .radio-item input {
+            accent-color: var(--brand-orange);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .radio-item span {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Botão Limpar Filtros */
+        .btn-clear {
+            width: 100%;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            color: var(--brand-silver);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .btn-clear:hover {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+            transform: translateY(-2px);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--brand-silver);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .stat-item i {
+            color: var(--brand-orange);
+            width: 20px;
+        }
+
+        /* Área de conteúdo principal */
+        .main-content {
+            flex: 1;
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            margin-right: 30px;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .main-content:hover {
+            border-color: rgba(242, 101, 34, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Toolbar */
+        .content-toolbar {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--toolbar-bg);
+        }
+
+        .toolbar-search {
+            flex: 1;
+            position: relative;
+            max-width: 350px;
+        }
+
+        .toolbar-search i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--brand-silver);
+            font-size: 14px;
+        }
+
+        .toolbar-search input {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .toolbar-search input:focus {
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+            outline: none;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--brand-orange), #ff8c52);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(242, 101, 34, 0.4);
+        }
+
+        .btn-secondary {
+            padding: 10px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+            transform: translateY(-1px);
+        }
+
+        /* KPI Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .kpi-card {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 18px 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--brand-orange), #ff8c42);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--brand-orange);
+            box-shadow: 0 8px 24px rgba(190, 96, 4, 0.15);
+        }
+
+        .kpi-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(190, 96, 4, 0.15), rgba(190, 96, 4, 0.05));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--brand-orange);
+            font-size: 22px;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover .kpi-icon {
+            transform: scale(1.1) rotate(5deg);
+            background: linear-gradient(135deg, rgba(190, 96, 4, 0.25), rgba(190, 96, 4, 0.1));
+        }
+
+        .kpi-info {
+            flex: 1;
+        }
+
+        .kpi-info .kpi-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
+        .kpi-info .kpi-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Tabela de Ativos */
+        .table-container {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .table-header {
+            padding: 14px 20px;
+            background: var(--sidebar-header-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .table-header h3 {
+            font-size: 16px;
+            color: var(--brand-orange);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-header span {
+            background: rgba(190, 96, 4, 0.15);
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .table-wrapper {
+            flex: 1;
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 1400px;
+        }
+
+        th {
+            position: sticky;
+            top: 0;
+            background: var(--sidebar-header-bg);
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--brand-orange);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-color);
+            z-index: 10;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: background 0.2s ease;
+        }
+
+        tr:hover td {
+            background: var(--hover-bg);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .status-badge.active {
+            background: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+        }
+
+        .status-badge.indisponivel {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+        }
+
+        .status-badge.desativado {
+            background: rgba(189, 195, 199, 0.2);
+            color: #95a5a6;
+        }
+
+        .vehicle-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vehicle-info i {
+            font-size: 20px;
+            color: var(--brand-orange);
+        }
+
+        .vehicle-info strong {
+            font-weight: 600;
+        }
+
+        .vehicle-info small {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: block;
+            margin-top: 2px;
+        }
+
+        .imei {
+            font-family: monospace;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        /* Paginação */
+        .pagination {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+            background: var(--toolbar-bg);
+        }
+
+        .pagination-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .page-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+        }
+
+        .page-btn.active {
+            background: var(--brand-orange);
+            color: #fff;
+            border-color: var(--brand-orange);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--brand-silver);
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            opacity: 0.3;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--brand-orange);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 2100;
+            box-shadow: 0 8px 20px rgba(242, 101, 34, 0.4);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--sidebar-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-orange);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff8c52;
+        }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg,
+                    var(--border-color) 25%,
+                    var(--card-bg-solid) 50%,
+                    var(--border-color) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="theme-dark">
+    <top-navigation></top-navigation>
+
+    <div class="assets-page">
+        <div class="breadcrumb-bar">
+            <div style="display: flex; gap: 8px;">
+                <span class="tab active" onclick="location.href='assets.html'">
+                    <i class="fas fa-car-side" style="margin-right: 6px;"></i> Ativos
+                </span>
+                <span class="tab" onclick="showToast('Funcionalidade em desenvolvimento')">
+                    <i class="fas fa-chart-line" style="margin-right: 6px;"></i> Manutenção
+                </span>
+                <span class="tab" onclick="showToast('Funcionalidade em desenvolvimento')">
+                    <i class="fas fa-gas-pump" style="margin-right: 6px;"></i> Combustível
+                </span>
+            </div>
+
+            <div class="org-selector">
+                <span><i class="far fa-building"></i> Organização:</span>
+                <select id="orgSelector" onchange="changeOrganization(this)">
+                    <option value="1">Track7 BR - Betânia</option>
+                    <option value="2">Track7 BR - Sul</option>
+                    <option value="3">Track7 BR - Norte</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="layout">
+            <!-- Sidebar de Filtros (mesmo estilo do live-tracking/configuration) -->
+            <aside class="filters-panel">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="sidebarSearch" placeholder="Buscar ativo..."
+                        oninput="syncSearch(this.value)">
+                    <button class="btn-icon" onclick="clearAllFilters()">
+                        <i class="fas fa-eraser"></i>
+                    </button>
+                </div>
+
+                <div class="filters-content">
+                    <div class="filters-section">
+                        <div class="section-title">
+                            <i class="fas fa-circle"></i> Status do Ativo
+                        </div>
+                        <div class="radio-group">
+                            <label class="radio-item">
+                                <input type="radio" name="statusFilter" value="all" checked onchange="applyFilters()">
+                                <span>Todos os status</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="statusFilter" value="active" onchange="applyFilters()">
+                                <span>Ativos</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="statusFilter" value="indisponivel" onchange="applyFilters()">
+                                <span>Indisponíveis</span>
+                            </label>
+                            <label class="radio-item">
+                                <input type="radio" name="statusFilter" value="desativado" onchange="applyFilters()">
+                                <span>Desativados</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="filters-section">
+                        <div class="section-title">
+                            <i class="fas fa-tags"></i> Tipo de Veículo
+                        </div>
+                        <select class="filter-select" id="typeFilter" onchange="applyFilters()">
+                            <option value="all">Todos os tipos</option>
+                            <option value="Caminhão">Caminhão</option>
+                            <option value="Carreta">Carreta</option>
+                            <option value="Van">Van</option>
+                        </select>
+                    </div>
+
+                    <div class="filters-section">
+                        <div class="section-title">
+                            <i class="fas fa-calendar-alt"></i> Ano de Fabricação
+                        </div>
+                        <input type="number" id="yearFilter" class="filter-input" placeholder="Ano (ex: 2023)"
+                            min="2000" max="2030" onchange="applyFilters()">
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Toolbar -->
+                <div class="content-toolbar">
+                    <div class="toolbar-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="mainSearch" placeholder="Buscar por placa, IMEI, modelo..."
+                            oninput="syncSearch(this.value)">
+                    </div>
+                    <div class="toolbar-actions">
+                        <button class="btn-primary" onclick="showToast('Funcionalidade em desenvolvimento')">
+                            <i class="fas fa-plus-circle"></i> Novo Ativo
+                        </button>
+                        <button class="btn-secondary" onclick="exportToCSV()">
+                            <i class="fas fa-download"></i> Exportar CSV
+                        </button>
+                        <button class="btn-secondary" onclick="loadVehicles()">
+                            <i class="fas fa-sync-alt"></i> Atualizar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid" id="kpiContainer">
+                    <!-- Preenchido via JS -->
+                </div>
+
+                <!-- Tabela de Ativos -->
+                <div class="table-container">
+                    <div class="table-header">
+                        <h3>
+                            <i class="fas fa-list"></i>
+                            Lista de Ativos
+                        </h3>
+                        <span id="vehicleCount">Carregando...</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table id="vehicleTable">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Descrição do ativo</th>
+                                    <th>Última posição</th>
+                                    <th>Ultima Viagem</th>
+                                    <th>Modelo</th>
+                                    <th>Número de registro</th>
+                                    <th>Garagem</th>
+                                    <th>Ano</th>
+                                    <th>IMEI</th>
+                                    <th>ID do ativo</th>
+                                    <th>Tipo de Ativo</th>
+                                    <th>Fabricante</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginação -->
+                    <div class="pagination" id="pagination">
+                        <!-- Preenchido via JS -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Operação realizada!</span>
+    </div>
+
+    <script>
+        // Configuração do tema
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = `theme-${savedTheme}`;
+
+            // Carregar dados
+            loadVehicles();
+        });
+
+        document.addEventListener('themeChanged', (e) => {
+            document.body.className = `theme-${e.detail.theme}`;
+        });
+
+        // Dados mockados (mesmos do original)
+        let vehicles = [
+            { id: 1, description: 'MB 1722 - Carreta 01', plate: 'ABC-1D34', status: 'active', lastPosition: 'Av. Brasil, 1234 - São Paulo, SP', lastPositionTime: '2024-03-27 14:32:18', lastTrip: '2024-03-27 08:15', model: 'Mercedes-Benz Actros 2546', registerNumber: 'BR-2024-001', garage: 'Garagem Central', year: 2023, imei: '860123456789012', assetId: 'TRK-001', type: 'Caminhão', manufacturer: 'Mercedes-Benz', statusDetail: 'active' },
+            { id: 2, description: 'VW 17230 - Carreta 02', plate: 'DEF-5E78', status: 'active', lastPosition: 'Rod. BR-116, km 245 - Curitiba, PR', lastPositionTime: '2024-03-27 14:28:45', lastTrip: '2024-03-27 09:30', model: 'Volkswagen Constellation 17.230', registerNumber: 'BR-2024-002', garage: 'Garagem Sul', year: 2022, imei: '860123456789013', assetId: 'TRK-002', type: 'Caminhão', manufacturer: 'Volkswagen', statusDetail: 'active' },
+            { id: 3, description: 'Scania R450 - Carreta 03', plate: 'GHI-9F12', status: 'active', lastPosition: 'Av. das Nações, 500 - Blumenau, SC', lastPositionTime: '2024-03-27 14:15:22', lastTrip: '2024-03-26 22:45', model: 'Scania R 450', registerNumber: 'BR-2024-003', garage: 'Garagem Norte', year: 2024, imei: '860123456789014', assetId: 'TRK-003', type: 'Caminhão', manufacturer: 'Scania', statusDetail: 'active' },
+            { id: 4, description: 'Volvo FH460 - Carreta 04', plate: 'JKL-3G56', status: 'active', lastPosition: 'Av. Paulista, 1500 - São Paulo, SP', lastPositionTime: '2024-03-27 13:55:01', lastTrip: '2024-03-27 07:20', model: 'Volvo FH 460', registerNumber: 'BR-2024-004', garage: 'Garagem Central', year: 2023, imei: '860123456789015', assetId: 'TRK-004', type: 'Caminhão', manufacturer: 'Volvo', statusDetail: 'active' },
+            { id: 5, description: 'Ford Cargo 2429 - Carreta 05', plate: 'MNO-7H90', status: 'indisponivel', lastPosition: 'Rod. Dutra, km 150 - Resende, RJ', lastPositionTime: '2024-03-26 18:42:33', lastTrip: '2024-03-26 10:15', model: 'Ford Cargo 2429', registerNumber: 'BR-2024-005', garage: 'Garagem Leste', year: 2021, imei: '860123456789016', assetId: 'TRK-005', type: 'Caminhão', manufacturer: 'Ford', statusDetail: 'no_position_5d' },
+            { id: 6, description: 'Iveco Daily 70C17 - Van 01', plate: 'PQR-1I22', status: 'active', lastPosition: 'Av. Rio Branco, 300 - Rio de Janeiro, RJ', lastPositionTime: '2024-03-27 14:05:47', lastTrip: '2024-03-27 08:50', model: 'Iveco Daily 70C17', registerNumber: 'BR-2024-006', garage: 'Garagem Rio', year: 2023, imei: '860123456789017', assetId: 'TRK-006', type: 'Van', manufacturer: 'Iveco', statusDetail: 'active' },
+            { id: 7, description: 'MB Sprinter 416 - Van 02', plate: 'STU-3J44', status: 'desativado', lastPosition: 'Av. dos Bandeirantes, 800 - Belo Horizonte, MG', lastPositionTime: '2024-03-20 09:12:05', lastTrip: '2024-03-19 16:30', model: 'Mercedes-Benz Sprinter 416', registerNumber: 'BR-2024-007', garage: 'Garagem MG', year: 2020, imei: '860123456789018', assetId: 'TRK-007', type: 'Van', manufacturer: 'Mercedes-Benz', statusDetail: 'inactive' },
+            { id: 8, description: 'VW Delivery 11.180 - Caminhão 08', plate: 'VWX-5K66', status: 'active', lastPosition: 'Av. Getúlio Vargas, 450 - Porto Alegre, RS', lastPositionTime: '2024-03-27 13:48:22', lastTrip: '2024-03-27 09:45', model: 'Volkswagen Delivery 11.180', registerNumber: 'BR-2024-008', garage: 'Garagem Sul', year: 2023, imei: '860123456789019', assetId: 'TRK-008', type: 'Caminhão', manufacturer: 'Volkswagen', statusDetail: 'active' },
+            { id: 9, description: 'Scania G410 - Carreta 09', plate: 'YZA-6L77', status: 'indisponivel', lastPosition: 'Rod. Régis Bittencourt, km 300 - Curitiba, PR', lastPositionTime: '2024-03-22 11:30:15', lastTrip: '2024-03-21 14:20', model: 'Scania G 410', registerNumber: 'BR-2024-009', garage: 'Garagem Sul', year: 2022, imei: '860123456789020', assetId: 'TRK-009', type: 'Caminhão', manufacturer: 'Scania', statusDetail: 'no_trip_5d' },
+            { id: 10, description: 'Volvo VM 270 - Caminhão 10', plate: 'BCD-8M88', status: 'active', lastPosition: 'Av. Brasil, 2500 - Londrina, PR', lastPositionTime: '2024-03-27 12:22:38', lastTrip: '2024-03-27 08:10', model: 'Volvo VM 270', registerNumber: 'BR-2024-010', garage: 'Garagem Central', year: 2023, imei: '860123456789021', assetId: 'TRK-010', type: 'Caminhão', manufacturer: 'Volvo', statusDetail: 'active' }
+        ];
+
+        let filteredVehicles = [...vehicles];
+        let currentPage = 1;
+        let itemsPerPage = 10;
+
+        // Funções auxiliares
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.style.display = 'flex';
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                toast.style.display = 'none';
+            }, duration);
+        }
+
+        function changeOrganization(select) {
+            showToast(`Organização alterada: ${select.options[select.selectedIndex].text}`);
+        }
+
+        function syncSearch(value) {
+            document.getElementById('sidebarSearch').value = value;
+            document.getElementById('mainSearch').value = value;
+            applyFilters();
+        }
+
+        // Renderizar KPIs
+        function renderKPIs() {
+            const total = vehicles.length;
+            const active = vehicles.filter(v => v.status === 'active').length;
+            const indisponivel = vehicles.filter(v => v.status === 'indisponivel').length;
+            const desativado = vehicles.filter(v => v.status === 'desativado').length;
+
+            document.getElementById('totalStats').textContent = `${total} ativos`;
+            document.getElementById('activeStats').textContent = `${active} ativos`;
+            document.getElementById('indisponivelStats').textContent = `${indisponivel} indisponíveis`;
+
+            const kpis = [
+                { label: 'Total de Ativos', value: total, icon: 'fa-car-side' },
+                { label: 'Ativos', value: active, icon: 'fa-check-circle' },
+                { label: 'Indisponíveis', value: indisponivel, icon: 'fa-exclamation-triangle' },
+                { label: 'Desativados', value: desativado, icon: 'fa-ban' }
+            ];
+
+            const container = document.getElementById('kpiContainer');
+            container.innerHTML = kpis.map(kpi => `
+                <div class="kpi-card">
+                    <div class="kpi-icon">
+                        <i class="fas ${kpi.icon}"></i>
+                    </div>
+                    <div class="kpi-info">
+                        <div class="kpi-value">${kpi.value}</div>
+                        <div class="kpi-label">${kpi.label}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Aplicar filtros
+        function applyFilters() {
+            const statusRadio = document.querySelector('input[name="statusFilter"]:checked');
+            const statusFilter = statusRadio ? statusRadio.value : 'all';
+            const typeFilter = document.getElementById('typeFilter').value;
+            const yearFilter = document.getElementById('yearFilter').value;
+            const searchTerm = document.getElementById('mainSearch').value.toLowerCase();
+
+            filteredVehicles = vehicles.filter(v => {
+                // Filtro de status
+                if (statusFilter !== 'all' && v.status !== statusFilter) return false;
+
+                // Filtro de tipo
+                if (typeFilter !== 'all' && v.type !== typeFilter) return false;
+
+                // Filtro de ano
+                if (yearFilter && v.year !== parseInt(yearFilter)) return false;
+
+                // Busca textual
+                if (searchTerm) {
+                    const matches =
+                        v.description.toLowerCase().includes(searchTerm) ||
+                        v.plate.toLowerCase().includes(searchTerm) ||
+                        v.imei.includes(searchTerm) ||
+                        v.model.toLowerCase().includes(searchTerm) ||
+                        v.assetId.toLowerCase().includes(searchTerm);
+                    if (!matches) return false;
+                }
+
+                return true;
+            });
+
+            currentPage = 1;
+            renderTable();
+            renderKPIs();
+        }
+
+        // Limpar todos os filtros
+        function clearAllFilters() {
+            document.querySelector('input[name="statusFilter"][value="all"]').checked = true;
+            document.getElementById('typeFilter').value = 'all';
+            document.getElementById('yearFilter').value = '';
+            document.getElementById('mainSearch').value = '';
+            document.getElementById('sidebarSearch').value = '';
+            applyFilters();
+            showToast('Filtros limpos');
+        }
+
+        // Função para carregar veículos (simula carregamento)
+        function loadVehicles() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = Array(5).fill(0).map(() => `
+                <tr>
+                    ${Array(12).fill().map(() => '<td><div class="skeleton" style="height: 30px; border-radius: 4px;"></div></td>').join('')}
+                </tr>
+            `).join('');
+            document.getElementById('vehicleCount').innerHTML = '<span class="skeleton" style="width: 80px; display: inline-block;">&nbsp;</span>';
+
+            setTimeout(() => {
+                filteredVehicles = [...vehicles];
+                applyFilters();
+                showToast('Dados atualizados');
+            }, 800);
+        }
+
+        // Renderizar tabela
+        function renderTable() {
+            const tbody = document.getElementById('tableBody');
+            const countSpan = document.getElementById('vehicleCount');
+
+            countSpan.innerText = `${filteredVehicles.length} veículos`;
+
+            if (filteredVehicles.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="12" style="text-align: center; padding: 60px;">
+                            <i class="fas fa-car-side" style="font-size: 48px; opacity: 0.3; margin-bottom: 15px;"></i>
+                            <p style="color: var(--text-secondary);">Nenhum veículo encontrado</p>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = Math.min(start + itemsPerPage, filteredVehicles.length);
+            const pageVehicles = filteredVehicles.slice(start, end);
+
+            tbody.innerHTML = pageVehicles.map(v => {
+                let statusClass = 'active';
+                let statusIcon = 'fa-check-circle';
+                let statusText = 'Ativo';
+
+                if (v.status === 'indisponivel') {
+                    statusClass = 'indisponivel';
+                    statusIcon = 'fa-exclamation-triangle';
+                    statusText = 'Indisponível';
+                } else if (v.status === 'desativado') {
+                    statusClass = 'desativado';
+                    statusIcon = 'fa-ban';
+                    statusText = 'Desativado';
+                }
+
+                return `
+                    <tr onclick="showVehicleDetails(${v.id})" style="cursor: pointer;">
+                        <td>
+                            <span class="status-badge ${statusClass}">
+                                <i class="fas ${statusIcon}"></i>
+                                ${statusText}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="vehicle-info">
+                                <i class="fas fa-truck"></i>
+                                <div>
+                                    <strong>${v.description}</strong>
+                                    <small>${v.plate}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>${v.lastPosition}</div>
+                            <small class="text-muted">${v.lastPositionTime}</small>
+                        </td>
+                        <td>${v.lastTrip}</td>
+                        <td>${v.model}</td>
+                        <td>${v.registerNumber}</td>
+                        <td>${v.garage}</td>
+                        <td>${v.year}</td>
+                        <td><span class="imei">${v.imei}</span></td>
+                        <td>${v.assetId}</td>
+                        <td>${v.type}</td>
+                        <td>${v.manufacturer}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            renderPagination();
+        }
+
+        // Paginação
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredVehicles.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = `
+                <span class="pagination-info">
+                    Página ${currentPage} de ${totalPages}
+                </span>
+                <div class="pagination-controls">
+            `;
+
+            html += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})"><i class="fas fa-chevron-left"></i></button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += `<span class="page-btn" style="border: none;">...</span>`;
+                }
+            }
+
+            html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})"><i class="fas fa-chevron-right"></i></button>`;
+            html += '</div>';
+            pagination.innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        // Exportar CSV
+        function exportToCSV() {
+            const headers = [
+                'Status', 'Descrição', 'Placa', 'Última Posição', 'Última Viagem',
+                'Modelo', 'Registro', 'Garagem', 'Ano', 'IMEI', 'ID', 'Tipo', 'Fabricante'
+            ];
+            const data = filteredVehicles.map(v => [
+                v.status === 'active' ? 'Ativo' : v.status === 'indisponivel' ? 'Indisponível' : 'Desativado',
+                v.description, v.plate, v.lastPosition, v.lastTrip,
+                v.model, v.registerNumber, v.garage, v.year,
+                v.imei, v.assetId, v.type, v.manufacturer
+            ]);
+            const csvContent = [headers.join(','), ...data.map(row => row.map(cell => `"${cell}"`).join(','))].join('\n');
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `ativos_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            showToast('Exportação concluída!');
+        }
+
+        function showVehicleDetails(id) {
+            const vehicle = vehicles.find(v => v.id === id);
+            if (vehicle) showToast(`Detalhes de ${vehicle.description}`, 2000);
+        }
+    </script>
+</body>
+
+</html>

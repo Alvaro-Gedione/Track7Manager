@@ -1,0 +1,41 @@
+# Paths for Meet360 project
+$projects = @(
+    @{ 
+        Origem  = "C:\Users\alvar\Meet360\Track7Manager"; 
+        Destino = "C:\Users\alvar\Meet360\Track7Manager\txt_back"; 
+        Final = "C:\Users\alvar\Meet360\tudo_combinado\tudo_combinado_Track7Manager.txt";
+        Filtro = "*"
+    }
+)
+
+foreach ($p in $projects) {
+    # Ensure directories exist
+    if (!(Test-Path $p.Destino)) { New-Item -ItemType Directory -Path $p.Destino | Out-Null }
+    if (!(Test-Path (Split-Path $p.Final))) { New-Item -ItemType Directory -Path (Split-Path $p.Final) | Out-Null }
+
+    # Array to hold content in memory to avoid constant file locking
+    $conteudoAcumulado = New-Object System.Collections.Generic.List[string]
+
+    Get-ChildItem -Path $p.Origem -Recurse -File -Filter $p.Filtro | ForEach-Object {
+        $caminhoRelativo = $_.FullName.Substring($p.Origem.Length).TrimStart('\')
+        $nomeFinal = ($caminhoRelativo.Replace('\', '_').Replace(':', '_')) + ".txt"
+        $destinoIndividual = Join-Path $p.Destino $nomeFinal
+
+        # Read the source file
+        $fileContent = Get-Content $_.FullName -Raw
+
+        # Save individual txt copy
+        $fileContent | Set-Content $destinoIndividual
+
+        # Add to the list with headers
+        $conteudoAcumulado.Add("`n#### Início de $nomeFinal ####`n")
+        $conteudoAcumulado.Add($fileContent)
+        $conteudoAcumulado.Add("`n#### Fim de $nomeFinal ####`n")
+    }
+
+    # Write everything at once (Overwrites if exists, bypassing the 'Remove-Item' lock risk)
+    $conteudoAcumulado | Out-File -FilePath $p.Final -Encoding utf8 -Force
+    Write-Host "Concluído: $($p.Final)" -ForegroundColor Green
+}
+
+

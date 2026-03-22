@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../public/img/meet360.png">
+    <title>Track7 - Configuração</title>
+    <link rel="stylesheet" href="../global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../../components/topnav.js"></script>
+    <style>
+        /* Animações extras específicas para configuração */
+        .config-container {
+            padding: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+            animation: fadeInScale 0.5s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3px;
+            animation: slideInDown 0.5s ease-out;
+        }
+
+        .config-header h1 {
+            font-size: 28px;
+            color: var(--brand-orange);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .config-header h1::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--brand-orange), transparent);
+            animation: slideInLeft 0.8s ease-out;
+        }
+
+        .company-selector {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            padding: 8px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+
+        .company-selector:hover {
+            border-color: var(--brand-orange);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(242, 101, 34, 0.3);
+        }
+
+        .config-tabs {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 25px;
+            animation: slideInUp 0.5s ease-out;
+        }
+
+        .config-tab {
+            padding: 12px 25px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .config-tab::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(242, 101, 34, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .config-tab:hover::before {
+            width: 200px;
+            height: 200px;
+        }
+
+        .config-tab:hover {
+            color: var(--brand-orange);
+        }
+
+        .config-tab.active {
+            border-bottom-color: var(--brand-orange);
+            color: var(--brand-orange);
+        }
+
+        .config-layout {
+            display: flex;
+            gap: 25px;
+            height: calc(100vh - 250px);
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .config-sidebar {
+            width: 350px;
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideInLeft 0.5s ease-out;
+            transition: all 0.3s ease;
+        }
+
+        .config-sidebar:hover {
+            border-color: rgba(242, 101, 34, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-box {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            animation: fadeIn 0.7s ease-out;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 18px;
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+            transform: scale(1.02);
+            outline: none;
+        }
+
+        .list-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .group-item,
+        .client-item {
+            padding: 15px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: cardEntrance 0.5s ease-out backwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .group-item::after,
+        .client-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--brand-orange);
+            transition: width 0.3s ease;
+        }
+
+        .group-item:hover::after,
+        .client-item:hover::after {
+            width: 100%;
+        }
+
+        .group-item:hover,
+        .client-item:hover {
+            transform: translateX(8px) translateY(-2px);
+            border-color: var(--brand-orange);
+            box-shadow: 0 5px 15px rgba(242, 101, 34, 0.2);
+        }
+
+        .group-item.active,
+        .client-item.selected {
+            background: var(--hover-bg);
+            border-left: 4px solid var(--brand-orange);
+            transform: scale(1.02);
+        }
+
+        .group-name,
+        .client-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .group-desc,
+        .client-doc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .config-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 10px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .metric-card {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+            animation: cardAppear 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateY(20px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(242, 101, 34, 0.05);
+            transform: translate(-50%, -50%);
+            transition: width 0.8s, height 0.8s;
+        }
+
+        .metric-card:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--brand-orange);
+            box-shadow: 0 10px 25px rgba(242, 101, 34, 0.15);
+        }
+
+        .metric-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .metric-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .metric-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .metric-card:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .metric-icon {
+            font-size: 32px;
+            color: var(--brand-orange);
+            transition: transform 0.3s ease;
+        }
+
+        .metric-card:hover .metric-icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        .metric-info h4 {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .table-container {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            overflow: hidden;
+            animation: slideInUp 0.6s ease-out;
+            transition: all 0.3s ease;
+        }
+
+        .table-container:hover {
+            border-color: rgba(242, 101, 34, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .table-header {
+            padding: 20px;
+            background: var(--sidebar-header-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h3 {
+            color: var(--brand-orange);
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 15px 20px;
+            background: var(--sidebar-header-bg);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        tr {
+            transition: all 0.3s ease;
+            animation: fadeInRow 0.5s ease-out backwards;
+        }
+
+        tr:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        tr:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        tr:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        tr:hover {
+            background: var(--hover-bg);
+            transform: scale(1.01);
+            box-shadow: 0 2px 10px rgba(242, 101, 34, 0.1);
+        }
+
+        @keyframes fadeInRow {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge.active {
+            background: rgba(39, 174, 96, 0.2);
+            color: var(--status-active);
+        }
+
+        .status-badge.idle {
+            background: rgba(243, 156, 18, 0.2);
+            color: var(--status-idle);
+        }
+
+        .status-badge.inactive {
+            background: rgba(149, 165, 166, 0.2);
+            color: var(--status-off);
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: var(--hover-bg);
+            color: var(--brand-orange);
+            transform: rotate(15deg) scale(1.2);
+        }
+
+        .btn-primary {
+            background: var(--brand-orange);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn-primary:hover::before {
+            width: 200px;
+            height: 200px;
+        }
+
+        .btn-primary:hover {
+            background: #d45512;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(242, 101, 34, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 30px;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+            transform: translateY(-2px);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: overlayFade 0.3s ease;
+        }
+
+        .modal.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--modal-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            width: 500px;
+            max-width: 95%;
+            animation: modalAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--modal-header-bg);
+            border-radius: 24px 24px 0 0;
+        }
+
+        .modal-header h2 {
+            color: var(--brand-orange);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            animation: slideInRight 0.3s ease both;
+        }
+
+        .form-group:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .form-group:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .form-group:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .form-group:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+            transform: scale(1.02);
+            outline: none;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-label:hover {
+            color: var(--brand-orange);
+            transform: translateX(5px);
+        }
+
+        .checkbox-label input {
+            accent-color: var(--brand-orange);
+            width: 16px;
+            height: 16px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            background: var(--modal-header-bg);
+            border-radius: 0 0 24px 24px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--brand-orange);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 2100;
+            box-shadow: 0 10px 30px rgba(242, 101, 34, 0.3);
+            animation: toastSlide 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        @keyframes toastSlide {
+            from {
+                opacity: 0;
+                transform: translateX(50px) scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        .toast i {
+            font-size: 20px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--sidebar-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-orange);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff8c52;
+        }
+    </style>
+</head>
+
+<body class="theme-dark">
+    <top-navigation></top-navigation>
+
+    <div class="config-container">
+        <div class="config-header">
+            <h1>
+                <i class="fas fa-cog fa"></i>
+                Painel de Configuração
+            </h1>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <select id="companySelect" class="company-selector">
+                    <option value="">Todas as Empresas</option>
+                </select>
+                <button class="btn-primary" id="newGroupBtn">
+                    <i class="fas fa-plus"></i>
+                    Novo Grupo
+                </button>
+            </div>
+        </div>
+
+        <div class="config-tabs">
+            <div class="config-tab active" data-tab="groups">
+                <i class="fas fa-layer-group"></i>
+                Grupos de Configuração
+            </div>
+            <div class="config-tab" data-tab="clients">
+                <i class="fas fa-building"></i>
+                Gestão de Clientes
+            </div>
+        </div>
+
+        <div class="config-layout">
+            <!-- Sidebar -->
+            <div class="config-sidebar">
+                <div class="search-box">
+                    <i class="fas fa-search" style="color: var(--text-secondary); margin-right: 10px;"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar...">
+                </div>
+                <div id="groupsList" class="list-items tab-content active"></div>
+                <div id="clientsList" class="list-items tab-content"></div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="config-content">
+                <div id="groups-tab" class="tab-content active">
+                    <div id="configCards" class="metrics-grid"></div>
+                </div>
+
+                <div id="clients-tab" class="tab-content">
+                    <div id="selectedClientInfo"
+                        style="margin-bottom: 20px; font-weight: 600; color: var(--brand-orange);"></div>
+                    <div id="clientMetrics" class="metrics-grid"></div>
+
+                    <div class="table-container">
+                        <div class="table-header">
+                            <h3>
+                                <i class="fas fa-microchip"></i>
+                                Equipamentos do Cliente
+                            </h3>
+                            <div class="table-actions">
+                                <button class="btn-secondary" id="importEquipmentsBtn">
+                                    <i class="fas fa-file-import"></i>
+                                    Importar
+                                </button>
+                                <button class="btn-primary" id="addEquipmentBtn">
+                                    <i class="fas fa-plus"></i>
+                                    Adicionar
+                                </button>
+                            </div>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;"><input type="checkbox" id="selectAll"></th>
+                                    <th>IMEI</th>
+                                    <th>Veículo</th>
+                                    <th>Placa</th>
+                                    <th>Modelo</th>
+                                    <th>Status</th>
+                                    <th>Última Com.</th>
+                                    <th style="width: 80px;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="equipmentTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Grupo -->
+    <div id="groupModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <i class="fas fa-layer-group"></i>
+                    <span id="groupModalTitle">Novo Grupo de Configuração</span>
+                </h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nome do Grupo</label>
+                    <input type="text" id="groupName" class="form-control" placeholder="Ex: Transportadora Rápido">
+                </div>
+                <div class="form-group">
+                    <label>Empresa</label>
+                    <select id="groupCompany" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <textarea id="groupDesc" class="form-control" rows="3"
+                        placeholder="Descrição do grupo..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Configurações</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="configTracking" checked>
+                            <span>Rastreamento</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="configReports" checked>
+                            <span>Relatórios</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="configAlerts" checked>
+                            <span>Alertas</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal('groupModal')">
+                    <i class="fas fa-times"></i>
+                    Cancelar
+                </button>
+                <button class="btn-primary" onclick="saveGroup()">
+                    <i class="fas fa-save"></i>
+                    Salvar Grupo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Operação realizada com sucesso!</span>
+    </div>
+
+    <div class="help-btn">
+        <i class="fas fa-headset"></i>
+    </div>
+
+    <script>
+        // Dados mockados com mais informações
+        let groups = [
+            { id: 1, name: "Transportadora Rápido", description: "Grupo principal de configurações", company: "Transportadora Rápido Ltda", configs: { tracking: true, reports: true, alerts: true }, equipmentCount: 45 },
+            { id: 2, name: "Logística Express", description: "Configurações avançadas para frota", company: "Logística Express S.A.", configs: { tracking: true, reports: false, alerts: true }, equipmentCount: 28 },
+            { id: 3, name: "Frota VIP", description: "Veículos de luxo", company: "Transportadora Rápido Ltda", configs: { tracking: true, reports: true, alerts: false }, equipmentCount: 12 }
+        ];
+
+        let clients = [
+            { id: 1, companyName: "Transportadora Rápido Ltda", tradeName: "Rápido Transportes", cnpj: "12.345.678/0001-90", status: "active", plan: "professional", state: "SP", equipmentCount: 45, dataConsumption: 2350, lastActive: "2024-03-27", planValue: 499.90 },
+            { id: 2, companyName: "Logística Express S.A.", tradeName: "Log Express", cnpj: "23.456.789/0001-01", status: "active", plan: "enterprise", state: "RJ", equipmentCount: 128, dataConsumption: 8450, lastActive: "2024-03-27", planValue: 1299.90 },
+            { id: 3, companyName: "Transportes Silva ME", tradeName: "Silva Transportes", cnpj: "34.567.890/0001-12", status: "inactive", plan: "basic", state: "MG", equipmentCount: 8, dataConsumption: 450, lastActive: "2024-03-25", planValue: 199.90 }
+        ];
+
+        let equipments = [
+            { id: 1, imei: "860123456789012", vehicle: "Caminhão Mercedes Actros", plate: "ABC-1234", model: "Actros 2546", status: "active", lastCom: "2024-03-27 14:32", consumption: 145.3 },
+            { id: 2, imei: "860123456789013", vehicle: "Van Fiat Ducato", plate: "DEF-5678", model: "Ducato 2023", status: "idle", lastCom: "2024-03-27 14:28", consumption: 89.2 },
+            { id: 3, imei: "860123456789014", vehicle: "Caminhão VW Constellation", plate: "GHI-9012", model: "17.230", status: "active", lastCom: "2024-03-27 14:45", consumption: 210.5 }
+        ];
+
+        // Estado da aplicação
+        let currentTab = 'groups';
+        let currentGroupId = 1;
+        let currentClientId = 1;
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            // Configurar tema
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = `theme-${savedTheme}`;
+
+            loadCompanies();
+            loadGroups();
+            loadClients();
+            setupEventListeners();
+
+            // Selecionar primeiro grupo por padrão
+            if (groups.length) selectGroup(groups[0].id);
+            if (clients.length) selectClient(clients[0].id);
+        });
+
+        // Event listener para mudança de tema
+        document.addEventListener('themeChanged', (e) => {
+            document.body.className = `theme-${e.detail.theme}`;
+        });
+
+        function setupEventListeners() {
+            document.querySelectorAll('.config-tab').forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+            });
+
+            document.getElementById('newGroupBtn').addEventListener('click', () => openGroupModal());
+            document.getElementById('companySelect').addEventListener('change', (e) => filterByCompany(e.target.value));
+            document.getElementById('searchInput').addEventListener('input', (e) => filterList(e.target.value));
+            document.getElementById('selectAll').addEventListener('change', (e) => toggleSelectAll(e.target.checked));
+        }
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+
+            // Atualizar tabs
+            document.querySelectorAll('.config-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.tab === tabName);
+            });
+
+            // Atualizar conteúdos
+            document.querySelectorAll('.tab-content').forEach(c => {
+                c.classList.toggle('active', c.id.includes(tabName));
+            });
+
+            // Atualizar listas na sidebar
+            document.getElementById('groupsList').classList.toggle('active', tabName === 'groups');
+            document.getElementById('clientsList').classList.toggle('active', tabName === 'clients');
+
+            // Atualizar placeholder da busca
+            const searchInput = document.getElementById('searchInput');
+            searchInput.placeholder = tabName === 'groups' ? 'Buscar grupos...' : 'Buscar clientes...';
+            searchInput.value = '';
+        }
+
+        function loadGroups() {
+            const list = document.getElementById('groupsList');
+            list.innerHTML = '';
+
+            groups.forEach((g, index) => {
+                const div = document.createElement('div');
+                div.className = `group-item ${currentGroupId === g.id ? 'active' : ''}`;
+                div.style.animationDelay = `${index * 0.1}s`;
+                div.innerHTML = `
+                    <div class="group-name">
+                        <i class="fas fa-layer-group" style="color: var(--brand-orange);"></i>
+                        ${g.name}
+                    </div>
+                    <div class="group-desc">
+                        <i class="fas fa-building" style="font-size: 10px;"></i> ${g.company}
+                    </div>
+                `;
+                div.onclick = () => selectGroup(g.id);
+                list.appendChild(div);
+            });
+        }
+
+        function selectGroup(id) {
+            currentGroupId = id;
+            const group = groups.find(g => g.id === id);
+
+            // Atualizar visual da lista
+            loadGroups();
+
+            // Carregar cards de configuração
+            const cards = document.getElementById('configCards');
+            cards.innerHTML = '';
+
+            const configItems = [
+                { icon: 'fa-map-marker-alt', label: 'Rastreamento', value: group.configs.tracking ? 'Ativo' : 'Inativo', status: group.configs.tracking ? 'active' : 'inactive' },
+                { icon: 'fa-file-alt', label: 'Relatórios', value: group.configs.reports ? 'Automático' : 'Manual', status: group.configs.reports ? 'active' : 'inactive' },
+                { icon: 'fa-bell', label: 'Alertas', value: group.configs.alerts ? 'Ligado' : 'Desligado', status: group.configs.alerts ? 'active' : 'inactive' },
+                { icon: 'fa-microchip', label: 'Equipamentos', value: `${group.equipmentCount} unidades`, status: 'active' }
+            ];
+
+            configItems.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'metric-card';
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.innerHTML = `
+                    <div class="metric-icon">
+                        <i class="fas ${item.icon}"></i>
+                    </div>
+                    <div class="metric-info">
+                        <h4>${item.label}</h4>
+                        <div class="metric-value">${item.value}</div>
+                    </div>
+                `;
+                cards.appendChild(card);
+            });
+        }
+
+        function loadClients() {
+            const list = document.getElementById('clientsList');
+            list.innerHTML = '';
+
+            clients.forEach((c, index) => {
+                const div = document.createElement('div');
+                div.className = `client-item ${currentClientId === c.id ? 'selected' : ''}`;
+                div.style.animationDelay = `${index * 0.1}s`;
+                div.innerHTML = `
+                    <div class="client-name">
+                        <i class="fas fa-building" style="color: var(--brand-orange);"></i>
+                        ${c.tradeName}
+                    </div>
+                    <div class="client-doc">
+                        <i class="fas fa-id-card" style="font-size: 10px;"></i> ${c.cnpj}
+                    </div>
+                `;
+                div.onclick = () => selectClient(c.id);
+                list.appendChild(div);
+            });
+        }
+
+        function selectClient(id) {
+            currentClientId = id;
+            const client = clients.find(c => c.id === id);
+
+            // Atualizar visual da lista
+            loadClients();
+
+            // Atualizar info do cliente
+            document.getElementById('selectedClientInfo').innerHTML = `
+                <i class="fas fa-building"></i>
+                Cliente: <strong>${client.tradeName}</strong> (${client.cnpj})
+            `;
+
+            // Carregar métricas do cliente
+            const metrics = document.getElementById('clientMetrics');
+            metrics.innerHTML = '';
+
+            const clientMetrics = [
+                { icon: 'fa-crown', label: 'Plano', value: client.plan.charAt(0).toUpperCase() + client.plan.slice(1) },
+                { icon: 'fa-chart-line', label: 'Consumo', value: `${client.dataConsumption} MB` },
+                { icon: 'fa-dollar-sign', label: 'Valor', value: `R$ ${client.planValue.toFixed(2)}` },
+                { icon: 'fa-microchip', label: 'Equipamentos', value: `${client.equipmentCount} unidades` }
+            ];
+
+            clientMetrics.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'metric-card';
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.innerHTML = `
+                    <div class="metric-icon">
+                        <i class="fas ${item.icon}"></i>
+                    </div>
+                    <div class="metric-info">
+                        <h4>${item.label}</h4>
+                        <div class="metric-value">${item.value}</div>
+                    </div>
+                `;
+                metrics.appendChild(card);
+            });
+
+            // Carregar equipamentos
+            loadEquipments();
+        }
+
+        function loadEquipments() {
+            const tbody = document.getElementById('equipmentTableBody');
+            tbody.innerHTML = '';
+
+            equipments.forEach((e, index) => {
+                const row = document.createElement('tr');
+                row.style.animationDelay = `${index * 0.1}s`;
+                row.innerHTML = `
+                    <td><input type="checkbox" class="equipment-check"></td>
+                    <td><strong>${e.imei}</strong></td>
+                    <td>${e.vehicle}</td>
+                    <td>${e.plate}</td>
+                    <td>${e.model}</td>
+                    <td><span class="status-badge ${e.status}">${e.status}</span></td>
+                    <td>${e.lastCom}</td>
+                    <td>
+                        <button class="btn-icon" onclick="showToast('Editando equipamento')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon" onclick="showToast('Excluindo equipamento')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function loadCompanies() {
+            const select = document.getElementById('companySelect');
+            const groupCompanySelect = document.getElementById('groupCompany');
+
+            const options = clients.map(c => `<option value="${c.id}">${c.tradeName}</option>`).join('');
+            select.innerHTML = '<option value="">Todas as Empresas</option>' + options;
+            groupCompanySelect.innerHTML = options;
+        }
+
+        function filterByCompany(id) {
+            if (id) {
+                switchTab('clients');
+                selectClient(parseInt(id));
+            }
+        }
+
+        function filterList(query) {
+            const items = currentTab === 'groups'
+                ? document.querySelectorAll('.group-item')
+                : document.querySelectorAll('.client-item');
+
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(query.toLowerCase())) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function toggleSelectAll(checked) {
+            document.querySelectorAll('.equipment-check').forEach(cb => {
+                cb.checked = checked;
+            });
+        }
+
+        function openGroupModal() {
+            document.getElementById('groupModal').classList.add('open');
+            document.getElementById('groupName').value = '';
+            document.getElementById('groupDesc').value = '';
+            document.getElementById('configTracking').checked = true;
+            document.getElementById('configReports').checked = true;
+            document.getElementById('configAlerts').checked = true;
+        }
+
+        function saveGroup() {
+            const name = document.getElementById('groupName').value;
+            if (!name) {
+                showToast('Nome do grupo é obrigatório', 'error');
+                return;
+            }
+
+            const company = document.getElementById('groupCompany').value;
+            const desc = document.getElementById('groupDesc').value;
+
+            groups.push({
+                id: groups.length + 1,
+                name: name,
+                description: desc,
+                company: company,
+                configs: {
+                    tracking: document.getElementById('configTracking').checked,
+                    reports: document.getElementById('configReports').checked,
+                    alerts: document.getElementById('configAlerts').checked
+                },
+                equipmentCount: 0
+            });
+
+            loadGroups();
+            closeModal('groupModal');
+            showToast('Grupo criado com sucesso!');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('open');
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('i');
+
+            if (type === 'success') {
+                icon.className = 'fas fa-check-circle';
+                toast.style.background = 'var(--brand-orange)';
+            } else {
+                icon.className = 'fas fa-exclamation-circle';
+                toast.style.background = '#e74c3c';
+            }
+
+            document.getElementById('toastMessage').textContent = message;
+            toast.style.display = 'flex';
+
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Adicionar listeners para botões
+        document.getElementById('importEquipmentsBtn').addEventListener('click', () => {
+            showToast('Função de importação em desenvolvimento');
+        });
+
+        document.getElementById('addEquipmentBtn').addEventListener('click', () => {
+            showToast('Função de adicionar equipamento em desenvolvimento');
+        });
+    </script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../../public/img/meet360.png">
+    <title>Track7 - Live Tracking</title>
+    <link rel="stylesheet" href="../global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../../components/topnav.js"></script>
+    <style>
+        /* Animações extras específicas para live-tracking */
+        .tracking-container {
+            padding: 0px 0px 30px 0px;
+            max-width: 1600px;
+            margin: 0 auto;
+            animation: fadeInScale 0.5s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .layout {
+            display: flex;
+            height: calc(100vh - 180px);
+            gap: 15px;
+            position: relative;
+            align-items: stretch;
+            margin-left: 30px;
+        }
+
+        .vehicle-panel:hover {
+            border-color: rgba(242, 101, 34, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .panel-header {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--sidebar-header-bg);
+        }
+
+        .panel-header h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--brand-orange);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-search {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 10px 12px;
+            gap: 10px;
+            background: var(--input-bg);
+            transition: all 0.3s ease;
+        }
+
+        .panel-search:focus-within {
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+        }
+
+        .panel-search input {
+            border: none;
+            outline: none;
+            font-size: 13px;
+            flex: 1;
+            color: var(--text-primary);
+            background: transparent;
+        }
+
+        .panel-search i {
+            color: var(--brand-silver);
+        }
+
+        /* Stats Pills - versão melhorada com dots coloridos em círculos perfeitos */
+        .panel-stats {
+            display: flex;
+            gap: 12px;
+            padding: 20px 20px;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            background: var(--card-bg-solid);
+        }
+
+        .stat-pill {
+            flex: 1;
+            text-align: center;
+            padding: 6px 16px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-pill::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(242, 101, 34, 0.15);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+
+        .stat-pill:hover::before {
+            width: 200px;
+            height: 200px;
+        }
+
+        .stat-pill:hover {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(242, 101, 34, 0.2);
+        }
+
+        .stat-pill.active-filter {
+            border-color: var(--brand-orange);
+            background: linear-gradient(135deg, var(--hover-bg) 0%, rgba(242, 101, 34, 0.1) 100%);
+            color: var(--brand-orange);
+            box-shadow: 0 4px 12px rgba(242, 101, 34, 0.25);
+            transform: scale(1.02);
+        }
+
+        .stat-pill .stat-num {
+            font-size: 18px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--brand-orange), #ff8c52);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Dots/Círculos coloridos para os botões - AGORA SÃO CÍRCULOS PERFEITOS */
+        .stat-pill .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+            flex-shrink: 0;
+        }
+
+        .stat-pill:hover .status-dot {
+            transform: scale(1.2);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.3);
+        }
+
+        .dot-all {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            box-shadow: 0 0 0 2px rgba(149, 165, 166, 0.3);
+        }
+
+        .dot-active {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            animation: pulse-green 2s infinite;
+        }
+
+        .dot-idle {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            animation: pulse-orange 2s infinite;
+        }
+
+        .dot-off {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+        }
+
+        @keyframes pulse-green {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.2);
+            }
+        }
+
+        @keyframes pulse-orange {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 0 4px rgba(243, 156, 18, 0.2);
+            }
+        }
+
+        /* Vehicle List - seguindo padrão da lista de grupos/clientes */
+        .vehicle-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .vi-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        /* Status dots na lista de veículos - AGORA SÃO CÍRCULOS PERFEITOS */
+        .vi-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .vi-status-dot.active {
+            background: var(--status-active);
+            animation: pulse-green 2s infinite;
+        }
+
+        .vi-status-dot.idle {
+            background: var(--status-idle);
+            animation: pulse-orange 2s infinite;
+        }
+
+        .vi-status-dot.off {
+            background: var(--status-off);
+        }
+
+        .vi-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .vi-plate {
+            font-size: 11px;
+            background: var(--input-bg);
+            padding: 3px 8px;
+            border-radius: 6px;
+            color: var(--brand-silver);
+            font-weight: 600;
+        }
+
+        .vi-mid {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 11px;
+            color: var(--brand-silver);
+            margin-bottom: 8px;
+        }
+
+        .vi-driver {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .vi-event-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--status-alert);
+        }
+
+        .vi-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .vi-location {
+            font-size: 10px;
+            color: var(--brand-silver);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+
+        .vi-speed {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--brand-orange);
+        }
+
+        .vi-speed.speeding {
+            color: var(--status-alert);
+        }
+
+        /* Map Area - seguindo padrão do config-content */
+        .map-area {
+            flex: 1;
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            overflow: hidden;
+            position: relative;
+            transition: all 0.3s ease;
+            margin-right: 30px;
+        }
+
+        .map-area:hover {
+            border-color: rgba(242, 101, 34, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        #realMap {
+            width: 100%;
+            height: 100%;
+            background: var(--map-bg);
+        }
+
+        /* Map controls - seguindo padrão dos botões */
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .map-ctrl-group {
+            background: var(--card-bg-solid);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .map-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: var(--card-bg-solid);
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .map-btn:last-child {
+            border-bottom: none;
+        }
+
+        .map-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(242, 101, 34, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .map-btn:hover::before {
+            width: 80px;
+            height: 80px;
+        }
+
+        .map-btn:hover {
+            color: var(--brand-orange);
+            transform: scale(1.05);
+        }
+
+        /* Status bar - seguindo padrão do breadcrumb */
+        .map-status-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            padding: 8px 20px;
+            font-size: 12px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            backdrop-filter: blur(10px);
+            animation: slideInUp 0.5s ease-out;
+        }
+
+        .map-status-bar .upd-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--status-active);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Vehicle Popup - seguindo padrão do modal */
+        .vehicle-popup {
+            position: absolute;
+            background: var(--modal-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            width: 300px;
+            z-index: 40;
+            display: none;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+            animation: modalAppear 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .vehicle-popup.show {
+            display: block;
+        }
+
+        .popup-header {
+            background: var(--modal-header-bg);
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .popup-header h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--brand-orange);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .popup-close {
+            background: none;
+            border: none;
+            color: var(--brand-silver);
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .popup-close:hover {
+            background: var(--hover-bg);
+            color: var(--brand-orange);
+            transform: rotate(90deg);
+        }
+
+        .popup-body {
+            padding: 16px 18px;
+        }
+
+        .popup-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border-color);
+            animation: slideInRight 0.3s ease both;
+        }
+
+        .popup-row:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .popup-row:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .popup-row:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .popup-row:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .popup-row:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .popup-row:nth-child(6) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .popup-row:last-child {
+            border-bottom: none;
+        }
+
+        .popup-row .lbl {
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        .popup-row .val {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .popup-row .val.green {
+            color: var(--status-active);
+        }
+
+        .popup-row .val.red {
+            color: var(--status-alert);
+        }
+
+        .popup-row .val.orange {
+            color: var(--status-idle);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--brand-orange);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 40px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 2100;
+            box-shadow: 0 8px 20px rgba(242, 101, 34, 0.4);
+            animation: toastSlide 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        @keyframes toastSlide {
+            from {
+                opacity: 0;
+                transform: translateX(50px) scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--sidebar-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-orange);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff8c52;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes cardEntrance {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Estilos para os marcadores do Leaflet */
+        .custom-div-icon {
+            background: transparent;
+            border: none;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: var(--modal-bg);
+            color: var(--text-primary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .leaflet-popup-tip {
+            background: var(--modal-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Sidebar do Live Tracking com visual de Configuration */
+        .vehicle-panel {
+            width: 350px;
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .vehicle-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Adicione isso para melhor espaçamento interno */
+        .vehicle-item>div {
+            width: 100%;
+        }
+
+        /* Efeito de Hover igual ao Configuration */
+        .vehicle-item:hover {
+            transform: translateX(8px);
+            border-color: var(--brand-orange);
+            background: var(--hover-bg);
+            box-shadow: 0 5px 15px rgba(242, 101, 34, 0.2);
+        }
+
+        /* Efeito de Ativação/Seleção igual ao Configuration */
+        .vehicle-item.selected {
+            background: var(--hover-bg);
+            border-left: 4px solid var(--brand-orange);
+            transform: scale(1.02);
+        }
+
+        /* Linha inferior animada (opcional, presente no configuration) */
+        .vehicle-item::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: var(--brand-orange);
+            transition: width 0.3s ease;
+        }
+
+        .vehicle-item:hover::after {
+            width: 100%;
+        }
+
+        /* Botão de ícone padrão da marca */
+        .btn-icon {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 50% !important;
+            background: var(--brand-orange) !important;
+            color: white !important;
+            border: none !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .btn-icon:hover {
+            background: #d45512 !important;
+            transform: scale(1.1) rotate(0deg) !important;
+            box-shadow: 0 0 15px rgba(242, 101, 34, 0.5);
+        }
+
+        .btn-icon i {
+            margin: 0;
+            color: white;
+        }
+
+        .search-box {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            animation: fadeIn 0.7s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-box i {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+            outline: none;
+        }
+
+        /* Counter badge */
+        .stat-badge {
+            background: rgba(242, 101, 34, 0.2);
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Modal de Filtros */
+        .filter-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .filter-modal.open {
+            display: flex;
+        }
+
+        .filter-modal-content {
+            background: var(--modal-bg);
+            border-radius: 24px;
+            width: 90%;
+            max-width: 480px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            animation: modalSlideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .filter-modal-header {
+            padding: 20px 24px;
+            background: var(--modal-header-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .filter-modal-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--brand-orange);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+        .filter-modal-close:hover {
+            background: var(--hover-bg);
+            color: var(--brand-orange);
+            transform: rotate(90deg);
+        }
+
+        .filter-modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(85vh - 130px);
+        }
+
+        .filter-section {
+            margin-bottom: 28px;
+        }
+
+        .filter-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        .filter-checkbox:hover {
+            background: var(--hover-bg);
+            border-color: var(--brand-orange);
+            transform: translateX(5px);
+        }
+
+        .filter-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--brand-orange);
+        }
+
+        .filter-checkbox i {
+            font-size: 16px;
+            color: var(--brand-orange);
+        }
+
+        /* Dots do modal de filtros - AGORA SÃO CÍRCULOS PERFEITOS */
+        .status-dot-filter {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .active-dot {
+            background: #27ae60;
+            box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.3);
+        }
+
+        .idle-dot {
+            background: #f39c12;
+            box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.3);
+        }
+
+        .off-dot {
+            background: #95a5a6;
+            box-shadow: 0 0 0 2px rgba(149, 165, 166, 0.3);
+        }
+
+        .filter-speed-range {
+            display: flex;
+            gap: 16px;
+        }
+
+        .speed-input-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .speed-input-group label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .speed-input-group input {
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .speed-input-group input:focus {
+            outline: none;
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+        }
+
+        .filter-modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 12px;
+            background: var(--modal-header-bg);
+        }
+
+        .filter-btn-clear,
+        .filter-btn-apply {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn-clear {
+            background: var(--input-bg);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .filter-btn-clear:hover {
+            background: var(--hover-bg);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+
+        .filter-btn-apply {
+            background: var(--brand-orange);
+            color: white;
+        }
+
+        .filter-btn-apply:hover {
+            background: #d45512;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(242, 101, 34, 0.3);
+        }
+
+        /* Forçar ícone do filtro a ser branco */
+        .btn-icon i,
+        .btn-icon .fas,
+        .btn-icon .fa-sliders-h {
+            color: white !important;
+        }
+    </style>
+</head>
+
+<body class="theme-dark">
+    <top-navigation></top-navigation>
+    <div class="tracking-container">
+        <!-- Breadcrumb bar igual ao configuration -->
+        <div class="breadcrumb-bar">
+            <div style="display: flex; gap: 8px;">
+                <span class="tab active" onclick="location.href='live-tracking.html'">
+                    <i class="fas fa-map-marker-alt" style="margin-right: 6px;"></i> Localização
+                </span>
+                <span class="tab" onclick="showToast('Funcionalidade em desenvolvimento')">
+                    <i class="fas fa-draw-polygon" style="margin-right: 6px;"></i> Geocercas
+                </span>
+                <span class="tab" onclick="showToast('Funcionalidade em desenvolvimento')">
+                    <i class="fas fa-bell" style="margin-right: 6px;"></i> Alertas
+                </span>
+            </div>
+
+            <div class="org-selector">
+                <span><i class="far fa-building"></i> Organização:</span>
+                <select id="orgSelector" onchange="changeOrganization(this)">
+                    <option value="1">Track7 BR - Betânia</option>
+                    <option value="2">Track7 BR - Sul</option>
+                    <option value="3">Track7 BR - Norte</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="layout">
+            <!-- Vehicle Panel - igual sidebar do configuration -->
+            <aside class="vehicle-panel">
+                <div class="config-sidebar">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar veículos..."
+                            onkeyup="filterVehicles(this.value)">
+                        <button class="btn-icon" id="filterBtn" title="Filtros" onclick="openVehicleFilter()">
+                            <i class="fas fa-sliders-h"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Pills com dots coloridos em círculos perfeitos -->
+                <div class="panel-stats">
+                    <div class="stat-pill active-filter" onclick="filterByStatus('all', this)">
+                        <span class="status-dot dot-all"></span>
+                        <span>Todos</span>
+                    </div>
+                    <div class="stat-pill" onclick="filterByStatus('active', this)">
+                        <span class="status-dot dot-active"></span>
+                        <span>Ativos</span>
+                    </div>
+                    <div class="stat-pill" onclick="filterByStatus('idle', this)">
+                        <span class="status-dot dot-idle"></span>
+                        <span>Parados</span>
+                    </div>
+                    <div class="stat-pill" onclick="filterByStatus('off', this)">
+                        <span class="status-dot dot-off"></span>
+                        <span>Desligados</span>
+                    </div>
+                </div>
+
+                <div class="vehicle-list list-items" id="vehicleList" style="padding: 10px; overflow-y: auto; flex: 1;">
+                </div>
+            </aside>
+
+            <!-- Map Area - igual content do configuration -->
+            <main class="map-area">
+                <div id="realMap" style="width: 100%; height: 100%;"></div>
+
+                <div class="map-status-bar">
+                    <span class="upd-dot"></span>
+                    <span><i class="fas fa-sync-alt" style="margin-right: 6px;"></i> Telemetria Ativa</span>
+                    <span style="opacity:0.5;">|</span>
+                    <span id="lastUpdate"><i class="far fa-clock" style="margin-right: 4px;"></i> --:--:--</span>
+                </div>
+
+                <div class="map-controls">
+                    <div class="map-ctrl-group">
+                        <button class="map-btn" onclick="toggleTracking()" data-tip="Pausar/Retomar Tracking">
+                            <i class="fas fa-play" id="trackingIcon"></i>
+                        </button>
+                        <button class="map-btn" onclick="centerMapOnVehicles()" data-tip="Centralizar veículos">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                        <button class="map-btn" onclick="toggleFullscreen()" data-tip="Tela cheia">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="vehicle-popup" id="vehiclePopup">
+                    <div class="popup-header">
+                        <h3 id="popupTitle">Monitoramento</h3>
+                        <button class="popup-close" onclick="closePopup()">×</button>
+                    </div>
+                    <div class="popup-body" id="popupBody"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Operação realizada com sucesso!</span>
+    </div>
+    <!-- Modal de Filtros -->
+    <div id="filterModal" class="filter-modal">
+        <div class="filter-modal-content">
+            <div class="filter-modal-header">
+                <h3><i class="fas fa-filter"></i> Filtros Avançados</h3>
+                <button class="filter-modal-close" onclick="closeVehicleFilter()">&times;</button>
+            </div>
+            <div class="filter-modal-body">
+                <!-- Filtro por Status -->
+                <div class="filter-section">
+                    <label class="filter-label"><i class="fas fa-circle"></i> Status do Veículo</label>
+                    <div class="filter-options" id="statusFilterGroup">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="active" checked>
+                            <span class="status-dot-filter active-dot"></span>
+                            Ativos
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="idle" checked>
+                            <span class="status-dot-filter idle-dot"></span>
+                            Parados
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="off" checked>
+                            <span class="status-dot-filter off-dot"></span>
+                            Desligados
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Filtro por Velocidade -->
+                <div class="filter-section">
+                    <label class="filter-label"><i class="fas fa-tachometer-alt"></i> Velocidade (km/h)</label>
+                    <div class="filter-speed-range">
+                        <div class="speed-input-group">
+                            <label>Mínima:</label>
+                            <input type="number" id="minSpeedFilter" value="0" min="0" step="10">
+                        </div>
+                        <div class="speed-input-group">
+                            <label>Máxima:</label>
+                            <input type="number" id="maxSpeedFilter" placeholder="Sem limite" min="0" step="10">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filtro por Tipo de Veículo -->
+                <div class="filter-section">
+                    <label class="filter-label"><i class="fas fa-truck"></i> Tipo de Veículo</label>
+                    <div class="filter-options" id="typeFilterGroup">
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="bus" checked>
+                            <i class="fas fa-bus"></i> Ônibus
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="truck" checked>
+                            <i class="fas fa-truck"></i> Caminhão
+                        </label>
+                        <label class="filter-checkbox">
+                            <input type="checkbox" value="van" checked>
+                            <i class="fas fa-shuttle-van"></i> Van
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="filter-modal-footer">
+                <button class="filter-btn-clear" onclick="clearAllFilters()">Limpar Filtros</button>
+                <button class="filter-btn-apply" onclick="applyVehicleFilters()">Aplicar Filtros</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const API = 'http://localhost:5000/api';
+        let map;
+        let vehicleMarkers = {};
+        let vehicles = [];
+        let trackingInterval;
+        let lastUpdateTime = Date.now();
+        let isTracking = true;
+        let selectedVehicleId = null;
+        let currentStatusFilter = 'all';
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = toast.querySelector('i');
+            const msgSpan = document.getElementById('toastMessage');
+
+            if (type === 'success') {
+                icon.className = 'fas fa-check-circle';
+                toast.style.background = 'var(--brand-orange)';
+            } else {
+                icon.className = 'fas fa-exclamation-circle';
+                toast.style.background = '#e74c3c';
+            }
+
+            msgSpan.textContent = message;
+            toast.style.display = 'flex';
+
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        function saveVehiclesToCache() {
+            localStorage.setItem('meet360_vehicles_cache', JSON.stringify(vehicles));
+            localStorage.setItem('meet360_last_cache_time', Date.now());
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = `theme-${savedTheme}`;
+
+            initMap();
+
+            const cachedData = localStorage.getItem('meet360_vehicles_cache');
+            if (cachedData) {
+                vehicles = JSON.parse(cachedData);
+                renderVehicleList();
+                renderAllMarkers();
+                updateStats();
+                showToast('📍 Carregando posições salvas...');
+            }
+
+            await authenticateAndLoadVehicles();
+            startRealTimeTracking();
+        });
+
+        document.addEventListener('themeChanged', (e) => {
+            document.body.className = `theme-${e.detail.theme}`;
+            updateMapTheme();
+        });
+
+        async function authenticateAndLoadVehicles() {
+            try {
+                showToast('🔄 Conectando ao servidor...');
+
+                const statusResponse = await fetch(`${API}/status`);
+                const statusData = await statusResponse.json();
+
+                if (!statusData.authenticated) {
+                    const loginResponse = await fetch(`${API}/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token: '67eba42da80819eb285dd8794678964707481B6FFB3E065405FE46F889143875DE5B3C3A'
+                        })
+                    });
+                    const loginData = await loginResponse.json();
+                    if (loginData.error) throw new Error(loginData.error);
+                }
+
+                await loadUnits();
+
+            } catch (error) {
+                console.error('Erro na autenticação:', error);
+                showToast('❌ Erro ao conectar ao servidor. Usando dados simulados.', 'error');
+                loadSimulatedData();
+            }
+        }
+
+        async function loadUnits() {
+            try {
+                const response = await fetch(`${API}/units`);
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                if (data.units && data.units.length > 0) {
+                    vehicles = data.units.map(unit => ({
+                        id: unit.id,
+                        name: unit.name,
+                        plate: unit.label || unit.name.split(' ').pop() || `PLACA-${unit.id}`,
+                        driver: '—',
+                        status: 'active',
+                        speed: 0,
+                        maxSpeed: 80,
+                        location: 'Aguardando posição...',
+                        lastUpdate: '--:--:--',
+                        odometer: '0 km',
+                        ignition: 'Desligado',
+                        event: null,
+                        lat: null,
+                        lng: null,
+                        icon: '🚛'
+                    }));
+
+                    updateStats();
+                    renderVehicleList();
+                    fetchAllVehiclesPosition();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar unidades:', error);
+                loadSimulatedData();
+            }
+        }
+
+        function loadSimulatedData() {
+            vehicles = [
+                { id: 1, name: '1658 - M.B. - OF 1722', plate: 'ABC-1D34', driver: 'Carlos Silva', status: 'active', speed: 62, maxSpeed: 80, location: 'Av. Brasil, 4520 - Centro', lastUpdate: '14:37:18', odometer: '128.450 km', ignition: 'Ligado', event: null, lat: -22.2568, lng: -45.7035, icon: '🚌' },
+                { id: 2, name: '1659 - M.B. - OF 1418', plate: 'DEF-5E78', driver: 'Ana Oliveira', status: 'active', speed: 87, maxSpeed: 80, location: 'Rod. BR-116, km 42', lastUpdate: '14:37:20', odometer: '214.320 km', ignition: 'Ligado', event: 'Exc. Velocidade', lat: -22.2578, lng: -45.7045, icon: '🚌' },
+                { id: 3, name: '3000 - M.B. - OF 1722', plate: 'GHI-9F12', driver: 'Pedro Santos', status: 'active', speed: 45, maxSpeed: 80, location: 'Rua das Flores, 210', lastUpdate: '14:37:15', odometer: '98.760 km', ignition: 'Ligado', event: null, lat: -22.2558, lng: -45.7025, icon: '🚌' },
+                { id: 4, name: '3001 - VW - 17-230 OD', plate: 'JKL-3G56', driver: 'Maria Lima', status: 'active', speed: 31, maxSpeed: 60, location: 'Terminal Norte - Garagem', lastUpdate: '14:37:05', odometer: '56.120 km', ignition: 'Ligado', event: 'Acel. Brusca', lat: -22.2548, lng: -45.7015, icon: '🚛' },
+                { id: 5, name: '3002 - Scania - R 450', plate: 'MNO-7H90', driver: 'João Costa', status: 'idle', speed: 0, maxSpeed: 90, location: 'Garagem Central', lastUpdate: '14:32:44', odometer: '302.880 km', ignition: 'Ligado', event: null, lat: -22.2538, lng: -45.7005, icon: '🚛' },
+                { id: 6, name: '3003 - Volvo - FH 460', plate: 'PQR-1I22', driver: 'Luiz Ferreira', status: 'idle', speed: 0, maxSpeed: 90, location: 'Pátio Interno - Dep. Sul', lastUpdate: '14:29:11', odometer: '441.600 km', ignition: 'Ligado', event: null, lat: -22.2528, lng: -45.6995, icon: '🚛' },
+                { id: 7, name: '3004 - Ford - Cargo 2429', plate: 'STU-3J44', driver: '—', status: 'off', speed: 0, maxSpeed: 80, location: 'Garagem Central', lastUpdate: '08:14:03', odometer: '73.990 km', ignition: 'Desligado', event: null, lat: -22.2518, lng: -45.6985, icon: '🚚' },
+                { id: 8, name: '3005 - Iveco - Daily 70C17', plate: 'VWX-5K66', driver: '—', status: 'off', speed: 0, maxSpeed: 70, location: 'Filial Leste', lastUpdate: '07:50:28', odometer: '19.340 km', ignition: 'Desligado', event: null, lat: -22.2508, lng: -45.6975, icon: '🚐' },
+            ];
+
+            renderVehicleList();
+            renderAllMarkers();
+            updateStats();
+        }
+
+        async function fetchAllVehiclesPosition() {
+            if (!isTracking) return;
+
+            for (const vehicle of vehicles) {
+                if (vehicle.status !== 'off') {
+                    await fetchVehiclePosition(vehicle.id);
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+            }
+
+            renderAllMarkers();
+            renderVehicleList(document.getElementById('searchInput')?.value || '', currentStatusFilter);
+            updateLastUpdateTime();
+        }
+
+        async function fetchVehiclePosition(unitId) {
+            try {
+                const response = await fetch(`${API}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        unitId: unitId,
+                        timeFrom: 0,
+                        timeTo: Math.floor(Date.now() / 1000),
+                        msgType: 1,
+                        maxCount: 1,
+                        flags: 0x0001
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.messages && data.messages.length > 0) {
+                    const latestMsg = data.messages[0];
+                    updateVehicleFromMessage(unitId, latestMsg);
+                }
+            } catch (error) {
+                console.error(`Erro na telemetria do veículo ${unitId}:`, error);
+            }
+        }
+
+        function updateVehicleFromMessage(unitId, msg) {
+            const vehicle = vehicles.find(v => v.id == unitId);
+            if (!vehicle || !msg.pos) return;
+
+            vehicle.lat = msg.pos.y;
+            vehicle.lng = msg.pos.x;
+            vehicle.speed = Math.round(msg.pos.s || 0);
+            vehicle.lastUpdate = new Date(msg.t * 1000).toLocaleTimeString('pt-BR');
+
+            if (vehicleMarkers[unitId]) {
+                vehicleMarkers[unitId].setLatLng([vehicle.lat, vehicle.lng]);
+                if (vehicleMarkers[unitId].getPopup()) {
+                    vehicleMarkers[unitId].setPopupContent(createPopupContent(vehicle));
+                }
+            } else {
+                renderAllMarkers();
+            }
+        }
+
+        function startRealTimeTracking() {
+            const INTERVALO_UM_MINUTO = 60000;
+
+            if (trackingInterval) clearInterval(trackingInterval);
+
+            if (isTracking) {
+                fetchAllVehiclesPosition();
+            }
+
+            trackingInterval = setInterval(() => {
+                if (isTracking) {
+                    fetchAllVehiclesPosition();
+                }
+            }, INTERVALO_UM_MINUTO);
+
+            setInterval(updateClock, 1000);
+        }
+
+        function updateLastUpdateTime() {
+            lastUpdateTime = Date.now();
+            const date = new Date();
+            document.getElementById('lastUpdate').innerHTML = `<i class="far fa-clock" style="margin-right: 4px;"></i> ${date.toLocaleTimeString()}`;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('lastUpdate').innerHTML = `<i class="far fa-clock" style="margin-right: 4px;"></i> ${now.toLocaleTimeString()}`;
+        }
+
+        function toggleTracking() {
+            isTracking = !isTracking;
+            showToast(isTracking ? '▶ Tracking ativado' : '⏸ Tracking pausado');
+
+            const statusDot = document.querySelector('.upd-dot');
+            if (statusDot) {
+                statusDot.style.background = isTracking ? '#2ecc71' : '#f39c12';
+            }
+        }
+
+        function initMap() {
+            map = L.map('realMap', { zoomControl: false }).setView([-22.2568, -45.7035], 13);
+            updateMapTheme();
+
+            if (vehicles.length > 0) {
+                centerMapOnVehicles();
+            }
+        }
+
+        function updateMapTheme() {
+            map.eachLayer((layer) => {
+                if (layer instanceof L.TileLayer) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            const currentTheme = document.body.classList.contains('theme-light') ? 'light' : 'dark';
+
+            if (currentTheme === 'light') {
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap, © CartoDB'
+                }).addTo(map);
+            } else {
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap, © CartoDB'
+                }).addTo(map);
+            }
+        }
+
+        function renderAllMarkers() {
+            Object.values(vehicleMarkers).forEach(marker => map.removeLayer(marker));
+            vehicleMarkers = {};
+
+            const vehiclesWithPosition = vehicles.filter(v => v.lat != null && v.lng != null);
+
+            vehiclesWithPosition.forEach(vehicle => {
+                const marker = createVehicleMarker(vehicle);
+                marker.addTo(map);
+                vehicleMarkers[vehicle.id] = marker;
+            });
+
+            if (vehiclesWithPosition.length > 0 && !selectedVehicleId) {
+                centerMapOnVehicles();
+            }
+        }
+
+        function createVehicleMarker(vehicle) {
+            const statusColorMap = {
+                active: '#27ae60',
+                idle: '#f39c12',
+                off: '#bdc3c7',
+                alert: '#e74c3c'
+            };
+
+            const bgColor = statusColorMap[vehicle.status] || '#BE6004';
+
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `
+                    <div style="
+                        background: ${bgColor};
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border: 2px solid #fff;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                        transition: all 0.3s ease;
+                        position: relative;
+                    ">
+                        <i class="fas fa-bus-alt" style="color: white; font-size: 14px;"></i>
+                        ${vehicle.speed > 0 ? `
+                            <div style="
+                                position: absolute;
+                                top: -8px;
+                                right: -8px;
+                                background: #BE6004;
+                                color: white;
+                                border-radius: 10px;
+                                padding: 2px 4px;
+                                font-size: 8px;
+                                font-weight: bold;
+                                border: 1px solid white;
+                            ">
+                                ${vehicle.speed}
+                            </div>
+                        ` : ''}
+                        <div style="
+                            position: absolute;
+                            bottom: -22px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            background: rgba(0,0,0,0.8);
+                            color: white;
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            font-size: 9px;
+                            white-space: nowrap;
+                            border: 1px solid ${bgColor};
+                            backdrop-filter: blur(4px);
+                        ">
+                            ${vehicle.plate}
+                        </div>
+                    </div>
+                `,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+                popupAnchor: [0, -16]
+            });
+
+            const marker = L.marker([vehicle.lat, vehicle.lng], { icon: icon });
+            marker.bindPopup(createPopupContent(vehicle));
+            marker.on('click', () => selectVehicle(vehicle.id));
+
+            return marker;
+        }
+
+        function createPopupContent(vehicle) {
+            return `
+                <div style="min-width: 250px;">
+                    <div style="
+                        background: var(--brand-orange);
+                        color: white;
+                        padding: 10px 12px;
+                        margin: -12px -12px 10px -12px;
+                        border-radius: 12px 12px 0 0;
+                    ">
+                        <strong style="font-size: 13px;">${vehicle.name}</strong>
+                    </div>
+                    <div style="padding: 0 5px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="color: var(--text-secondary);">Placa:</span>
+                            <span style="font-weight: 600;">${vehicle.plate}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="color: var(--text-secondary);">Motorista:</span>
+                            <span>${vehicle.driver}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="color: var(--text-secondary);">Velocidade:</span>
+                            <span style="color: ${vehicle.speed > vehicle.maxSpeed ? '#e74c3c' : '#27ae60'}; font-weight: bold;">
+                                ${vehicle.speed} km/h
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="color: var(--text-secondary);">Ignição:</span>
+                            <span style="color: ${vehicle.ignition === 'Ligado' ? '#27ae60' : 'var(--text-secondary)'};">
+                                ${vehicle.ignition}
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="color: var(--text-secondary);">Última atualização:</span>
+                            <span>${vehicle.lastUpdate}</span>
+                        </div>
+                        ${vehicle.event ? `
+                            <div style="
+                                background: rgba(231, 76, 60, 0.15);
+                                color: #e74c3c;
+                                padding: 6px 10px;
+                                border-radius: 8px;
+                                margin-top: 8px;
+                                font-size: 11px;
+                                font-weight: bold;
+                                text-align: center;
+                            ">
+                                ⚠️ ${vehicle.event}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function centerMapOnVehicles() {
+            const vehiclesWithPosition = vehicles.filter(v => v.lat != null && v.lng != null);
+
+            if (vehiclesWithPosition.length === 0) return;
+
+            if (vehiclesWithPosition.length === 1) {
+                map.setView([vehiclesWithPosition[0].lat, vehiclesWithPosition[0].lng], 15);
+            } else {
+                const bounds = L.latLngBounds(vehiclesWithPosition.map(v => [v.lat, v.lng]));
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        function renderVehicleList(filter = '', statusFilter = 'all') {
+            const list = document.getElementById('vehicleList');
+            if (!list) return;
+
+            list.innerHTML = '';
+
+            const filtered = vehicles.filter(v => {
+                const matchText = v.name.toLowerCase().includes(filter.toLowerCase()) ||
+                    v.plate.toLowerCase().includes(filter.toLowerCase()) ||
+                    (v.driver && v.driver.toLowerCase().includes(filter.toLowerCase()));
+                const matchStatus = statusFilter === 'all' || v.status === statusFilter;
+                return matchText && matchStatus;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><br>Nenhum veículo encontrado.</div>';
+                return;
+            }
+
+            filtered.forEach((v, index) => {
+                const div = document.createElement('div');
+                div.className = 'vehicle-item' + (v.id === selectedVehicleId ? ' selected' : '');
+
+                // Mapeamento de cores para os status
+                const statusColorMap = {
+                    active: '#27ae60',
+                    idle: '#f39c12',
+                    off: '#95a5a6'
+                };
+
+                // Determinar a garagem baseado no nome/localização
+                let garage = 'Garagem Central';
+                if (v.location && v.location.includes('Norte')) garage = 'Garagem Norte';
+                else if (v.location && v.location.includes('Sul')) garage = 'Garagem Sul';
+                else if (v.location && v.location.includes('Leste')) garage = 'Garagem Leste';
+                else if (v.name && v.name.includes('1658')) garage = 'Garagem Betânia';
+                else if (v.name && v.name.includes('1659')) garage = 'Garagem Betânia';
+                else if (v.name && v.name.includes('3000')) garage = 'Garagem Sul';
+                else if (v.name && v.name.includes('3001')) garage = 'Garagem Norte';
+                else if (v.name && v.name.includes('3002')) garage = 'Garagem Central';
+                else if (v.name && v.name.includes('3003')) garage = 'Garagem Central';
+
+                // Extrair apenas o número do carro (primeira parte do nome)
+                const carNumber = v.name.split(' ')[0] || v.id;
+                div.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <!-- Bolinha de status -->
+                        <span class="vi-status-dot ${v.status}" style="background:${statusColorMap[v.status]}; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;"></span>
+                        
+                        <!-- Número do veículo -->
+                        <div style="font-weight: 700; color: var(--brand-orange); font-size: 14px; flex-shrink: 0;">
+                            N° ${carNumber}
+                        </div>
+                        
+                        <!-- Motorista -->
+                        <div style="font-size: 12px; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-user" style="font-size: 11px;"></i>
+                            <span>${v.driver || 'Não identificado'}</span>
+                        </div>
+                        
+                        <!-- Garagem -->
+                        <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-building" style="font-size: 10px;"></i>
+                            <span>${garage}</span>
+                        </div>
+                    </div>
+                `;
+
+                div.onclick = () => selectVehicle(v.id);
+                list.appendChild(div);
+            });
+        }
+
+        function updateStats() {
+            const active = vehicles.filter(v => v.status === 'active').length;
+            const idle = vehicles.filter(v => v.status === 'idle').length;
+            const off = vehicles.filter(v => v.status === 'off').length;
+
+            // Removendo os números dos botões - mantendo apenas os textos
+            const statPills = document.querySelectorAll('.stat-pill');
+            if (statPills.length >= 4) {
+                // Remove os números e mantém apenas os textos
+                statPills[0].innerHTML = `<span class="status-dot dot-all"></span><span>Todos</span>`;
+                statPills[1].innerHTML = `<span class="status-dot dot-active"></span><span>Ativos</span>`;
+                statPills[2].innerHTML = `<span class="status-dot dot-idle"></span><span>Parados</span>`;
+                statPills[3].innerHTML = `<span class="status-dot dot-off"></span><span>Deslig.</span>`;
+            }
+        }
+
+        function selectVehicle(id) {
+            selectedVehicleId = id;
+            renderVehicleList(
+                document.getElementById('searchInput')?.value || '',
+                currentStatusFilter
+            );
+
+            const vehicle = vehicles.find(v => v.id === id);
+            if (!vehicle) return;
+
+            if (vehicle.lat && vehicle.lng) {
+                map.setView([vehicle.lat, vehicle.lng], 16);
+                if (vehicleMarkers[vehicle.id]) {
+                    vehicleMarkers[vehicle.id].openPopup();
+                }
+            }
+
+            showPopup(vehicle);
+        }
+
+        function filterByStatus(status, el) {
+            currentStatusFilter = status;
+
+            // Remove active class from all stat-pills
+            document.querySelectorAll('.stat-pill').forEach(pill => {
+                pill.classList.remove('active-filter');
+            });
+
+            // Add active class to clicked pill
+            if (el) {
+                el.classList.add('active-filter');
+            }
+
+            renderVehicleList(
+                document.getElementById('searchInput')?.value || '',
+                status
+            );
+            showToast(`Filtrando: ${el ? el.textContent.trim().replace(/\d+/g, '').trim() : status}`);
+        }
+
+        function filterVehicles(q) {
+            renderVehicleList(q, currentStatusFilter);
+        }
+
+        function toggleFullscreen() {
+            const mapArea = document.querySelector('.map-area');
+            if (!document.fullscreenElement) {
+                mapArea.requestFullscreen();
+                showToast('Modo tela cheia ativado');
+            } else {
+                document.exitFullscreen();
+                showToast('Modo tela cheia desativado');
+            }
+        }
+
+        function showPopup(v) {
+            const popup = document.getElementById('vehiclePopup');
+            document.getElementById('popupTitle').innerHTML = `<i class="fas fa-bus-alt" style="margin-right: 8px;"></i> ${v.name}`;
+
+            const speedClass = v.speed > v.maxSpeed ? 'red' : 'green';
+            const ignClass = v.ignition === 'Ligado' ? 'green' : '';
+
+            document.getElementById('popupBody').innerHTML = `
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-id-card"></i> Placa</span>
+                    <span class="val">${v.plate}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-user"></i> Motorista</span>
+                    <span class="val">${v.driver}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-tachometer-alt"></i> Velocidade</span>
+                    <span class="val ${speedClass}">${v.status === 'off' ? '—' : v.speed + ' km/h'}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-key"></i> Ignição</span>
+                    <span class="val ${ignClass}">${v.ignition}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-map-marker-alt"></i> Localização</span>
+                    <span class="val" style="font-size: 10.5px;">${v.location}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-road"></i> Hodômetro</span>
+                    <span class="val">${v.odometer}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="far fa-clock"></i> Atualização</span>
+                    <span class="val">${v.lastUpdate}</span>
+                </div>
+                ${v.event ? `
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-exclamation-triangle"></i> Evento</span>
+                    <span class="val red">⚠ ${v.event}</span>
+                </div>` : ''}
+            `;
+
+            const marker = vehicleMarkers[v.id];
+            if (marker) {
+                const point = map.latLngToContainerPoint(marker.getLatLng());
+                const mapArea = document.querySelector('.map-area');
+                const mapRect = mapArea.getBoundingClientRect();
+
+                let left = point.x + 20;
+                let top = point.y - 100;
+
+                if (left + 300 > mapRect.width) left = point.x - 320;
+                if (top < 0) top = 10;
+                if (top + 320 > mapRect.height) top = mapRect.height - 330;
+
+                popup.style.left = left + 'px';
+                popup.style.top = top + 'px';
+            }
+
+            popup.classList.add('show');
+        }
+
+        function closePopup() {
+            document.getElementById('vehiclePopup').classList.remove('show');
+            selectedVehicleId = null;
+            renderVehicleList(
+                document.getElementById('searchInput').value,
+                currentStatusFilter
+            );
+        }
+        // Função para abrir o modal de filtros
+        function openVehicleFilter() {
+            const modal = document.getElementById('filterModal');
+            modal.classList.add('open');
+
+            // Carregar valores atuais nos inputs
+            if (window.activeFilters) {
+                document.getElementById('minSpeedFilter').value = window.activeFilters.minSpeed || 0;
+                document.getElementById('maxSpeedFilter').value = window.activeFilters.maxSpeed || '';
+
+                // Carregar checkboxes de status
+                document.querySelectorAll('#statusFilterGroup input').forEach(cb => {
+                    cb.checked = window.activeFilters.status.includes(cb.value);
+                });
+
+                // Carregar checkboxes de tipos
+                document.querySelectorAll('#typeFilterGroup input').forEach(cb => {
+                    cb.checked = window.activeFilters.types.includes(cb.value);
+                });
+            }
+        }
+
+        // Função para fechar o modal de filtros
+        function closeVehicleFilter() {
+            const modal = document.getElementById('filterModal');
+            modal.classList.remove('open');
+        }
+
+        // Função para limpar todos os filtros
+        function clearAllFilters() {
+            // Limpar checkboxes de status
+            document.querySelectorAll('#statusFilterGroup input').forEach(cb => {
+                cb.checked = true;
+            });
+
+            // Limpar checkboxes de tipos
+            document.querySelectorAll('#typeFilterGroup input').forEach(cb => {
+                cb.checked = true;
+            });
+
+            // Limpar inputs de velocidade
+            document.getElementById('minSpeedFilter').value = 0;
+            document.getElementById('maxSpeedFilter').value = '';
+
+            showToast('Filtros limpos!');
+        }
+
+        // Função para aplicar os filtros
+        function applyVehicleFilters() {
+            // Capturar status selecionados
+            const selectedStatus = [];
+            document.querySelectorAll('#statusFilterGroup input:checked').forEach(cb => {
+                selectedStatus.push(cb.value);
+            });
+
+            // Capturar tipos selecionados
+            const selectedTypes = [];
+            document.querySelectorAll('#typeFilterGroup input:checked').forEach(cb => {
+                selectedTypes.push(cb.value);
+            });
+
+            // Capturar velocidades
+            const minSpeed = parseInt(document.getElementById('minSpeedFilter').value) || 0;
+            const maxSpeed = document.getElementById('maxSpeedFilter').value ?
+                parseInt(document.getElementById('maxSpeedFilter').value) : null;
+
+            // Atualizar filtros ativos
+            window.activeFilters = {
+                status: selectedStatus,
+                minSpeed: minSpeed,
+                maxSpeed: maxSpeed,
+                types: selectedTypes
+            };
+
+            // Fechar modal e aplicar filtros na lista
+            closeVehicleFilter();
+            applyFiltersToList();
+            showToast('Filtros aplicados com sucesso!');
+        }
+
+        // Função para aplicar filtros na lista de veículos
+        function applyFiltersToList() {
+            const searchTerm = document.getElementById('searchInput')?.value || '';
+            const filteredVehicles = vehicles.filter(vehicle => {
+                // Filtro por texto
+                const matchText = vehicle.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    vehicle.plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (vehicle.driver && vehicle.driver.toLowerCase().includes(searchTerm.toLowerCase()));
+
+                if (!matchText) return false;
+
+                // Filtro por status
+                if (!window.activeFilters.status.includes(vehicle.status)) return false;
+
+                // Filtro por velocidade
+                if (vehicle.speed < window.activeFilters.minSpeed) return false;
+                if (window.activeFilters.maxSpeed !== null && vehicle.speed > window.activeFilters.maxSpeed) return false;
+
+                // Filtro por tipo (baseado no ícone/nome do veículo)
+                let vehicleType = 'bus';
+                if (vehicle.icon === '🚛' || vehicle.name.includes('Cargo') || vehicle.name.includes('Scania')) {
+                    vehicleType = 'truck';
+                } else if (vehicle.icon === '🚐' || vehicle.name.includes('Daily')) {
+                    vehicleType = 'van';
+                }
+
+                if (!window.activeFilters.types.includes(vehicleType)) return false;
+
+                return true;
+            });
+
+            renderFilteredVehicleList(filteredVehicles, searchTerm);
+        }
+
+        // Função para renderizar a lista filtrada
+        function renderFilteredVehicleList(filteredVehicles, searchTerm) {
+            const list = document.getElementById('vehicleList');
+            if (!list) return;
+
+            list.innerHTML = '';
+
+            if (filteredVehicles.length === 0) {
+                list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-filter" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><br>Nenhum veículo encontrado com os filtros selecionados.</div>';
+                return;
+            }
+
+            filteredVehicles.forEach((v, index) => {
+                const div = document.createElement('div');
+                div.className = 'vehicle-item' + (v.id === selectedVehicleId ? ' selected' : '');
+                div.style.animationDelay = (index * 0.05) + 's';
+                div.onclick = () => selectVehicle(v.id);
+
+                const statusColorMap = {
+                    active: '#27ae60',
+                    idle: '#f39c12',
+                    off: '#95a5a6',
+                    alert: '#e74c3c'
+                };
+
+                // Determinar a garagem
+                let garage = 'Garagem Central';
+                if (v.location && v.location.includes('Norte')) garage = 'Garagem Norte';
+                else if (v.location && v.location.includes('Sul')) garage = 'Garagem Sul';
+                else if (v.location && v.location.includes('Leste')) garage = 'Garagem Leste';
+                else if (v.name && v.name.includes('1658')) garage = 'Garagem Betânia';
+                else if (v.name && v.name.includes('1659')) garage = 'Garagem Betânia';
+                else if (v.name && v.name.includes('3000')) garage = 'Garagem Sul';
+                else if (v.name && v.name.includes('3001')) garage = 'Garagem Norte';
+                else if (v.name && v.name.includes('3002')) garage = 'Garagem Central';
+                else if (v.name && v.name.includes('3003')) garage = 'Garagem Central';
+
+                // Extrair apenas o número do carro
+                const carNumber = v.name.split(' ')[0] || v.id;
+                div.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <!-- Bolinha de status -->
+                        <span class="vi-status-dot ${v.status}" style="background:${statusColorMap[v.status] || '#999'}; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;"></span>
+                        
+                        <!-- Número do veículo -->
+                        <div style="font-weight: 700; color: var(--brand-orange); font-size: 14px; flex-shrink: 0;">
+                            N° ${carNumber}
+                        </div>
+                        
+                        <!-- Motorista -->
+                        <div style="font-size: 12px; color: var(--text-primary); display: flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-user" style="font-size: 11px;"></i>
+                            <span>${v.driver || 'Não identificado'}</span>
+                        </div>
+                        
+                        <!-- Garagem -->
+                        <div style="font-size: 11px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px;">
+                            <i class="fas fa-building" style="font-size: 10px;"></i>
+                            <span>${garage}</span>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // Inicializar filtros
+        window.activeFilters = {
+            status: ['active', 'idle', 'off'],
+            minSpeed: 0,
+            maxSpeed: null,
+            types: ['bus', 'truck', 'van']
+        };
+
+        // Modificar a função filterVehicles existente para usar os filtros
+        const originalFilterVehicles = filterVehicles;
+        window.filterVehicles = function (q) {
+            if (window.activeFilters) {
+                applyFiltersToList();
+            } else {
+                originalFilterVehicles(q);
+            }
+        };
+        function changeOrganization(select) {
+            showToast(`Organização alterada: ${select.options[select.selectedIndex].text}`);
+        }
+    </script>
+</body>
+
+</html>

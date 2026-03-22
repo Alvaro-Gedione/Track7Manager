@@ -158,7 +158,7 @@ def api_messages():
     time_from = body.get("timeFrom", 0)
     time_to   = body.get("timeTo",   0)
     msg_type  = body.get("msgType",  1)
-    max_count = body.get("maxCount", 5000)
+    max_count = body.get("maxCount", 50)
 
     if not unit_id:
         return jsonify({"error": "unitId obrigatorio"}), 400

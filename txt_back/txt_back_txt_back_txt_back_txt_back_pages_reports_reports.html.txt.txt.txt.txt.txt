@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../public/img/meet360.png">
+    <title>Track7 - Relatórios</title>
+    <link rel="stylesheet" href="../global.css">
+    <link rel="stylesheet" href="reports-specific.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../../components/topnav.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="../../components/export.js"></script>
+</head>
+
+<body class="theme-dark">
+
+    <!-- TOP NAVIGATION -->
+    <top-navigation></top-navigation>
+
+    <!-- BREADCRUMB / TABS -->
+    <div class="breadcrumb-bar">
+        <span class="tab active" onclick="switchTab(this, 'conjunto')"><i class="fas fa-chart-pie"
+                style="margin-right: 6px;"></i> Conjunto relatório</span>
+        <span class="tab" onclick="switchTab(this, 'agendados')"><i class="far fa-clock" style="margin-right: 6px;"></i>
+            Agendados</span>
+        <span class="tab" onclick="switchTab(this, 'historico')"><i class="fas fa-history"
+                style="margin-right: 6px;"></i> Histórico</span>
+        <div class="org-selector">
+            <span><i class="far fa-building"></i> Organização:</span>
+            <select id="orgSelector" onchange="changeOrganization(this)">
+                <option>BR-Track7-Brazil / Track7 BR - Betânia</option>
+                <option>BR-Track7-Brazil / Track7 BR - Sul</option>
+                <option>BR-Track7-Brazil / Track7 BR - Norte</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- MAIN -->
+        <main class="main">
+
+            <div class="page-header">
+                <div>
+                    <h1><i class="fas fa-chart-bar"></i> Relatórios</h1>
+                    <p><i class="far fa-file-alt"></i> Selecione um relatório para configurar e rodar.</p>
+                </div>
+                <button class="btn-primary" onclick="openModal('Novo Relatório Customizado')">
+                    <i class="fas fa-plus-circle"></i> Novo Relatório Agendado
+                </button>
+            </div>
+
+            <!-- CATEGORY DROPDOWN -->
+            <div class="filter-bar"
+                style="margin-bottom: 24px; display: flex; align-items: center; gap: 12px; background: var(--card-bg-solid); padding: 12px 20px; border-radius: 10px; border: 1px solid var(--border-color);">
+                <label style="font-weight: 600; color: var(--text-primary);"><i class="fas fa-filter"></i> Filtrar por
+                    Categoria:</label>
+                <select id="categorySelect" class="form-select" onchange="filterSelect(this.value)"
+                    style="max-width: 300px;">
+                    <option value="all">Todos</option>
+                    <option value="auditoria">Auditoria</option>
+                    <option value="departamento">Departamento</option>
+                    <option value="custo">Custo</option>
+                    <option value="gerenciamento">Gerenciamento</option>
+                    <option value="qualidade">Qualidade de Dados</option>
+                    <option value="evento">Evento</option>
+                    <option value="combustivel">Combustível</option>
+                    <option value="operacao">Operação</option>
+                    <option value="horas">Horas de Serviço</option>
+                    <option value="lista">Lista</option>
+                    <option value="satelital">Satelital</option>
+                    <option value="momento">Momento</option>
+                    <option value="rolo">Gerenciamento de Rolo</option>
+                    <option value="pontuacao">Pontuação / Rebote</option>
+                    <option value="viagem">Viagem</option>
+                </select>
+            </div>
+
+            <!-- PROGRESS BAR -->
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+
+            <!-- REPORT GRID -->
+            <div class="report-grid" id="reportGrid">
+
+                <!-- AUDITORIA -->
+                <div class="category-block" data-cat="auditoria">
+                    <div class="cat-head">
+                        <i class="fas fa-check-circle"></i>
+                        <h3>Auditoria</h3>
+                        <span class="cat-count">3</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Configurar Auditoria')"><i class="fas fa-chevron-right"></i> Configurar
+                            Auditoria</li>
+                        <li onclick="openModal('Auditoria do Estado do Satélite')"><i class="fas fa-chevron-right"></i>
+                            Auditoria do Estado do Satélite</li>
+                        <li onclick="openModal('Velocidade do Veículo (Mais/Menos)')"><i
+                                class="fas fa-chevron-right"></i> Velocidade do Veículo (Mais/Menos)</li>
+                    </ul>
+                </div>
+
+                <!-- DEPARTAMENTO -->
+                <div class="category-block" data-cat="departamento">
+                    <div class="cat-head">
+                        <i class="fas fa-users"></i>
+                        <h3>Departamento</h3>
+                        <span class="cat-count">0</span>
+                    </div>
+                    <ul>
+                        <li class="empty"><i class="fas fa-ban"></i> Nenhum relatório disponível</li>
+                    </ul>
+                </div>
+
+                <!-- CUSTO -->
+                <div class="category-block" data-cat="custo">
+                    <div class="cat-head">
+                        <i class="fas fa-dollar-sign"></i>
+                        <h3>Custo</h3>
+                        <span class="cat-count">2</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Custo por Distância')"><i class="fas fa-chevron-right"></i> Custo por
+                            Distância</li>
+                        <li onclick="openModal('Custo por Estado de Serviço')"><i class="fas fa-chevron-right"></i>
+                            Custo por Estado de Serviço</li>
+                    </ul>
+                </div>
+
+                <!-- GERENCIAMENTO -->
+                <div class="category-block" data-cat="gerenciamento">
+                    <div class="cat-head">
+                        <i class="fas fa-tasks"></i>
+                        <h3>Gerenciamento</h3>
+                        <span class="cat-count">3</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Painel de 7 Dias')"><i class="fas fa-chevron-right"></i> Painel de 7
+                            Dias</li>
+                        <li onclick="openModal('Resumo de Gerenciamento')"><i class="fas fa-chevron-right"></i> Resumo
+                            de Gerenciamento</li>
+                        <li onclick="openModal('KPI de Frota')"><i class="fas fa-chevron-right"></i> KPI de Frota</li>
+                    </ul>
+                </div>
+
+                <!-- QUALIDADE DE DADOS -->
+                <div class="category-block" data-cat="qualidade">
+                    <div class="cat-head">
+                        <i class="fas fa-database"></i>
+                        <h3>Qualidade de Dados</h3>
+                        <span class="cat-count">2</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Qualidade de Dados GPS')"><i class="fas fa-chevron-right"></i> Qualidade
+                            de Dados GPS</li>
+                        <li onclick="openModal('Integridade dos Dados')"><i class="fas fa-chevron-right"></i>
+                            Integridade dos Dados</li>
+                    </ul>
+                </div>
+
+                <!-- EVENTO -->
+                <div class="category-block" data-cat="evento">
+                    <div class="cat-head">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <h3>Evento</h3>
+                        <span class="cat-count">2</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Eventos por Veículo')"><i class="fas fa-chevron-right"></i> Eventos por
+                            Veículo</li>
+                        <li onclick="openModal('Histórico de Eventos')"><i class="fas fa-chevron-right"></i> Histórico
+                            de Eventos</li>
+                    </ul>
+                </div>
+
+                <!-- COMBUSTÍVEL -->
+                <div class="category-block" data-cat="combustivel">
+                    <div class="cat-head">
+                        <i class="fas fa-gas-pump"></i>
+                        <h3>Combustível</h3>
+                        <span class="cat-count">3</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Consumo de Combustível')"><i class="fas fa-chevron-right"></i> Consumo
+                            de Combustível</li>
+                        <li onclick="openModal('Eficiência por Veículo')"><i class="fas fa-chevron-right"></i>
+                            Eficiência por Veículo</li>
+                        <li onclick="openModal('Abastecimentos Registrados')"><i class="fas fa-chevron-right"></i>
+                            Abastecimentos Registrados</li>
+                    </ul>
+                </div>
+
+                <!-- OPERAÇÃO -->
+                <div class="category-block" data-cat="operacao">
+                    <div class="cat-head">
+                        <i class="fas fa-cogs"></i>
+                        <h3>Operação</h3>
+                        <span class="cat-count">2</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Resumo de Operação')"><i class="fas fa-chevron-right"></i> Resumo de
+                            Operação</li>
+                        <li onclick="openModal('Utilização de Frota')"><i class="fas fa-chevron-right"></i> Utilização
+                            de Frota</li>
+                    </ul>
+                </div>
+
+                <!-- HORAS DE SERVIÇO -->
+                <div class="category-block" data-cat="horas">
+                    <div class="cat-head">
+                        <i class="far fa-hourglass"></i>
+                        <h3>Horas de Serviço</h3>
+                        <span class="cat-count">2</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Horas Trabalhadas por Veículo')"><i class="fas fa-chevron-right"></i>
+                            Horas Trabalhadas por Veículo</li>
+                        <li onclick="openModal('Horas de Serviço por Motorista')"><i class="fas fa-chevron-right"></i>
+                            Horas de Serviço por Motorista</li>
+                    </ul>
+                </div>
+
+                <!-- LISTA -->
+                <div class="category-block" data-cat="lista">
+                    <div class="cat-head">
+                        <i class="fas fa-list"></i>
+                        <h3>Lista</h3>
+                        <span class="cat-count">2</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Lista de Ativos')"><i class="fas fa-chevron-right"></i> Lista de Ativos
+                        </li>
+                        <li onclick="openModal('Lista de Motoristas')"><i class="fas fa-chevron-right"></i> Lista de
+                            Motoristas</li>
+                    </ul>
+                </div>
+
+                <!-- SATELITAL -->
+                <div class="category-block" data-cat="satelital">
+                    <div class="cat-head">
+                        <i class="fas fa-satellite"></i>
+                        <h3>Satelital</h3>
+                        <span class="cat-count">2</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Posição Satelital')"><i class="fas fa-chevron-right"></i> Posição
+                            Satelital</li>
+                        <li onclick="openModal('Histórico de Rota')"><i class="fas fa-chevron-right"></i> Histórico de
+                            Rota</li>
+                    </ul>
+                </div>
+
+                <!-- MOMENTO -->
+                <div class="category-block" data-cat="momento">
+                    <div class="cat-head">
+                        <i class="fas fa-stopwatch"></i>
+                        <h3>Momento</h3>
+                        <span class="cat-count">1</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Relatório de Momento')"><i class="fas fa-chevron-right"></i> Relatório
+                            de Momento</li>
+                    </ul>
+                </div>
+
+                <!-- GERENCIAMENTO DE ROLO -->
+                <div class="category-block" data-cat="rolo">
+                    <div class="cat-head">
+                        <i class="fas fa-scroll"></i>
+                        <h3>Gerenciamento de Rolo</h3>
+                        <span class="cat-count">1</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Controle de Rolo')"><i class="fas fa-chevron-right"></i> Controle de
+                            Rolo</li>
+                    </ul>
+                </div>
+
+                <!-- PONTUAÇÃO / REBOTE -->
+                <div class="category-block" data-cat="pontuacao">
+                    <div class="cat-head">
+                        <i class="fas fa-medal"></i>
+                        <h3>Pontuação / Rebote</h3>
+                        <span class="cat-count">2</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Pontuação de Motoristas')"><i class="fas fa-chevron-right"></i>
+                            Pontuação de Motoristas</li>
+                        <li onclick="openModal('Eventos de Rebote')"><i class="fas fa-chevron-right"></i> Eventos de
+                            Rebote</li>
+                    </ul>
+                </div>
+
+                <!-- MANUSEIO -->
+                <div class="category-block" data-cat="manuseio">
+                    <div class="cat-head">
+                        <i class="fas fa-hand-paper"></i>
+                        <h3>Manuseio</h3>
+                        <span class="cat-count">1</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Relatório de Manuseio')"><i class="fas fa-chevron-right"></i> Relatório
+                            de Manuseio</li>
+                    </ul>
+                </div>
+
+                <!-- MATERIAIS -->
+                <div class="category-block" data-cat="materiais">
+                    <div class="cat-head">
+                        <i class="fas fa-cubes"></i>
+                        <h3>Materiais</h3>
+                        <span class="cat-count">1</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Controle de Materiais')"><i class="fas fa-chevron-right"></i> Controle
+                            de Materiais</li>
+                    </ul>
+                </div>
+
+                <!-- VIAGEM -->
+                <div class="category-block" data-cat="viagem">
+                    <div class="cat-head">
+                        <i class="fas fa-route"></i>
+                        <h3>Viagem</h3>
+                        <span class="cat-count">3</span>
+                    </div>
+                    <ul>
+                        <li onclick="openModal('Resumo de Viagem')"><i class="fas fa-chevron-right"></i> Resumo de
+                            Viagem</li>
+                        <li onclick="openModal('Detalhes de Viagem')"><i class="fas fa-chevron-right"></i> Detalhes de
+                            Viagem</li>
+                        <li onclick="openModal('Distância por Viagem')"><i class="fas fa-chevron-right"></i> Distância
+                            por Viagem</li>
+                    </ul>
+                </div>
+
+            </div><!-- /report-grid -->
+            <!-- RESULTADO DO RELATÓRIO -->
+            <div id="reportResultArea" style="display:none; margin-top: 24px;">
+
+                <!-- Summary Strip igual ao list.html -->
+                <div class="summary-strip" id="rptSummary" style="
+                        background: var(--card-bg-solid);
+                        border: 1px solid var(--border-color);
+                        border-radius: 10px;
+                        padding: 12px 20px;
+                        display: flex;
+                        gap: 20px;
+                        flex-wrap: wrap;
+                        margin-bottom: 16px;
+                        align-items: center;
+                    ">
+                    <div class="sg">
+                        <div class="sv" id="rptTotal">0</div>
+                        <div class="sl">Mensagens</div>
+                    </div>
+                    <div class="strip-sep" style="width:1px;height:28px;background:var(--border-color);"></div>
+                    <div class="sg">
+                        <div class="sv" id="rptUnits">0</div>
+                        <div class="sl">Unidades</div>
+                    </div>
+                    <div class="strip-sep" style="width:1px;height:28px;background:var(--border-color);"></div>
+                    <div class="sg">
+                        <div class="sv" id="rptPeriod">--</div>
+                        <div class="sl">Período</div>
+                    </div>
+                    <div class="strip-sep" style="width:1px;height:28px;background:var(--border-color);"></div>
+                    <div class="sg">
+                        <div class="sv" id="rptMaxSpd">--</div>
+                        <div class="sl">Vel. Máx.</div>
+                    </div>
+                    <div class="strip-sep" style="width:1px;height:28px;background:var(--border-color);"></div>
+                    <div class="sg">
+                        <div class="sv" id="rptAvgSpd">--</div>
+                        <div class="sl">Vel. Média</div>
+                    </div>
+                    <div style="margin-left:auto;display:flex;gap:8px;">
+                        <button class="btn-ghost" onclick="exportToPDF()" title="PDF">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </button>
+                        <button class="btn-ghost" onclick="exportToXLSX()" title="Excel">
+                            <i class="fas fa-file-excel"></i> Excel
+                        </button>
+                        <button class="btn-ghost" onclick="exportToCSV()" title="CSV">
+                            <i class="fas fa-file-csv"></i> CSV
+                        </button>
+                        <button class="btn-ghost" onclick="collapseResult()" title="Fechar">
+                            <i class="fas fa-times"></i> Fechar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Toolbar de filtro -->
+                <div style="display:flex;gap:10px;margin-bottom:10px;align-items:center;">
+                    <input type="text" id="rptSearch" placeholder="Filtrar em qualquer coluna..."
+                        oninput="applyRptSearch()" style="border:1px solid var(--border-color);border-radius:6px;padding:7px 12px;
+                   font-size:12px;background:var(--input-bg);color:var(--text-primary);
+                   outline:none;width:280px;">
+                    <span id="rptPageInfo" style="font-size:12px;color:var(--brand-silver);margin-left:auto;"></span>
+                </div>
+
+                <!-- Tabela -->
+                <div style="border:1px solid var(--border-color);border-radius:10px;overflow:hidden;">
+                    <div style="overflow:auto;max-height:480px;">
+                        <table id="rptTable"
+                            style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px;">
+                            <thead id="rptTHead"></thead>
+                            <tbody id="rptTBody"></tbody>
+                        </table>
+                    </div>
+                    <!-- Paginação -->
+                    <div id="rptPagBar" style="
+                        background:var(--toolbar-bg);border-top:1px solid var(--border-color);
+                        padding:8px 16px;display:flex;align-items:center;gap:8px;font-size:12px;
+                        color:var(--brand-silver);
+                    ">
+                        <span id="rptPagInfo"></span>
+                        <div id="rptPagBtns" style="margin-left:auto;display:flex;gap:5px;"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL - WIZARD 3 STEPS -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+
+            <div class="modal-header">
+                <h2 id="modalTitle"><i class="fas fa-file-alt"></i> <span>Configurar Relatório</span></h2>
+                <button class="modal-close-btn" onclick="closeModal()">×</button>
+            </div>
+
+            <div class="stepper">
+                <div class="step current" id="s1"><i class="fas fa-truck"></i> 1. Ativos e motoristas</div>
+                <div class="step" id="s2"><i class="far fa-calendar-alt"></i> 2. Seleção de período</div>
+                <div class="step" id="s3"><i class="fas fa-play"></i> 3. Executar relatório</div>
+            </div>
+
+            <div class="modal-body" id="modalBody"></div>
+
+            <div class="modal-footer">
+                <button class="btn-ghost" id="btnBack" onclick="prevStep()" style="display:none;"><i
+                        class="fas fa-arrow-left"></i> Retornar</button>
+                <button class="btn-primary" id="btnNext" onclick="nextStep()">Próximo <i
+                        class="fas fa-arrow-right"></i></button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span>✔ Relatório gerado com sucesso!</span>
+    </div>
+
+    <script>
+        // Adicionar no topo do <script>
+        const API = 'http://localhost:5000/api';
+        let _unitsCache = [];   // [{id, name}]
+        let _selectedUnitIds = new Set(); // persiste entre steps
+        let _reportTimeFrom = 0;
+        let _reportTimeTo = 0;
+        let _selectedPeriodLabel = '';
+        let _reportTitle = '';
+
+        async function loadUnitsForModal() {
+            if (_unitsCache.length > 0) return _unitsCache;
+            try {
+                const r = await fetch(`${API}/units`);
+                const d = await r.json();
+                if (d.error) throw new Error(d.error);
+                _unitsCache = d.units; // [{id, name}]
+                return _unitsCache;
+            } catch (e) {
+                showToast('Erro ao carregar unidades: ' + e.message);
+                return [];
+            }
+        }
+        // Configurar tema inicial baseado no localStorage
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = `theme-${savedTheme}`;
+
+            // Garante sessão ativa antes de qualquer coisa
+            try {
+                const st = await fetch(`${API}/status`);
+                const sd = await st.json();
+                if (!sd.authenticated) {
+                    await fetch(`${API}/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: '67eba42da80819eb285dd8794678964707481B6FFB3E065405FE46F889143875DE5B3C3A' })
+                    });
+                }
+                await loadUnitsForModal(); // pré-carrega o cache
+            } catch (e) {
+                console.warn('Servidor offline:', e.message);
+            }
+
+            animateStats();
+        });
+
+        // Ouvir mudanças de tema da navegação
+        document.addEventListener('themeChanged', (e) => {
+            document.body.className = `theme-${e.detail.theme}`;
+        });
+
+        // Variáveis do modal
+        let currentStep = 1;
+        let reportTitle = '';
+
+        /* ── ABRIR / FECHAR MODAL ── */
+        function openModal(title) {
+            _reportTitle = title;
+            _selectedUnitIds = new Set(); // limpa seleções anteriores
+            _reportTimeFrom = 0;
+            _reportTimeTo = 0;
+            _selectedPeriodLabel = '';
+            currentStep = 1;
+
+            document.getElementById('modalTitle').querySelector('span').textContent = title;
+            renderStep();
+            document.getElementById('modalOverlay').classList.add('open');
+        }
+
+        // renderStep precisa chamar renderStep1 de forma async
+        function renderStep() {
+            ['s1', 's2', 's3'].forEach((id, i) => {
+                const el = document.getElementById(id);
+                el.className = (i + 1 === currentStep) ? 'step current'
+                    : (i + 1 < currentStep) ? 'step done' : 'step';
+            });
+            const back = document.getElementById('btnBack');
+            const next = document.getElementById('btnNext');
+            back.style.display = currentStep === 1 ? 'none' : 'inline-block';
+
+            if (currentStep === 3) {
+                next.innerHTML = '▶ Rodar <i class="fas fa-play"></i>';
+                next.classList.add('btn-run');
+            } else {
+                next.innerHTML = 'Próximo <i class="fas fa-arrow-right"></i>';
+                next.classList.remove('btn-run');
+            }
+
+            const body = document.getElementById('modalBody');
+            if (currentStep === 1) renderStep1(body);      // async, tudo bem
+            if (currentStep === 2) renderStep2(body);
+            if (currentStep === 3) renderStep3(body);
+        }
+
+        // nextStep: quando é step 3, delega ao runReport async
+        function nextStep() {
+            if (currentStep === 1) {
+                // Valida pelo Set global, não pelo DOM
+                if (_selectedUnitIds.size === 0) {
+                    showToast('⚠️ Selecione pelo menos uma unidade.');
+                    return;
+                }
+            }
+
+            if (currentStep === 2 && !_reportTimeFrom) {
+                [_reportTimeFrom, _reportTimeTo] = calcPeriod('Últimos 30 dias');
+            }
+
+            if (currentStep < 3) {
+                currentStep++;
+                renderStep();
+            } else {
+                runReport();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.remove('open');
+        }
+
+        document.getElementById('modalOverlay').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                renderStep();
+                showToast(`Passo ${currentStep} de 3`);
+            }
+        }
+
+
+        /* ── STEP 1: ATIVOS ── */
+        async function renderStep1(body) {
+            // Loading enquanto busca
+            body.innerHTML = `
+        <div style="padding:30px;text-align:center;color:var(--brand-silver);">
+            <div class="spinner" style="margin:0 auto 10px;"></div>
+            Carregando unidades...
+        </div>`;
+
+            if (!_unitsCache.length) {
+                try {
+                    const r = await fetch(`${API}/units`);
+                    const d = await r.json();
+                    if (d.error) throw new Error(d.error);
+                    _unitsCache = d.units;
+                } catch (e) {
+                    body.innerHTML = `<div style="color:#e74c3c;padding:20px;">
+                Erro ao carregar unidades: ${e.message}<br>
+                <small>Verifique se o servidor está rodando em localhost:5000</small>
+            </div>`;
+                    return;
+                }
+            }
+
+            body.innerHTML = `
+        <div class="form-group">
+            <label><i class="fas fa-list"></i> Unidades / Equipamentos *</label>
+            <div class="search-bar">
+                <i class="fas fa-search"></i>
+                <input type="text" id="assetSearch" placeholder="Filtrar unidades..."
+                       oninput="filterAssets(this.value)">
+            </div>
+            <div class="asset-list" id="assetList">
+
+                <div class="asset-item" id="rowAll" style="background:var(--sidebar-header-bg);
+                     font-weight:700;border-bottom:2px solid var(--border-color);">
+                    <input type="checkbox" id="chkAll"
+                           onchange="onChkAllChange(this)"
+                           onclick="event.stopPropagation()">
+                    <i class="fas fa-layer-group" style="color:var(--brand-orange);"></i>
+                    <strong style="color:var(--brand-orange);">Todos os equipamentos</strong>
+                </div>
+
+                ${_unitsCache.map(u => `
+                    <div class="asset-item unit-item"
+                         data-id="${u.id}" data-name="${escHtml(u.name)}"
+                         onclick="onUnitRowClick(this)">
+                        <input type="checkbox" class="unit-chk" value="${u.id}"
+                               onclick="event.stopPropagation()"
+                               onchange="onUnitChkChange(this)">
+                        <i class="fas fa-truck" style="color:var(--brand-orange);font-size:12px;"></i>
+                        <span>${escHtml(u.name)}</span>
+                    </div>
+                `).join('')}
+
+            </div>
+            <p class="hint" id="selHint">Carregando...</p>
+        </div>`;
+
+            // Restaura o estado salvo no Set
+            _unitsCache.forEach(u => {
+                if (_selectedUnitIds.has(String(u.id))) {
+                    const chk = document.querySelector(`.unit-chk[value="${u.id}"]`);
+                    if (chk) chk.checked = true;
+                }
+            });
+            syncChkAll();
+            updateSelHint();
+        }
+
+        /* Clique na linha inteira da unidade */
+        function onUnitRowClick(el) {
+            const chk = el.querySelector('.unit-chk');
+            chk.checked = !chk.checked;
+            persistUnitSelection(chk);
+            syncChkAll();
+            updateSelHint();
+        }
+
+        /* Mudança direta no checkbox de unidade */
+        function onUnitChkChange(chk) {
+            persistUnitSelection(chk);
+            syncChkAll();
+            updateSelHint();
+        }
+
+        /* Salva/remove do Set global */
+        function persistUnitSelection(chk) {
+            if (chk.checked) {
+                _selectedUnitIds.add(String(chk.value));
+            } else {
+                _selectedUnitIds.delete(String(chk.value));
+            }
+        }
+
+        /* Checkbox "Todos" */
+        function onChkAllChange(chkAll) {
+            const visible = [...document.querySelectorAll('.unit-item')]
+                .filter(el => el.style.display !== 'none');
+
+            visible.forEach(el => {
+                const chk = el.querySelector('.unit-chk');
+                chk.checked = chkAll.checked;
+                persistUnitSelection(chk);
+            });
+            updateSelHint();
+        }
+
+        /* Sincroniza o "Todos" com o estado atual dos checkboxes */
+        function syncChkAll() {
+            const all = document.querySelectorAll('.unit-chk');
+            const sel = [...all].filter(c => c.checked);
+            const chkAll = document.getElementById('chkAll');
+            if (chkAll) {
+                chkAll.checked = all.length > 0 && sel.length === all.length;
+                chkAll.indeterminate = sel.length > 0 && sel.length < all.length;
+            }
+        }
+
+        /* Texto de contagem */
+        function updateSelHint() {
+            const all = document.querySelectorAll('.unit-chk');
+            const sel = [...all].filter(c => c.checked);
+            const hint = document.getElementById('selHint');
+            if (!hint) return;
+            if (sel.length === 0)
+                hint.textContent = 'Nenhuma unidade selecionada';
+            else if (sel.length === all.length)
+                hint.textContent = `Todos os ${all.length} equipamentos selecionados`;
+            else
+                hint.textContent = `${sel.length} de ${all.length} selecionado(s)`;
+        }
+
+        /* Filtro de busca — não apaga seleções */
+        function filterAssets(q) {
+            document.querySelectorAll('.unit-item').forEach(el => {
+                const name = el.dataset.name || '';
+                el.style.display = name.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+            });
+            syncChkAll();
+        }
+
+        /* Lê as unidades selecionadas do Set (não do DOM, seguro entre steps) */
+        function getSelectedUnits() {
+            return _unitsCache.filter(u => _selectedUnitIds.has(String(u.id)));
+        }
+
+        /* HTML escape simples */
+        function escHtml(s) {
+            return String(s)
+                .replace(/&/g, '&')
+                .replace(/</g, '<')
+                .replace(/>/g, '>')
+                .replace(/"/g, '&quot;');
+        }
+
+        function toggleUnit(el) {
+            const chk = el.querySelector('input[type=checkbox]');
+            chk.checked = !chk.checked;
+            updateSelHint();
+        }
+
+        function syncAll(chkAll) {
+            document.querySelectorAll('.unit-chk').forEach(c => c.checked = chkAll.checked);
+            updateSelHint();
+        }
+
+        function selectAsset(element, index) {
+            // Update radio
+            element.querySelector('input[type=radio]').checked = true;
+
+            // Animate
+            element.style.animation = 'none';
+            element.offsetHeight;
+            element.style.animation = 'tagAppear 0.3s ease';
+
+            showToast(`Ativo selecionado: ${element.querySelector('span').textContent}`);
+        }
+
+        function switchAssetDriver(val) {
+            const list = document.getElementById('assetList');
+            if (!list) return;
+
+            if (val === 'driver') {
+                const drivers = [
+                    { name: 'Carlos Silva', icon: 'fa-user' },
+                    { name: 'Ana Oliveira', icon: 'fa-user' },
+                    { name: 'Pedro Santos', icon: 'fa-user' },
+                    { name: 'Maria Lima', icon: 'fa-user' },
+                    { name: 'João Costa', icon: 'fa-user' }
+                ];
+
+                list.innerHTML = drivers.map((d, i) => `
+                    <div class="asset-item" onclick="selectAsset(this, ${i})">
+                        <input type="radio" name="selectedAsset" ${i === 0 ? 'checked' : ''}>
+                        <i class="fas ${d.icon}" style="color: var(--brand-orange);"></i>
+                        <span>${d.name}</span>
+                    </div>
+                `).join('');
+            } else {
+                renderStep1(document.getElementById('modalBody'));
+            }
+
+            showToast(`Modo alterado para: ${val === 'driver' ? 'Motoristas' : 'Ativos'}`);
+        }
+
+        /* ── STEP 2: PERÍODO ── */
+        function calcPeriod(label) {
+            const now = Math.floor(Date.now() / 1000);
+            const d = new Date(); d.setHours(0, 0, 0, 0);
+            const today = Math.floor(d.getTime() / 1000);
+            const yrStart = Math.floor(new Date(d.getFullYear(), 0, 1).getTime() / 1000);
+
+            const map = {
+                'Hoje': [today, now],
+                'Ontem': [today - 86400, today - 1],
+                'Ontem e Hoje': [today - 86400, now],
+                'Semana Corrente': [today - (d.getDay() * 86400), now],
+                'Últimos 7 dias': [now - 7 * 86400, now],
+                'Últimos 7 dias (sem hoje)': [now - 7 * 86400, today - 1],
+                'Mês Corrente': [Math.floor(new Date(d.getFullYear(), d.getMonth(), 1).getTime() / 1000), now],
+                'Últimos 30 dias': [now - 30 * 86400, now],
+                'Últimos 30 dias (sem hoje)': [now - 30 * 86400, today - 1],
+                'Último Mês': [Math.floor(new Date(d.getFullYear(), d.getMonth() - 1, 1).getTime() / 1000),
+                Math.floor(new Date(d.getFullYear(), d.getMonth(), 0, 23, 59, 59).getTime() / 1000)],
+                'Acumulado do Ano': [yrStart, now],
+                'Últimos 2 Meses': [now - 60 * 86400, now],
+                'Últimos 6 Meses': [now - 180 * 86400, now],
+            };
+            return map[label] || [now - 30 * 86400, now];
+        }
+
+        // Modificar selPeriod para capturar os valores
+        function selPeriod(el) {
+            document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            _selectedPeriodLabel = el.textContent.trim();
+            [_reportTimeFrom, _reportTimeTo] = calcPeriod(_selectedPeriodLabel);
+
+            // Reflete nas datas personalizadas (readonly feedback)
+            const fmt = ts => new Date(ts * 1000).toISOString().split('T')[0];
+            const inputs = document.querySelectorAll('.date-row input[type=date]');
+            if (inputs[0]) inputs[0].value = fmt(_reportTimeFrom);
+            if (inputs[1]) inputs[1].value = fmt(_reportTimeTo);
+
+            showToast(`Período: ${_selectedPeriodLabel}`);
+        }
+
+        // Datas personalizadas sobrescrevem
+        function updateCustomDates() {
+            const inputs = document.querySelectorAll('.date-row input[type=date]');
+            if (inputs[0]?.value) _reportTimeFrom = Math.floor(new Date(inputs[0].value).getTime() / 1000);
+            if (inputs[1]?.value) _reportTimeTo = Math.floor(new Date(inputs[1].value + 'T23:59:59').getTime() / 1000);
+            _selectedPeriodLabel = 'Personalizado';
+            showToast('Período personalizado atualizado');
+        }
+        function renderStep2(body) {
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+            const periods = [
+                'Hoje', 'Ontem', 'Ontem e Hoje',
+                'Semana Corrente', 'Últimos 7 dias', 'Últimos 7 dias (sem hoje)',
+                'Mês Corrente', 'Últimos 30 dias', 'Últimos 30 dias (sem hoje)',
+                'Último Mês', 'Trimestre até a Data', 'Trimestre Passado',
+                'Acumulado do Ano', 'Ano Passado', 'Últimos 2 Meses', 'Últimos 6 Meses'
+            ];
+
+            body.innerHTML = `
+                <div class="form-group">
+                    <label><i class="far fa-calendar-alt"></i> Selecionar período de relatório *</label>
+                    <div class="period-grid">
+                        ${periods.map((p, i) => `
+                            <button class="period-btn ${i === 3 ? 'active' : ''}" onclick="selPeriod(this)">${p}</button>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="section-sep"><i class="fas fa-sliders-h"></i> — ou — Período personalizado</div>
+                    <div class="date-row">
+                        <div class="date-field">
+                            <label><i class="fas fa-arrow-right"></i> A partir de</label>
+                            <input type="date" value="${yesterday}" onchange="updateCustomDates()">
+                        </div>
+                        <div class="date-field">
+                            <label><i class="fas fa-arrow-left"></i> Até</label>
+                            <input type="date" value="${today}" onchange="updateCustomDates()">
+                        </div>
+                    </div>
+                    <p class="hint"><i class="fas fa-info-circle"></i> Ao inserir datas personalizadas, a seleção acima será desconsiderada.</p>
+                </div>
+            `;
+        }
+
+        /* ── STEP 3: EXECUTAR ── */
+        function renderStep3(body) {
+            body.innerHTML = `
+                <div class="form-group">
+                    <label><i class="fas fa-cog"></i> Ação *</label>
+                    <select class="form-select" id="actionSelect" onchange="toggleFmtRow(this.value)">
+                        <option value="ver"><i class="fas fa-eye"></i> Ver (visualizar no navegador)</option>
+                        <option value="download"><i class="fas fa-download"></i> Download</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="fmtRow" style="display:none;">
+                    <label><i class="fas fa-file"></i> Formato do relatório *</label>
+                    <select class="form-select">
+                        <option><i class="fas fa-file-excel"></i> EXCEL (.xlsx)</option>
+                        <option><i class="fas fa-file-pdf"></i> PDF</option>
+                        <option><i class="fas fa-file-csv"></i> CSV</option>
+                        <option><i class="fas fa-file-code"></i> HTML</option>
+                    </select>
+                </div>
+
+                <div class="section-sep"><i class="fas fa-sliders-h"></i> Opções adicionais</div>
+
+                <div class="form-group">
+                    <div class="check-group">
+                        <label class="check-label">
+                            <input type="checkbox" id="chkFav" onchange="toggleFavorite(this)">
+                            <i class="far fa-star"></i> Salvar para favoritos
+                        </label>
+                        <label class="check-label">
+                            <input type="checkbox" id="chkEmail" onchange="toggleEmailSection(this.checked)">
+                            <i class="far fa-envelope"></i> Criar assinatura / Enviar por e-mail
+                        </label>
+                    </div>
+                </div>
+
+                <div id="emailSection" style="display:none;">
+                    <div class="section-sep"><i class="fas fa-envelope-open-text"></i> Configurações de e-mail</div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Descrição do relatório</label>
+                        <input type="text" class="form-input"
+                            value="Relatório: ${reportTitle}"
+                            placeholder="Ex: Relatório semanal de auditoria"
+                            onchange="updateReportDesc(this)">
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-heading"></i> Assunto do e-mail</label>
+                        <input type="text" class="form-input"
+                            value="[Track7] ${reportTitle} - ${new Date().toLocaleDateString('pt-BR')}"
+                            placeholder="Assunto do e-mail">
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-users"></i> Destinatários</label>
+                        <div class="tag-input-wrap" id="tagWrap" onclick="document.getElementById('emailInput').focus()">
+                            <div class="email-tag">gestor@frota.com.br <span class="remove" onclick="removeTag(this)">×</span></div>
+                            <div class="email-tag">frota@empresa.com <span class="remove" onclick="removeTag(this)">×</span></div>
+                            <input type="text" id="emailInput"
+                                placeholder="Adicionar e-mail e pressionar Enter..."
+                                onkeydown="addEmailTag(event, this)">
+                        </div>
+                        <p class="hint"><i class="fas fa-info-circle"></i> Pressione Enter para adicionar cada destinatário.</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="far fa-clock"></i> Frequência de envio</label>
+                        <select class="form-select">
+                            <option value="">— Sem recorrência (apenas uma vez) —</option>
+                            <option><i class="fas fa-sun"></i> Diariamente</option>
+                            <option selected><i class="fas fa-calendar-week"></i> Semanalmente</option>
+                            <option><i class="fas fa-calendar-alt"></i> Quinzenalmente</option>
+                            <option><i class="far fa-calendar"></i> Mensalmente</option>
+                            <option><i class="fas fa-calendar-check"></i> Trimestralmente</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-pen"></i> Assinatura do e-mail</label>
+                        <textarea class="form-input" rows="3" style="resize:vertical;"
+                            placeholder="Assinatura que aparecerá no rodapé...">Atenciosamente,
+Equipe Track7 | On-Road IoT</textarea>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleFavorite(checkbox) {
+            if (checkbox.checked) {
+                showToast('Relatório adicionado aos favoritos ⭐');
+            } else {
+                showToast('Relatório removido dos favoritos');
+            }
+        }
+
+        function updateReportDesc(input) {
+            showToast(`Descrição atualizada: ${input.value}`);
+        }
+
+        function toggleFmtRow(val) {
+            const row = document.getElementById('fmtRow');
+            if (val === 'download') {
+                row.style.display = 'block';
+                row.style.animation = 'slideInRight 0.3s ease';
+                showToast('Selecione o formato do arquivo');
+            } else {
+                row.style.display = 'none';
+            }
+        }
+
+        function toggleEmailSection(checked) {
+            const section = document.getElementById('emailSection');
+            if (checked) {
+                section.style.display = 'block';
+                section.style.animation = 'slideInRight 0.3s ease';
+                showToast('Configure os detalhes do e-mail');
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        function removeTag(el) {
+            const tag = el.closest('.email-tag');
+            const email = tag.textContent.replace('×', '').trim();
+            tag.style.animation = 'tagAppear 0.3s ease reverse';
+            setTimeout(() => tag.remove(), 280);
+            showToast(`E-mail removido: ${email}`);
+        }
+
+        function addEmailTag(e, input) {
+            if (e.key === 'Enter' && input.value.trim()) {
+                e.preventDefault();
+                const email = input.value.trim();
+
+                // Validate email
+                if (!email.includes('@') || !email.includes('.')) {
+                    showToast('E-mail inválido!');
+                    return;
+                }
+
+                const wrap = document.getElementById('tagWrap');
+                const tag = document.createElement('div');
+                tag.className = 'email-tag';
+                tag.innerHTML = `${email} <span class="remove" onclick="removeTag(this)">×</span>`;
+                wrap.insertBefore(tag, input);
+                input.value = '';
+
+                showToast(`E-mail adicionado: ${email}`);
+            }
+        }
+
+        /* ── RODAR RELATÓRIO ── */
+        async function runReport() {
+            const units = getSelectedUnits();
+            if (!units.length) {
+                showToast('⚠️ Selecione pelo menos uma unidade.');
+                return;
+            }
+
+            // Garante que temos período
+            if (!_reportTimeFrom) [_reportTimeFrom, _reportTimeTo] = calcPeriod('Últimos 30 dias');
+
+            // UI de loading
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            progressBar.classList.add('show');
+            progressFill.style.width = '0%';
+            document.getElementById('btnNext').disabled = true;
+
+            let allMsgs = [];
+            let allParamKeys = new Set();
+
+            for (let i = 0; i < units.length; i++) {
+                const u = units[i];
+                const pct = Math.round((i / units.length) * 100);
+                progressFill.style.width = pct + '%';
+                showToast(`Buscando ${i + 1}/${units.length}: ${u.name}`);
+
+                try {
+                    const r = await fetch(`${API}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            unitId: u.id,
+                            timeFrom: _reportTimeFrom,
+                            timeTo: _reportTimeTo,
+                            msgType: 1,
+                            maxCount: 5000
+                        })
+                    });
+                    const d = await r.json();
+                    if (d.error) throw new Error(d.error);
+
+                    (d.messages || []).forEach(m => {
+                        m._unitName = u.name;
+                        m._unitId = u.id;
+                        Object.keys(m.p || {}).forEach(k => allParamKeys.add(k));
+                        allMsgs.push(m);
+                    });
+                } catch (e) {
+                    showToast(`Erro em "${u.name}": ${e.message}`);
+                }
+            }
+
+            progressFill.style.width = '100%';
+            setTimeout(() => progressBar.classList.remove('show'), 600);
+            document.getElementById('btnNext').disabled = false;
+
+            closeModal();
+            renderReportTable(allMsgs, allParamKeys);
+            showToast(`✅ ${allMsgs.length.toLocaleString('pt-BR')} mensagens carregadas para "${_reportTitle}"`);
+        }
+
+        /* ── FILTRO SUSPENSO ── */
+        function filterSelect(cat) {
+            document.querySelectorAll('.category-block').forEach(b => {
+                const shouldShow = (cat === 'all' || b.dataset.cat === cat);
+                if (shouldShow) {
+                    b.style.display = '';
+                    b.style.animation = 'cardAppear 0.5s ease-out';
+                } else {
+                    b.style.display = 'none';
+                }
+            });
+
+            // Update active category in sidebar
+            document.querySelectorAll('#categoryList a').forEach(a => {
+                a.classList.remove('active');
+            });
+
+            if (cat !== 'all') {
+                const categoryLinks = document.querySelectorAll('#categoryList a');
+                for (let link of categoryLinks) {
+                    if (link.textContent.toLowerCase().includes(cat)) {
+                        link.classList.add('active');
+                        break;
+                    }
+                }
+            }
+
+            const selectEl = document.getElementById('categorySelect');
+            const text = selectEl.options[selectEl.selectedIndex].text;
+            showToast(`Filtrando por: ${text}`);
+        }
+
+        function filterByCategory(cat) {
+            const selectEl = document.getElementById('categorySelect');
+            for (let i = 0; i < selectEl.options.length; i++) {
+                if (selectEl.options[i].value === cat || selectEl.options[i].text.toLowerCase().includes(cat)) {
+                    selectEl.selectedIndex = i;
+                    filterSelect(selectEl.options[i].value);
+                    break;
+                }
+            }
+        }
+
+        /* ── SWITCH TAB ── */
+        function switchTab(el, tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+
+            // Simulate content change
+            showToast(`Visualizando: ${el.textContent.trim()}`);
+
+            // Animate grid
+            document.querySelectorAll('.category-block').forEach(block => {
+                block.style.animation = 'cardAppear 0.5s ease-out';
+            });
+        }
+
+        /* ── ORGANIZATION CHANGE ── */
+        function changeOrganization(select) {
+            showToast(`Organização alterada: ${select.value}`);
+
+            // Simulate data loading
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+
+            progressBar.classList.add('show');
+            progressFill.style.width = '0%';
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 20;
+                progressFill.style.width = progress + '%';
+
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        progressBar.classList.remove('show');
+                    }, 300);
+                }
+            }, 100);
+        }
+
+        /* ── ANIMATE STATS ── */
+        function animateStats() {
+            // Animate category counts
+            document.querySelectorAll('.cat-count').forEach((el, index) => {
+                setTimeout(() => {
+                    el.style.animation = 'pulse 0.5s ease';
+                    setTimeout(() => {
+                        el.style.animation = '';
+                    }, 500);
+                }, index * 100);
+            });
+        }
+
+        /* ── TOAST ── */
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.querySelector('span').textContent = msg;
+            toast.style.display = 'flex';
+
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Animate on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                showToast('Bem-vindo ao Track7 Reports!');
+            }, 1000);
+        });
+        // ─── TABELA DE RESULTADO ───────────────────────────────────────────
+        const RPT_PAGE_SIZE = 200;
+        let rptAllRows = [], rptFiltered = [], rptColHeaders = [];
+        let rptPage = 1, rptSortCol = null, rptSortAsc = true;
+
+        function renderReportTable(msgs, paramKeys) {
+            const paramArr = [...paramKeys].sort();
+
+            // Mesmas colunas do list.html
+            const cols = [
+                { key: '_idx', label: '#', mono: true, unitCol: false },
+                { key: 'unit', label: 'Unidade', mono: false, unitCol: true },
+                { key: 'dt', label: 'Data / Hora', mono: true, unitCol: false },
+                { key: 'lat', label: 'Latitude', mono: true, unitCol: false },
+                { key: 'lon', label: 'Longitude', mono: true, unitCol: false },
+                { key: 'spd', label: 'Vel.(km/h)', speed: true, unitCol: false },
+                { key: 'course', label: 'Curso(°)', mono: false, unitCol: false },
+                { key: 'alt', label: 'Alt.(m)', mono: false, unitCol: false },
+                { key: 'sat', label: 'Sats', sat: true, unitCol: false },
+            ];
+            paramArr.forEach(k => cols.push({ key: 'p_' + k, label: k, param: true }));
+            rptColHeaders = cols;
+
+            const rows = [];
+            msgs.forEach((m, idx) => {
+                const pos = m.pos || {};
+                const row = {
+                    _idx: idx + 1,
+                    unit: m._unitName || '',
+                    t: m.t || 0,
+                    dt: tsToStr(m.t),
+                    lat: pos.y != null ? pos.y.toFixed(6) : '',
+                    lon: pos.x != null ? pos.x.toFixed(6) : '',
+                    spd: pos.s != null ? pos.s : '',
+                    course: pos.c != null ? pos.c : '',
+                    alt: pos.z != null ? pos.z : '',
+                    sat: pos.sc != null ? pos.sc : '',
+                };
+                const p = m.p || {};
+                paramArr.forEach(k => {
+                    const v = p[k];
+                    row['p_' + k] = (v != null && typeof v === 'object')
+                        ? (v.v != null ? v.v : JSON.stringify(v))
+                        : (v != null ? v : '');
+                });
+                rows.push(row);
+            });
+
+            // Stats
+            const speeds = rows.map(r => parseFloat(r.spd)).filter(v => !isNaN(v) && v >= 0);
+            const unitSet = new Set(rows.map(r => r.unit));
+            document.getElementById('rptTotal').textContent = rows.length.toLocaleString('pt-BR');
+            document.getElementById('rptUnits').textContent = unitSet.size;
+            document.getElementById('rptMaxSpd').textContent = (speeds.length ? Math.max(...speeds) : 0) + ' km/h';
+            document.getElementById('rptAvgSpd').textContent = (speeds.length
+                ? (speeds.reduce((a, b) => a + b, 0) / speeds.length).toFixed(1) : 0) + ' km/h';
+            document.getElementById('rptPeriod').textContent = _selectedPeriodLabel || '--';
+
+            rptAllRows = rows;
+            rptFiltered = [...rows];
+            rptPage = 1;
+
+            document.getElementById('reportResultArea').style.display = 'block';
+            document.getElementById('reportGrid').style.display = 'none'; // oculta os cards
+            renderRptTable();
+            document.getElementById('reportResultArea').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function renderRptTable() {
+            const start = (rptPage - 1) * RPT_PAGE_SIZE;
+            const page = rptFiltered.slice(start, start + RPT_PAGE_SIZE);
+
+            // Header
+            document.getElementById('rptTHead').innerHTML = '<tr>' + rptColHeaders.map(c =>
+                `<th onclick="rptSortBy('${c.key}')" style="
+            position:sticky;top:0;background:var(--table-header-bg,#181818);
+            border-bottom:2px solid var(--border-color);padding:8px 10px;
+            text-align:left;font-size:11px;font-weight:700;
+            color:${c.unitCol ? 'var(--brand-orange)' : 'var(--brand-silver)'};
+            text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;cursor:pointer;
+        ">${c.label} <span style="opacity:.4;font-size:9px;">
+            ${rptSortCol === c.key ? (rptSortAsc ? '▲' : '▼') : '⇅'}
+        </span></th>`
+            ).join('') + '</tr>';
+
+            // Body
+            document.getElementById('rptTBody').innerHTML = page.map(row => {
+                const spd = parseFloat(row.spd);
+                const hasSpd = !isNaN(spd);
+                const spdColor = spd > 90 ? '#e53e3e' : spd > 60 ? '#e67e22' : '#27ae60';
+                const spdCls = spd > 90 ? 'bg-red' : spd > 60 ? 'bg-orange' : 'bg-green';
+                const spdW = hasSpd ? Math.min(spd / 120 * 36, 36) : 0;
+
+                const cells = rptColHeaders.map(c => {
+                    const v = row[c.key];
+                    const str = v != null && v !== '' ? String(v) : '';
+
+                    if (c.key === '_idx')
+                        return `<td style="color:#666;font-size:11px;padding:6px 10px;">${v}</td>`;
+                    if (c.unitCol)
+                        return `<td style="font-weight:600;color:var(--brand-orange);padding:6px 10px;
+                         max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                         title="${str}">${str}</td>`;
+                    if (c.speed && hasSpd)
+                        return `<td style="padding:6px 10px;">
+                    <span style="display:inline-block;height:6px;border-radius:3px;
+                        width:${spdW}px;background:${spdColor};vertical-align:middle;margin-right:5px;"></span>
+                    <span style="background:${spdColor}22;color:${spdColor};
+                        padding:1px 6px;border-radius:3px;font-size:10.5px;font-weight:700;">${spd} km/h</span></td>`;
+                    if (c.sat && str)
+                        return `<td style="padding:6px 10px;">
+                    <span style="background:${parseInt(str) >= 4 ? 'rgba(46,125,50,.3)' : 'rgba(183,28,28,.3)'};
+                        color:${parseInt(str) >= 4 ? '#81c784' : '#ff8a80'};
+                        padding:1px 6px;border-radius:3px;font-size:10.5px;font-weight:700;">${str}</span></td>`;
+                    if (c.param)
+                        return str
+                            ? `<td style="padding:6px 10px;"><span style="background:rgba(242,101,34,.15);
+                        border:1px solid rgba(242,101,34,.3);border-radius:3px;padding:1px 5px;
+                        font-size:10.5px;color:#ff8c52;font-family:monospace;">${str}</span></td>`
+                            : `<td style="padding:6px 10px;color:#444;">-</td>`;
+                    if (c.mono)
+                        return `<td style="padding:6px 10px;font-family:monospace;font-size:11.5px;
+                    color:var(--brand-silver);">${str || '<span style="color:#444;">-</span>'}</td>`;
+                    return `<td style="padding:6px 10px;">${str || '<span style="color:#444;">-</span>'}</td>`;
+                });
+
+                return `<tr style="border-bottom:1px solid var(--border-color);">${cells.join('')}</tr>`;
+            }).join('');
+
+            renderRptPagination();
+        }
+
+        function renderRptPagination() {
+            const total = rptFiltered.length;
+            const totalPages = Math.ceil(total / RPT_PAGE_SIZE);
+            const start = (rptPage - 1) * RPT_PAGE_SIZE + 1;
+            const end = Math.min(rptPage * RPT_PAGE_SIZE, total);
+
+            document.getElementById('rptPagInfo').textContent =
+                `Exibindo ${start.toLocaleString('pt-BR')}-${end.toLocaleString('pt-BR')} de ${total.toLocaleString('pt-BR')}`;
+            document.getElementById('rptPageInfo').textContent =
+                `Pág. ${rptPage}/${totalPages}`;
+
+            const btns = document.getElementById('rptPagBtns');
+            btns.innerHTML = '';
+            const addBtn = (label, pg, active) => {
+                const b = document.createElement('button');
+                b.innerHTML = label;
+                b.disabled = pg < 1 || pg > totalPages || active;
+                b.style.cssText = `padding:4px 10px;border:1px solid var(--border-color);
+            border-radius:3px;background:${active ? 'var(--brand-orange)' : 'var(--input-bg)'};
+            color:${active ? '#fff' : 'var(--text-primary)'};font-size:12px;cursor:pointer;`;
+                b.onclick = () => { rptPage = pg; renderRptTable(); };
+                btns.appendChild(b);
+            };
+            addBtn('◀ Ant', rptPage - 1, false);
+            const pages = new Set([1, totalPages, rptPage, rptPage - 1, rptPage + 1]
+                .filter(p => p >= 1 && p <= totalPages));
+            let last = 0;
+            [...pages].sort((a, b) => a - b).forEach(p => {
+                if (last && p - last > 1) {
+                    const sp = document.createElement('span');
+                    sp.textContent = '...'; sp.style.cssText = 'padding:4px;color:#666;';
+                    btns.appendChild(sp);
+                }
+                addBtn(p, p, p === rptPage);
+                last = p;
+            });
+            addBtn('Próx ▶', rptPage + 1, false);
+        }
+
+        function rptSortBy(col) {
+            rptSortAsc = rptSortCol === col ? !rptSortAsc : true;
+            rptSortCol = col;
+            rptFiltered.sort((a, b) => {
+                let va = a[col], vb = b[col];
+                if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) { va = parseFloat(va); vb = parseFloat(vb); }
+                if (va < vb) return rptSortAsc ? -1 : 1;
+                if (va > vb) return rptSortAsc ? 1 : -1;
+                return 0;
+            });
+            rptPage = 1;
+            renderRptTable();
+        }
+
+        function applyRptSearch() {
+            const q = document.getElementById('rptSearch').value.toLowerCase();
+            rptFiltered = !q ? [...rptAllRows] : rptAllRows.filter(row =>
+                rptColHeaders.some(c => {
+                    const v = row[c.key];
+                    return v != null && String(v).toLowerCase().includes(q);
+                })
+            );
+            rptPage = 1;
+            renderRptTable();
+        }
+
+        function exportRptCSV() {
+            if (!rptFiltered.length) { showToast('Sem dados.'); return; }
+            const hdr = rptColHeaders.map(c => `"${c.label}"`).join(',');
+            const rows = rptFiltered.map(r => rptColHeaders.map(c => {
+                const v = r[c.key];
+                return v != null && v !== '' ? `"${String(v).replace(/"/g, '""')}"` : '""';
+            }).join(','));
+            const blob = 'data:text/csv;charset=utf-8,' + encodeURIComponent([hdr, ...rows].join('\n'));
+            const a = document.createElement('a');
+            a.href = blob; a.download = 'relatorio_track7.csv'; a.click();
+            showToast(`CSV exportado — ${rptFiltered.length.toLocaleString('pt-BR')} linhas.`);
+        }
+
+        function collapseResult() {
+            document.getElementById('reportResultArea').style.display = 'none';
+            document.getElementById('reportGrid').style.display = '';
+        }
+
+        function tsToStr(ts) {
+            if (!ts) return '';
+            const d = new Date(ts * 1000);
+            const p = n => String(n).padStart(2, '0');
+            return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+        }
+    </script>
+
+</body>
+
+</html>
+
+
+
+

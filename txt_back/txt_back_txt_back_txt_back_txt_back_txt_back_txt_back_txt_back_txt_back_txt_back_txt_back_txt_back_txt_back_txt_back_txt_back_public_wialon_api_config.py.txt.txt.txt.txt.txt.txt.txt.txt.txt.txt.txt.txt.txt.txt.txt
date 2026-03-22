@@ -1,0 +1,50 @@
+import time
+
+# Configurações gerais
+WIALON_HOST = "https://hst-api.wialon.com"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AUTENTICAÇÃO — use TOKEN (recomendado) ou usuário/senha
+#
+# Como gerar um token:
+#   1. Acesse https://hst-api.wialon.com e faça login
+#   2. Menu → Configurações do usuário → Tokens de acesso → Novo token
+#   3. Conceda permissões de leitura e copie o valor gerado
+# ─────────────────────────────────────────────────────────────────────────────
+WIALON_TOKEN = "67eba42da80819eb285dd8794678964707481B6FFB3E065405FE46F889143875DE5B3C3A"   # ← Cole aqui o token gerado no painel Wialon
+
+# Alternativa: autenticação por usuário e senha (menos confiável)
+USERNAME = "track7"
+PASSWORD = "iAR7Nyz2^Bnk"
+
+# Intervalo de busca: do início do ano (01/01/2025 00:00:00 UTC) até agora
+# 01/01/2025 00:00:00 UTC = 1735689600
+TIME_FROM = 1735689600          # 01/01/2025 00:00:00 UTC
+TIME_TO   = int(time.time())    # agora (timestamp dinâmico)
+
+# Tipos de mensagem:
+# 1   = Data messages (posições GPS normais)
+# 2   = SMS messages
+# 4   = Invalid Data messages
+# 256 = Custom messages
+MESSAGE_TYPE_FILTER = 1  # Data Messages
+
+# Máximo de mensagens por unidade (sem limite)
+MAX_MESSAGES = 0xFFFFFFFF
+
+# Nome do arquivo de saída Excel
+OUTPUT_FILE = "wialon_log_completo.xlsx"
+
+
+
+
+
+
+
+
+
+
+
+
+
+

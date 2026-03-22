@@ -1,0 +1,219 @@
+# -*- coding: utf-8 -*-
+"""
+main.py - Script principal de extracao de logs Wialon para planilha Excel.
+
+Fluxo:
+  1. Login na API Wialon (via token ou usuario/senha)
+  2. Busca todas as unidades disponiveis
+  3. Para cada unidade, carrega as mensagens no periodo configurado
+  4. Parseia os dados GPS (lat, lon, velocidade, curso, altitude, timestamp)
+  5. Exporta tudo em um arquivo .xlsx com uma aba por unidade + aba de resumo
+"""
+
+import sys
+import io
+import pandas as pd
+from datetime import datetime, timezone
+from wialon_api import WialonAPI
+from config import (
+    USERNAME,
+    PASSWORD,
+    TIME_FROM,
+    TIME_TO,
+    MESSAGE_TYPE_FILTER,
+    MAX_MESSAGES,
+    OUTPUT_FILE,
+)
+
+# Garante que o stdout aceita UTF-8 mesmo em terminais Windows legados
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+
+# --------------------------------------------------------------------------- #
+#  HELPERS                                                                      #
+# --------------------------------------------------------------------------- #
+
+def ts_to_str(ts: int) -> str:
+    """Converte timestamp Unix em string legivel no fuso horario local."""
+    if not ts:
+        return ""
+    try:
+        return datetime.fromtimestamp(ts, tz=timezone.utc).astimezone().strftime(
+            "%d/%m/%Y %H:%M:%S"
+        )
+    except Exception:
+        return str(ts)
+
+
+def parse_message(msg: dict) -> dict:
+    """
+    Transforma uma mensagem bruta Wialon em um dicionario plano.
+    Campos extraidos:
+      - timestamp, data_hora
+      - latitude, longitude
+      - velocidade_kmh, curso_graus, altitude_m
+      - satelites
+      - parametros extras (chave=valor)
+    """
+    pos = msg.get("pos") or {}
+    row = {
+        "timestamp":      msg.get("t", 0),
+        "data_hora":      ts_to_str(msg.get("t", 0)),
+        "latitude":       pos.get("y", None),
+        "longitude":      pos.get("x", None),
+        "velocidade_kmh": pos.get("s", None),
+        "curso_graus":    pos.get("c", None),
+        "altitude_m":     pos.get("z", None),
+        "satelites":      pos.get("sc", None),
+    }
+
+    # Parametros extras (sensores, ignicao, odometro, etc.)
+    params = msg.get("p") or {}
+    for key, value in params.items():
+        row[f"param_{key}"] = value
+
+    return row
+
+
+# --------------------------------------------------------------------------- #
+#  MAIN                                                                         #
+# --------------------------------------------------------------------------- #
+
+def main():
+    api = WialonAPI()
+
+    print("=" * 60)
+    print("  Extrator de Logs Wialon -> Excel")
+    print("=" * 60)
+    print(f"  Periodo : {ts_to_str(TIME_FROM)}  ->  {ts_to_str(TIME_TO)}")
+    print(f"  Arquivo : {OUTPUT_FILE}")
+    print("=" * 60)
+
+    # -- 1. Login ------------------------------------------------------------ #
+    from config import WIALON_TOKEN
+    if WIALON_TOKEN:
+        print("[AUTH] Autenticando via TOKEN...")
+        api.login_with_token(WIALON_TOKEN)
+    else:
+        print("[AUTH] Autenticando via usuario/senha...")
+        api.login_with_password(USERNAME, PASSWORD)
+    api.set_timezone(-10800)  # UTC-3 (Brasilia)
+
+    # -- 2. Busca unidades --------------------------------------------------- #
+    units = api.get_all_units()
+    if not units:
+        print("[AVISO] Nenhuma unidade encontrada. Encerrando.")
+        api.logout()
+        return
+
+    summary_rows = []
+    all_sheets: dict[str, pd.DataFrame] = {}
+
+    # -- 3. Processa cada unidade -------------------------------------------- #
+    for unit in units:
+        unit_id   = unit["id"]
+        unit_name = unit.get("nm", f"unit_{unit_id}")
+
+        print(f"\n[UNIDADE] Processando: {unit_name} (id={unit_id})")
+
+        try:
+            result = api.load_messages(
+                unit_id    = unit_id,
+                time_from  = TIME_FROM,
+                time_to    = TIME_TO,
+                msg_type   = MESSAGE_TYPE_FILTER,
+                max_count  = MAX_MESSAGES,
+            )
+        except Exception as e:
+            print(f"   [ERRO] Erro ao carregar mensagens: {e}")
+            summary_rows.append({
+                "unidade":         unit_name,
+                "id":              unit_id,
+                "total_mensagens": 0,
+                "status":          f"ERRO: {e}",
+            })
+            continue
+        finally:
+            try:
+                api.unload_messages()
+            except Exception:
+                pass
+
+        messages = result.get("messages", []) if isinstance(result, dict) else []
+        count    = len(messages)
+        print(f"   [OK] {count} mensagem(ns) recebida(s)")
+
+        summary_rows.append({
+            "unidade":         unit_name,
+            "id":              unit_id,
+            "total_mensagens": count,
+            "status":          "OK",
+        })
+
+        if not messages:
+            continue
+
+        # Parseia e monta DataFrame
+        rows = [parse_message(m) for m in messages]
+        df   = pd.DataFrame(rows)
+
+        # Ordena por timestamp crescente
+        if "timestamp" in df.columns:
+            df = df.sort_values("timestamp").reset_index(drop=True)
+
+        # Nome da aba: maximo 31 caracteres (limite do Excel)
+        sheet_name = unit_name[:31]
+        # Garante unicidade caso dois nomes sejam iguais no limite
+        if sheet_name in all_sheets:
+            sheet_name = sheet_name[:28] + f"_{unit_id % 1000:03d}"
+
+        all_sheets[sheet_name] = df
+
+    # -- 4. Exporta para Excel ----------------------------------------------- #
+    print(f"\n[EXPORT] Exportando para '{OUTPUT_FILE}'...")
+
+    with pd.ExcelWriter(OUTPUT_FILE, engine="openpyxl") as writer:
+        # Aba de resumo
+        df_summary = pd.DataFrame(summary_rows)
+        df_summary.to_excel(writer, sheet_name="RESUMO", index=False)
+        _auto_column_width(writer.sheets["RESUMO"], df_summary)
+
+        # Uma aba por unidade
+        for sheet_name, df in all_sheets.items():
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            _auto_column_width(writer.sheets[sheet_name], df)
+
+    print(f"[OK] Arquivo gerado com sucesso: {OUTPUT_FILE}")
+    print(f"   - {len(all_sheets)} aba(s) de unidade(s)")
+    print(f"   - 1 aba de resumo")
+
+    api.logout()
+
+
+# --------------------------------------------------------------------------- #
+#  UTIL: ajusta largura das colunas automaticamente                             #
+# --------------------------------------------------------------------------- #
+
+def _auto_column_width(ws, df: pd.DataFrame, max_width: int = 50):
+    """Ajusta a largura das colunas da planilha para melhor leitura."""
+    for i, col in enumerate(df.columns, start=1):
+        header_len = len(str(col))
+        try:
+            max_data_len = df[col].astype(str).map(len).max()
+        except Exception:
+            max_data_len = header_len
+        width = min(max(header_len, int(max_data_len or 0)) + 2, max_width)
+        col_letter = ws.cell(row=1, column=i).column_letter
+        ws.column_dimensions[col_letter].width = width
+
+
+# --------------------------------------------------------------------------- #
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../public/img/meet360.png">
+    <title>Track7 – Log de Mensagens</title>
+    <link rel="stylesheet" href="../global.css">
+    <link rel="stylesheet" href="list-specific.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="../../components/topnav.js""
+        onerror=" console.warn('topnav.js não encontrado. Verifique se o arquivo existe na pasta raiz.')"></script>
+</head>
+
+<body class="theme-dark">
+
+    <!-- TOP NAVIGATION (componente reutilizável) -->
+    <top-navigation></top-navigation>
+
+    <div class="page">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Filtros de Consulta</h2>
+            </div>
+
+            <!-- UNIDADES (multi-select com checkbox) -->
+            <div class="sb-section">
+                <label class="sb-label">Unidades / Equipamentos</label>
+                <input type="text" class="sb-ctrl unit-search" id="unitSearch" placeholder="Buscar unidade..."
+                    oninput="filterUnitList()" />
+                <div class="unit-list-wrap" id="unitListWrap">
+                    <div class="unit-row all-row" id="rowAll" onclick="toggleAll()">
+                        <input type="checkbox" id="chkAll" /> Todos os equipamentos
+                    </div>
+                    <!-- preenchido via JS -->
+                </div>
+                <div class="sel-count" id="selCount">Nenhuma unidade selecionada</div>
+            </div>
+
+            <!-- PERIODO -->
+            <div class="sb-section">
+                <label class="sb-label">Periodo</label>
+                <div class="pills">
+                    <span class="pill" onclick="setQuick(this,'today')">Hoje</span>
+                    <span class="pill" onclick="setQuick(this,'yesterday')">Ontem</span>
+                    <span class="pill" onclick="setQuick(this,'week')">7 dias</span>
+                    <span class="pill active" onclick="setQuick(this,'month')">30 dias</span>
+                    <span class="pill" onclick="setQuick(this,'ytd')">Ano atual</span>
+                    <span class="pill" onclick="setQuick(this,'custom')">Personalizado</span>
+                </div>
+                <div class="date-pair" id="customDates">
+                    <div class="dp-row"><span class="dp-lbl">De</span><input type="datetime-local" class="sb-ctrl"
+                            id="dtFrom" /></div>
+                    <div class="dp-row"><span class="dp-lbl">Ate</span><input type="datetime-local" class="sb-ctrl"
+                            id="dtTo" /></div>
+                </div>
+            </div>
+
+            <!-- TIPO / LIMITE -->
+            <div class="sb-section">
+                <label class="sb-label">Tipo de Mensagem</label>
+                <select class="sb-ctrl" id="msgType">
+                    <option value="1">Mensagens de dados (GPS)</option>
+                    <option value="256">Mensagens customizadas</option>
+                    <option value="2">Mensagens SMS</option>
+                    <option value="4">Dados invalidos</option>
+                </select>
+
+                <label class="sb-label" style="margin-top:10px;">Max. por Unidade</label>
+                <select class="sb-ctrl" id="maxMsgs">
+                    <option value="50" selected>50</option>
+                    <option value="1000">1.000</option>
+                    <option value="5000">5.000</option>
+                    <option value="10000">10.000</option>
+                    <option value="50000">50.000</option>
+                    <option value="4294967295">Sem limite</option>
+                </select>
+
+                <label class="chk-row"><input type="checkbox" id="chkParams" checked> Exibir parametros extras</label>
+                <label class="chk-row"><input type="checkbox" id="chkOnlyPos"> Somente com GPS valido</label>
+            </div>
+
+            <div class="sb-status" id="sbStatus"></div>
+            <div class="progress-bar" id="progressBar">
+                <div class="pb-fill"></div>
+            </div>
+            <!-- barra deterministica por unidade -->
+            <div style="padding:0 16px;display:none;" id="detProgWrap">
+                <div class="pb-det">
+                    <div class="pb-fill-det" id="pbFillDet" style="width:0%"></div>
+                </div>
+                <div style="font-size:10.5px;color:var(--brand-silver);margin-top:3px;" id="detProgLabel"></div>
+            </div>
+
+            <button class="btn-exec" id="btnExec" onclick="execute()">
+                <span id="btnContent">&#9654; Executar Consulta</span>
+            </button>
+        </aside>
+
+        <!-- MAIN -->
+        <div class="main-area">
+
+            <!-- Summary -->
+            <div class="summary-strip hidden" id="summaryStrip">
+                <div class="sg">
+                    <div class="sv" id="sumTotal">0</div>
+                    <div class="sl">Mensagens</div>
+                </div>
+                <div class="strip-sep"></div>
+                <div class="sg">
+                    <div class="sv" id="sumUnits">0</div>
+                    <div class="sl">Unidades</div>
+                </div>
+                <div class="strip-sep"></div>
+                <div class="sg">
+                    <div class="sv" id="sumPeriod">--</div>
+                    <div class="sl">Periodo</div>
+                </div>
+                <div class="strip-sep"></div>
+                <div class="sg">
+                    <div class="sv" id="sumMaxSpd">--</div>
+                    <div class="sl">Vel. Max.</div>
+                </div>
+                <div class="strip-sep"></div>
+                <div class="sg">
+                    <div class="sv" id="sumAvgSpd">--</div>
+                    <div class="sl">Vel. Media</div>
+                </div>
+                <div class="strip-sep"></div>
+                <div class="sg">
+                    <div class="sv" id="sumWithPos">--</div>
+                    <div class="sl">Com GPS</div>
+                </div>
+                <div class="strip-sep"></div>
+                <div class="sg">
+                    <div class="sv" id="sumParamKeys">--</div>
+                    <div class="sl">Param. Unicos</div>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="result-toolbar" id="resultToolbar" style="display:none;">
+                <input type="text" id="searchInput" placeholder="Filtrar em qualquer coluna..."
+                    oninput="applySearch()" />
+                <div class="tb-right">
+                    <button class="btn-sm" onclick="exportCSV()">&#8659; CSV</button>
+                    <button class="btn-sm" onclick="exportJSON()">&#8659; JSON</button>
+                    <span style="font-size:11px;color:var(--brand-silver);" id="pageInfo"></span>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-wrap">
+                <div class="empty-state" id="emptyState">
+                    <div class="icon">&#128202;</div>
+                    <div>Selecione equipamentos e clique em <strong>Executar</strong></div>
+                    <div style="font-size:11px;color:var(--brand-silver);">Todos os campos disponíveis do log serão
+                        exibidos, com a
+                        coluna Unidade na primeira posição.</div>
+                </div>
+                <table id="dataTable" style="display:none;">
+                    <thead id="tHead"></thead>
+                    <tbody id="tBody"></tbody>
+                </table>
+            </div>
+
+            <div class="pag-bar hidden" id="pagBar">
+                <span id="pagInfo"></span>
+                <div class="pag-right" id="pagBtns"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ============================================================
+        //  CONFIG
+        // ============================================================
+        const API = 'http://localhost:5000/api';
+        const PAGE_SIZE = 200;
+
+        let allUnits = [];   // [{id, name}]
+        let allRows = [];
+        let filtered = [];
+        let colHeaders = [];
+        let allParamKeys = new Set();
+        let currentPage = 1;
+        let sortCol = null, sortAsc = true;
+        let timeFrom = 0, timeTo = 0;
+
+        // Configurar tema inicial baseado no localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = `theme-${savedTheme}`;
+            applyPeriod('month');
+            checkServer();
+        });
+
+        // Ouvir mudanças de tema da navegação
+        document.addEventListener('themeChanged', (e) => {
+            document.body.className = `theme-${e.detail.theme}`;
+        });
+
+        // ============================================================
+        //  UNIT LIST (multi-select checkboxes)
+        // ============================================================
+        function renderUnitList(units) {
+            const wrap = document.getElementById('unitListWrap');
+            // remove filas antigas exceto "Todos"
+            [...wrap.querySelectorAll('.unit-item')].forEach(el => el.remove());
+
+            units.forEach(u => {
+                const row = document.createElement('label');
+                row.className = 'unit-row unit-item';
+                row.dataset.id = u.id;
+                row.dataset.name = u.name;
+                row.innerHTML = `<input type="checkbox" class="unit-chk" value="${u.id}" onchange="updateSelCount()"> ${esc(u.name)}`;
+                wrap.appendChild(row);
+            });
+            updateSelCount();
+        }
+
+        function filterUnitList() {
+            const q = document.getElementById('unitSearch').value.toLowerCase();
+            document.querySelectorAll('.unit-item').forEach(row => {
+                row.style.display = row.dataset.name.toLowerCase().includes(q) ? '' : 'none';
+            });
+        }
+
+        function toggleAll() {
+            const chkAll = document.getElementById('chkAll');
+            chkAll.checked = !chkAll.checked;
+            const checked = chkAll.checked;
+            document.querySelectorAll('.unit-chk').forEach(c => { if (c.closest('.unit-item').style.display !== 'none') c.checked = checked; });
+            updateSelCount();
+        }
+
+        function updateSelCount() {
+            const all = document.querySelectorAll('.unit-chk');
+            const sel = [...all].filter(c => c.checked);
+            const chkAll = document.getElementById('chkAll');
+            chkAll.checked = sel.length > 0 && sel.length === all.length;
+            document.getElementById('selCount').textContent =
+                sel.length === 0 ? 'Nenhuma unidade selecionada'
+                    : sel.length === all.length ? `Todos os ${all.length} equipamentos selecionados`
+                        : `${sel.length} de ${all.length} selecionado(s)`;
+        }
+
+        function getSelectedUnits() {
+            return [...document.querySelectorAll('.unit-chk:checked')].map(c => {
+                const row = c.closest('.unit-item');
+                return { id: c.value, name: row.dataset.name };
+            });
+        }
+
+        // ============================================================
+        //  SERVER / LOGIN
+        // ============================================================
+        async function checkServer() {
+            try {
+                const r = await fetch(`${API}/status`);
+                const d = await r.json();
+                setStatus('info', 'Servidor conectado');
+                if (d.authenticated) {
+                    await loadUnits();
+                    setStatus('info', 'Sessao ativa. Selecione equipamentos e execute.');
+                } else {
+                    await doLogin();
+                }
+            } catch (e) {
+                setStatus('error', 'Servidor offline. Execute: python server.py na pasta wialon_api/');
+            }
+        }
+
+        async function doLogin() {
+            setStatus('loading', 'Autenticando no Wialon...');
+            try {
+                const r = await fetch(`${API}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token: '67eba42da80819eb285dd8794678964707481B6FFB3E065405FE46F889143875DE5B3C3A' })
+                });
+                const d = await r.json();
+                if (d.error) throw new Error(d.error);
+                setStatus('info', 'Login OK. Carregando unidades...');
+                await loadUnits();
+            } catch (e) {
+                setStatus('error', 'Login falhou: ' + e.message);
+            }
+        }
+
+        async function loadUnits() {
+            const r = await fetch(`${API}/units`);
+            const d = await r.json();
+            if (d.error) { setStatus('error', d.error); return; }
+            allUnits = d.units;
+            renderUnitList(allUnits);
+            setStatus('info', d.units.length + ' unidade(s). Selecione e execute.');
+        }
+
+        // ============================================================
+        //  EXECUTE (loop por unidade)
+        // ============================================================
+        async function execute() {
+            const units = getSelectedUnits();
+            if (!units.length) { setStatus('error', 'Selecione pelo menos uma unidade.'); return; }
+
+            const msgType = parseInt(document.getElementById('msgType').value);
+            const maxCount = parseInt(document.getElementById('maxMsgs').value);
+
+            setBusy(true);
+            showProgress();
+            document.getElementById('detProgWrap').style.display = 'block';
+
+            let allMsgs = [];
+            let allParamSet = new Set();
+
+            for (let i = 0; i < units.length; i++) {
+                const u = units[i];
+                const pct = Math.round((i / units.length) * 100);
+                document.getElementById('pbFillDet').style.width = pct + '%';
+                document.getElementById('detProgLabel').textContent =
+                    `Carregando ${i + 1}/${units.length}: ${u.name}`;
+                setStatus('loading', `Buscando mensagens de "${u.name}"...`);
+
+                try {
+                    const r = await fetch(`${API}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ unitId: u.id, timeFrom, timeTo, msgType, maxCount })
+                    });
+                    const d = await r.json();
+                    if (d.error) throw new Error(d.error);
+
+                    const msgs = d.messages || [];
+                    // Injeta nome da unidade em cada mensagem
+                    msgs.forEach(m => {
+                        m._unitName = u.name;
+                        m._unitId = u.id;
+                        Object.keys(m.p || {}).forEach(k => allParamSet.add(k));
+                    });
+                    allMsgs = allMsgs.concat(msgs);
+                } catch (e) {
+                    setStatus('error', `Erro em "${u.name}": ${e.message}`);
+                }
+            }
+
+            document.getElementById('pbFillDet').style.width = '100%';
+            document.getElementById('detProgLabel').textContent = 'Concluido!';
+
+            buildTable(allMsgs, allParamSet);
+            setStatus('info', allMsgs.length.toLocaleString('pt-BR') + ' mensagens de ' + units.length + ' unidade(s).');
+            setBusy(false);
+            hideProgress();
+            setTimeout(() => { document.getElementById('detProgWrap').style.display = 'none'; }, 1000);
+        }
+
+        // ============================================================
+        //  TABLE BUILD
+        // ============================================================
+        function buildTable(msgs, paramSetArg) {
+            allParamKeys = paramSetArg || new Set();
+            const onlyPos = document.getElementById('chkOnlyPos').checked;
+            const showParams = document.getElementById('chkParams').checked;
+            const paramKeys = [...allParamKeys].sort();
+
+            // Columns — UNIDADE first
+            const cols = [
+                { key: '_idx', label: '#', mono: true, unitCol: false },
+                { key: 'unit', label: 'Unidade', mono: false, unitCol: true }, // ← 1a coluna
+                { key: 'dt', label: 'Data / Hora', mono: true, unitCol: false },
+                { key: 't', label: 'Timestamp', mono: true, unitCol: false },
+                { key: 'lat', label: 'Latitude', mono: true, unitCol: false },
+                { key: 'lon', label: 'Longitude', mono: true, unitCol: false },
+                { key: 'spd', label: 'Vel.(km/h)', speed: true, unitCol: false },
+                { key: 'course', label: 'Curso(°)', mono: false, unitCol: false },
+                { key: 'alt', label: 'Alt.(m)', mono: false, unitCol: false },
+                { key: 'sat', label: 'Sats', sat: true, unitCol: false },
+                { key: 'flags', label: 'Flags', mono: true, unitCol: false },
+            ];
+            if (showParams) paramKeys.forEach(k => cols.push({ key: 'p_' + k, label: k, param: true }));
+            colHeaders = cols;
+
+            let rows = [];
+            msgs.forEach((m, idx) => {
+                const pos = m.pos || {};
+                if (onlyPos && !pos.y) return;
+                const row = {
+                    _idx: idx + 1,
+                    unit: m._unitName || '',
+                    t: m.t || 0,
+                    dt: tsToStr(m.t),
+                    lat: pos.y != null ? pos.y.toFixed(6) : '',
+                    lon: pos.x != null ? pos.x.toFixed(6) : '',
+                    spd: pos.s != null ? pos.s : '',
+                    course: pos.c != null ? pos.c : '',
+                    alt: pos.z != null ? pos.z : '',
+                    sat: pos.sc != null ? pos.sc : '',
+                    flags: m.f != null ? m.f : '',
+                };
+                if (showParams) {
+                    const p = m.p || {};
+                    paramKeys.forEach(k => {
+                        const v = p[k];
+                        row['p_' + k] = (v != null && typeof v === 'object')
+                            ? (v.v != null ? v.v : (v.x != null ? v.x : JSON.stringify(v)))
+                            : (v != null ? v : '');
+                    });
+                }
+                rows.push(row);
+            });
+
+            // Stats
+            const speeds = rows.map(r => parseFloat(r.spd)).filter(v => !isNaN(v) && v >= 0);
+            const unitSet = new Set(rows.map(r => r.unit));
+            document.getElementById('sumTotal').textContent = rows.length.toLocaleString('pt-BR');
+            document.getElementById('sumUnits').textContent = unitSet.size;
+            document.getElementById('sumMaxSpd').textContent = (speeds.length ? Math.max(...speeds) : 0) + ' km/h';
+            document.getElementById('sumAvgSpd').textContent = (speeds.length ? (speeds.reduce((a, b) => a + b, 0) / speeds.length).toFixed(1) : 0) + ' km/h';
+            document.getElementById('sumWithPos').textContent = rows.filter(r => r.lat).length.toLocaleString('pt-BR');
+            document.getElementById('sumParamKeys').textContent = allParamKeys.size;
+            if (rows.length >= 2) {
+                const first = rows[0].dt.slice(0, 10), last = rows[rows.length - 1].dt.slice(0, 10);
+                document.getElementById('sumPeriod').textContent = first + ' -> ' + last;
+            }
+
+            allRows = rows;
+            filtered = [...rows];
+            currentPage = 1;
+            renderTable();
+        }
+
+        function renderTable() {
+            const empty = document.getElementById('emptyState');
+            const table = document.getElementById('dataTable');
+            const strip = document.getElementById('summaryStrip');
+            const toolbar = document.getElementById('resultToolbar');
+            const pagBar = document.getElementById('pagBar');
+
+            if (!filtered.length) {
+                table.style.display = 'none'; empty.style.display = 'flex';
+                empty.innerHTML = '<div class="icon">&#128202;</div><div>Nenhuma mensagem encontrada.</div>';
+                strip.classList.add('hidden'); toolbar.style.display = 'none'; pagBar.classList.add('hidden');
+                return;
+            }
+
+            empty.style.display = 'none'; table.style.display = '';
+            strip.classList.remove('hidden'); toolbar.style.display = 'flex'; pagBar.classList.remove('hidden');
+
+            // Header
+            document.getElementById('tHead').innerHTML = '<tr>' + colHeaders.map(c =>
+                `<th onclick="sortBy('${c.key}')" class="${c.unitCol ? 'unit-col' : ''} ${sortCol === c.key ? 'sorted' : ''}">
+            ${esc(c.label)}<span class="sort-icon">${sortCol === c.key ? (sortAsc ? '&#9650;' : '&#9660;') : '&#8645;'}</span>
+        </th>`
+            ).join('') + '</tr>';
+
+            // Rows
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const page = filtered.slice(start, start + PAGE_SIZE);
+
+            document.getElementById('tBody').innerHTML = page.map(row => {
+                const spd = parseFloat(row.spd);
+                const hasSpd = !isNaN(spd);
+                const spdColor = spd > 90 ? '#e53e3e' : spd > 60 ? '#e67e22' : '#27ae60';
+                const spdCls = spd > 90 ? 'bg-red' : spd > 60 ? 'bg-orange' : 'bg-green';
+                const spdW = hasSpd ? Math.min(spd / 120 * 36, 36) : 0;
+
+                const cells = colHeaders.map(c => {
+                    const v = row[c.key];
+                    const str = v != null && v !== '' ? String(v) : '';
+
+                    if (c.key === '_idx')
+                        return `<td style="color:#666;font-size:11px;">${v}</td>`;
+
+                    if (c.unitCol)
+                        return `<td class="unit-cell" title="${esc(str)}">${esc(str)}</td>`;
+
+                    if (c.speed && hasSpd)
+                        return `<td><span class="speed-bar" style="width:${spdW}px;background:${spdColor};"></span>
+                        <span class="badge ${spdCls}">${spd} km/h</span></td>`;
+
+                    if (c.sat && str)
+                        return `<td><span class="badge ${parseInt(str) >= 4 ? 'bg-green' : 'bg-red'}">${str}</span></td>`;
+
+                    if (c.key === 'flags' && str)
+                        return `<td class="mono" style="color:#888;">0x${(parseInt(str) || 0).toString(16).toUpperCase()}</td>`;
+
+                    if (c.param)
+                        return str ? `<td><span class="param-tag">${esc(str)}</span></td>` : `<td style="color:#444;">-</td>`;
+
+                    if (c.mono)
+                        return `<td class="mono">${str || '<span style="color:#444;">-</span>'}</td>`;
+
+                    return `<td>${str || '<span style="color:#444;">-</span>'}</td>`;
+                });
+
+                return `<tr>${cells.join('')}</tr>`;
+            }).join('');
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const total = filtered.length;
+            const totalPages = Math.ceil(total / PAGE_SIZE);
+            const start = (currentPage - 1) * PAGE_SIZE + 1;
+            const end = Math.min(currentPage * PAGE_SIZE, total);
+
+            document.getElementById('pagInfo').textContent =
+                `Exibindo ${start.toLocaleString('pt-BR')}-${end.toLocaleString('pt-BR')} de ${total.toLocaleString('pt-BR')}`;
+            document.getElementById('pageInfo').textContent = `Pag. ${currentPage}/${totalPages}`;
+
+            const btns = document.getElementById('pagBtns');
+            btns.innerHTML = '';
+            const add = (label, pg, active) => {
+                const b = document.createElement('button');
+                b.className = 'pg-btn' + (active ? ' active' : '');
+                b.innerHTML = label;
+                b.disabled = pg < 1 || pg > totalPages || active;
+                b.onclick = () => { currentPage = pg; renderTable(); };
+                btns.appendChild(b);
+            };
+            add('&#9664; Ant', currentPage - 1, false);
+            const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1].filter(p => p >= 1 && p <= totalPages));
+            let last = 0;
+            [...pages].sort((a, b) => a - b).forEach(p => {
+                if (last && p - last > 1) { const sp = document.createElement('span'); sp.textContent = '...'; sp.style.cssText = 'padding:4px;color:#666;'; btns.appendChild(sp); }
+                add(p, p, p === currentPage); last = p;
+            });
+            add('Prox &#9654;', currentPage + 1, false);
+        }
+
+        // ============================================================
+        //  SEARCH / SORT
+        // ============================================================
+        function applySearch() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            filtered = !q ? [...allRows] : allRows.filter(row =>
+                colHeaders.some(c => { const v = row[c.key]; return v != null && String(v).toLowerCase().includes(q); })
+            );
+            currentPage = 1;
+            renderTable();
+        }
+
+        function sortBy(col) {
+            sortAsc = sortCol === col ? !sortAsc : true;
+            sortCol = col;
+            filtered.sort((a, b) => {
+                let va = a[col], vb = b[col];
+                if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) { va = parseFloat(va); vb = parseFloat(vb); }
+                if (va < vb) return sortAsc ? -1 : 1;
+                if (va > vb) return sortAsc ? 1 : -1;
+                return 0;
+            });
+            currentPage = 1;
+            renderTable();
+        }
+
+        // ============================================================
+        //  PERIOD
+        // ============================================================
+        function setQuick(el, period) {
+            document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+            el.classList.add('active');
+            const cd = document.getElementById('customDates');
+            if (period === 'custom') { cd.classList.add('show'); return; }
+            cd.classList.remove('show');
+            applyPeriod(period);
+        }
+
+        function applyPeriod(period) {
+            const now = Math.floor(Date.now() / 1000);
+            const d = new Date(); d.setHours(0, 0, 0, 0);
+            const tod = Math.floor(d.getTime() / 1000);
+            switch (period) {
+                case 'today': timeFrom = tod; timeTo = now; break;
+                case 'yesterday': timeFrom = tod - 86400; timeTo = tod - 1; break;
+                case 'week': timeFrom = now - 7 * 86400; timeTo = now; break;
+                case 'month': timeFrom = now - 30 * 86400; timeTo = now; break;
+                case 'ytd': timeFrom = Math.floor(new Date(d.getFullYear(), 0, 1).getTime() / 1000); timeTo = now; break;
+            }
+            const fmt = ts => new Date(ts * 1000).toISOString().slice(0, 16);
+            const fi = document.getElementById('dtFrom'), ti = document.getElementById('dtTo');
+            if (fi) fi.value = fmt(timeFrom);
+            if (ti) ti.value = fmt(timeTo);
+        }
+
+        // ============================================================
+        //  EXPORT
+        // ============================================================
+        function exportCSV() {
+            if (!filtered.length) { toast('Sem dados.'); return; }
+            const hdr = colHeaders.map(c => '"' + c.label + '"').join(',');
+            const rows = filtered.map(r => colHeaders.map(c => {
+                const v = r[c.key]; return v != null && v !== '' ? '"' + String(v).replace(/"/g, '""') + '"' : '""';
+            }).join(','));
+            dl('wialon_log.csv', 'data:text/csv;charset=utf-8,' + encodeURIComponent([hdr, ...rows].join('\n')));
+            toast('CSV exportado — ' + filtered.length.toLocaleString('pt-BR') + ' linhas.');
+        }
+
+        function exportJSON() {
+            if (!filtered.length) { toast('Sem dados.'); return; }
+            const data = filtered.map(r => { const o = {}; colHeaders.forEach(c => { if (c.key !== '_idx') o[c.key] = r[c.key]; }); return o; });
+            dl('wialon_log.json', 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2)));
+            toast('JSON exportado — ' + filtered.length.toLocaleString('pt-BR') + ' registros.');
+        }
+
+        function dl(name, href) { const a = document.createElement('a'); a.href = href; a.download = name; a.click(); }
+
+        // ============================================================
+        //  HELPERS
+        // ============================================================
+        function tsToStr(ts) {
+            if (!ts) return ''; const d = new Date(ts * 1000), p = n => String(n).padStart(2, '0');
+            return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+        }
+        function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+        function setStatus(type, msg) { const el = document.getElementById('sbStatus'); el.className = 'sb-status ' + type; el.textContent = msg; }
+        function setBusy(b) {
+            const btn = document.getElementById('btnExec'); btn.disabled = b;
+            document.getElementById('btnContent').innerHTML = b ? '<div class="spinner"></div> Carregando...' : '&#9654; Executar Consulta';
+        }
+        function showProgress() { document.getElementById('progressBar').classList.add('show'); }
+        function hideProgress() { document.getElementById('progressBar').classList.remove('show'); }
+        function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(window._tt); window._tt = setTimeout(() => t.style.display = 'none', 3000); }
+
+        // ============================================================
+        //  INPUTS
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', () => {
+            ['dtFrom', 'dtTo'].forEach(id => {
+                document.getElementById(id).addEventListener('change', () => {
+                    const fv = document.getElementById('dtFrom').value, tv = document.getElementById('dtTo').value;
+                    if (fv) timeFrom = Math.floor(new Date(fv).getTime() / 1000);
+                    if (tv) timeTo = Math.floor(new Date(tv).getTime() / 1000);
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+

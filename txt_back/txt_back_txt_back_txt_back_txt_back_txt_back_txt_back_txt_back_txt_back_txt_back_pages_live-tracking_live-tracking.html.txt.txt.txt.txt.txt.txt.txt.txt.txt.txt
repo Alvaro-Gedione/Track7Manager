@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../public/img/meet360.png">
+    <title>Track7 - Live Tracking</title>
+    <link rel="stylesheet" href="../global.css">
+    <link rel="stylesheet" href="live-tracking-specific.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="../../components/topnav.js""></script>
+</head>
+
+<body class=" theme-dark">
+
+    <!-- TOP NAVIGATION (componente reutilizável) -->
+    <top-navigation></top-navigation>
+
+    <!-- BREADCRUMB / TABS -->
+    <div class="breadcrumb-bar">
+        <span class="tab" onclick="location.href='route-history.html'">Histórico de Rastreamento</span>
+        <span class="tab active" onclick="location.href='live-tracking.html'">Localização</span>
+        <span class="tab">Geocercas</span>
+        <span class="tab">Alertas</span>
+        <div class="org-selector">
+            <span>Organização:</span>
+            <select id="orgSelector" onchange="changeOrganization(this)">
+                <option>Track7 BR - Betânia</option>
+                <option>Track7 BR - Sul</option>
+                <option>Track7 BR - Norte</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="layout">
+
+        <!-- VEHICLE PANEL -->
+        <aside class="vehicle-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-bus-alt" style="margin-right: 8px;"></i> Veículos em Movimento</h2>
+                <div class="panel-search">
+                    <i class="fas fa-search" style="color: var(--brand-silver); font-size: 12px;"></i>
+                    <input type="text" placeholder="Buscar veículo ou placa..." id="vehicleSearch"
+                        oninput="filterVehicles(this.value)">
+                </div>
+            </div>
+
+            <!-- Stats pills -->
+            <div class="panel-stats">
+                <div class="stat-pill active-filter" onclick="filterByStatus('all', this)">
+                    <span class="stat-num" id="countAll">8</span>
+                    Todos
+                </div>
+                <div class="stat-pill" onclick="filterByStatus('active', this)">
+                    <span class="dot dot-active"></span>
+                    <span class="stat-num" id="countActive">4</span>
+                    Ativos
+                </div>
+                <div class="stat-pill" onclick="filterByStatus('idle', this)">
+                    <span class="dot dot-idle"></span>
+                    <span class="stat-num" id="countIdle">2</span>
+                    Parado
+                </div>
+                <div class="stat-pill" onclick="filterByStatus('off', this)">
+                    <span class="dot dot-off"></span>
+                    <span class="stat-num" id="countOff">2</span>
+                    Deslig.
+                </div>
+            </div>
+
+            <!-- Vehicle list -->
+            <div class="vehicle-list" id="vehicleList">
+                <!-- Populated by JS -->
+            </div>
+        </aside>
+
+        <!-- MAP AREA -->
+        <main class="map-area" id="mapArea" style="position: relative;">
+            <div id="realMap" style="width: 100%; height: 100%;"></div>
+
+            <div class="map-status-bar">
+                <span class="upd-dot"></span>
+                <span><i class="fas fa-sync-alt" style="margin-right: 6px;"></i> Telemetria Ativa</span>
+                <span style="opacity:0.7;">|</span>
+                <span id="lastUpdate"><i class="far fa-clock" style="margin-right: 4px;"></i> --:--:--</span>
+            </div>
+
+            <div class="map-controls">
+                <div class="map-ctrl-group">
+                    <button class="map-btn" onclick="toggleTracking()" data-tip="Pausar/Retomar Tracking">
+                        <i class="fas fa-play" id="trackingIcon"></i>
+                    </button>
+                    <button class="map-btn" onclick="centerMapOnVehicles()" data-tip="Centralizar veículos">
+                        <i class="fas fa-crosshairs"></i>
+                    </button>
+                    <button class="map-btn" onclick="toggleFullscreen()" data-tip="Tela cheia">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="vehicle-popup" id="vehiclePopup">
+                <div class="popup-header">
+                    <h3 id="popupTitle">Monitoramento</h3>
+                    <button class="popup-close" onclick="closePopup()">×</button>
+                </div>
+                <div class="popup-body" id="popupBody"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Adicionar no início do script, após as declarações existentes
+        const API = 'http://localhost:5000/api'; // Ajuste para a URL do seu servidor
+        let map;
+        let vehicleMarkers = {}; // Objeto para armazenar múltiplos marcadores
+        let vehicles = []; // Array de veículos atualizado em tempo real
+        let trackingInterval;
+        let lastUpdateTime = Date.now();
+        let isTracking = true;
+        let selectedVehicleId = null;
+        let currentStatusFilter = 'all';
+        let animationInterval;
+        let realTimeData = {}; // Cache dos dados em tempo real
+        let vehicleMarker;
+        let vehicleData = {
+            id: 1,
+            name: 'TRK-7001 | Scania R450',
+            plate: 'T7I-2026',
+            lat: -22.2568, // Coordenada inicial (Santa Rita do Sapucaí)
+            lng: -45.7035,
+            speed: 0
+        };
+
+        function saveVehiclesToCache() {
+            // Salvamos o array completo de veículos como uma string JSON
+            localStorage.setItem('meet360_vehicles_cache', JSON.stringify(vehicles));
+            localStorage.setItem('meet360_last_cache_time', Date.now());
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = `theme-${savedTheme}`;
+
+            initMap();
+
+            // --- NOVO: Carregamento de Cache ---
+            const cachedData = localStorage.getItem('meet360_vehicles_cache');
+            if (cachedData) {
+                vehicles = JSON.parse(cachedData);
+                renderVehicleList();
+                renderAllMarkers();
+                updateStats();
+                showToast('📍 Carregando posições salvas...', 1500);
+            }
+            // ----------------------------------
+
+            await authenticateAndLoadVehicles();
+            startRealTimeTracking();
+        });
+
+        document.addEventListener('themeChanged', (e) => {
+            document.body.className = `theme-${e.detail.theme}`;
+            updateMapTheme(); // Adicionado aqui
+        });
+
+        async function authenticateAndLoadVehicles() {
+            try {
+                showToast('🔄 Conectando ao servidor...', 2000);
+
+                // Verificar status primeiro
+                const statusResponse = await fetch(`${API}/status`);
+                const statusData = await statusResponse.json();
+
+                if (!statusData.authenticated) {
+                    // Fazer login
+                    const loginResponse = await fetch(`${API}/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token: '67eba42da80819eb285dd8794678964707481B6FFB3E065405FE46F889143875DE5B3C3A'
+                        })
+                    });
+                    const loginData = await loginResponse.json();
+                    if (loginData.error) throw new Error(loginData.error);
+                }
+
+                // Carregar unidades (veículos)
+                await loadUnits();
+
+            } catch (error) {
+                console.error('Erro na autenticação:', error);
+                showToast('❌ Erro ao conectar ao servidor. Usando dados simulados.', 3000);
+                // Fallback para dados simulados
+                loadSimulatedData();
+            }
+        }
+
+        async function loadUnits() {
+            try {
+                const response = await fetch(`${API}/units`);
+                const data = await response.json();
+
+                if (data.error) throw new Error(data.error);
+
+                if (data.units && data.units.length > 0) {
+                    // Converter unidades para o formato de veículos
+                    vehicles = data.units.map(unit => ({
+                        id: unit.id,
+                        name: unit.name,
+                        plate: unit.label || unit.name.split(' ').pop() || `PLACA-${unit.id}`,
+                        driver: '—',
+                        status: 'active', // Assume ativo até receber dados reais
+                        speed: 0,
+                        maxSpeed: 80,
+                        location: 'Aguardando posição...',
+                        lastUpdate: '--:--:--',
+                        odometer: '0 km',
+                        ignition: 'Desligado',
+                        event: null,
+                        lat: null, // Será preenchido com dados reais
+                        lng: null,
+                        icon: '🚛'
+                    }));
+
+                    updateStats();
+                    renderVehicleList();
+
+                    // Iniciar busca de posições em tempo real
+                    fetchAllVehiclesPosition();
+                }
+            } catch (error) {
+                console.error('Erro ao carregar unidades:', error);
+                loadSimulatedData();
+            }
+        }
+
+        function loadSimulatedData() {
+            // Dados simulados do seu arquivo original
+            vehicles = [
+                { id: 1, name: '1658 - M.B. - OF 1722', plate: 'ABC-1D34', driver: 'Carlos Silva', status: 'active', speed: 62, maxSpeed: 80, location: 'Av. Brasil, 4520 - Centro', lastUpdate: '14:37:18', odometer: '128.450 km', ignition: 'Ligado', event: null, lat: -22.2568, lng: -45.7035, icon: '🚌' },
+                { id: 2, name: '1659 - M.B. - OF 1418', plate: 'DEF-5E78', driver: 'Ana Oliveira', status: 'active', speed: 87, maxSpeed: 80, location: 'Rod. BR-116, km 42', lastUpdate: '14:37:20', odometer: '214.320 km', ignition: 'Ligado', event: 'Exc. Velocidade', lat: -22.2578, lng: -45.7045, icon: '🚌' },
+                { id: 3, name: '3000 - M.B. - OF 1722', plate: 'GHI-9F12', driver: 'Pedro Santos', status: 'active', speed: 45, maxSpeed: 80, location: 'Rua das Flores, 210', lastUpdate: '14:37:15', odometer: '98.760 km', ignition: 'Ligado', event: null, lat: -22.2558, lng: -45.7025, icon: '🚌' },
+                { id: 4, name: '3001 - VW - 17-230 OD', plate: 'JKL-3G56', driver: 'Maria Lima', status: 'active', speed: 31, maxSpeed: 60, location: 'Terminal Norte - Garagem', lastUpdate: '14:37:05', odometer: '56.120 km', ignition: 'Ligado', event: 'Acel. Brusca', lat: -22.2548, lng: -45.7015, icon: '🚛' },
+                { id: 5, name: '3002 - Scania - R 450', plate: 'MNO-7H90', driver: 'João Costa', status: 'idle', speed: 0, maxSpeed: 90, location: 'Garagem Central', lastUpdate: '14:32:44', odometer: '302.880 km', ignition: 'Ligado', event: null, lat: -22.2538, lng: -45.7005, icon: '🚛' },
+                { id: 6, name: '3003 - Volvo - FH 460', plate: 'PQR-1I22', driver: 'Luiz Ferreira', status: 'idle', speed: 0, maxSpeed: 90, location: 'Pátio Interno - Dep. Sul', lastUpdate: '14:29:11', odometer: '441.600 km', ignition: 'Ligado', event: null, lat: -22.2528, lng: -45.6995, icon: '🚛' },
+                { id: 7, name: '3004 - Ford - Cargo 2429', plate: 'STU-3J44', driver: '—', status: 'off', speed: 0, maxSpeed: 80, location: 'Garagem Central', lastUpdate: '08:14:03', odometer: '73.990 km', ignition: 'Desligado', event: null, lat: -22.2518, lng: -45.6985, icon: '🚚' },
+                { id: 8, name: '3005 - Iveco - Daily 70C17', plate: 'VWX-5K66', driver: '—', status: 'off', speed: 0, maxSpeed: 70, location: 'Filial Leste', lastUpdate: '07:50:28', odometer: '19.340 km', ignition: 'Desligado', event: null, lat: -22.2508, lng: -45.6975, icon: '🚐' },
+            ];
+
+            renderVehicleList();
+            renderAllMarkers();
+            updateStats();
+        }
+
+        async function fetchAllVehiclesPosition() {
+            if (!isTracking) return;
+
+            for (const vehicle of vehicles) {
+                if (vehicle.status !== 'off') {
+                    await fetchVehiclePosition(vehicle.id);
+                    // Espera 200ms entre cada veículo para evitar o erro 1003 (api_concurrent)
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+            }
+
+            renderAllMarkers();
+            renderVehicleList(document.getElementById('vehicleSearch')?.value || '', currentStatusFilter);
+            updateLastUpdateTime();
+        }
+
+        async function fetchVehiclePosition(unitId) {
+            try {
+                // Removendo o cálculo de tempo para não filtrar. 
+                // Queremos o último registro, não importa se foi hoje ou ontem.
+                const response = await fetch(`${API}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        unitId: unitId,
+                        timeFrom: 0,
+                        timeTo: Math.floor(Date.now() / 1000),
+                        msgType: 1,
+                        maxCount: 1,
+                        flags: 0x0001 // Se sua API suportar, isso indica "última mensagem"
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.messages && data.messages.length > 0) {
+                    // Pegamos a primeira mensagem do array (que será a mais nova)
+                    const latestMsg = data.messages[0];
+                    updateVehicleFromMessage(unitId, latestMsg);
+                }
+            } catch (error) {
+                console.error(`Erro na telemetria do veículo ${unitId}:`, error);
+            }
+        }
+
+        function updateVehicleFromMessage(unitId, msg) {
+            const vehicle = vehicles.find(v => v.id == unitId);
+            if (!vehicle || !msg.pos) return;
+
+            // 1. Atualiza apenas os dados necessários
+            vehicle.lat = msg.pos.y;
+            vehicle.lng = msg.pos.x;
+            vehicle.speed = Math.round(msg.pos.s || 0);
+            vehicle.lastUpdate = new Date(msg.t * 1000).toLocaleTimeString('pt-BR');
+
+            // 2. MOVE O MARCADOR NO MAPA SEM RERENDERIZAR TUDO
+            if (vehicleMarkers[unitId]) {
+                // Leaflet move o marcador suavemente se houver transição CSS
+                vehicleMarkers[unitId].setLatLng([vehicle.lat, vehicle.lng]);
+
+                // Atualiza o conteúdo do popup sem fechá-lo
+                if (vehicleMarkers[unitId].getPopup()) {
+                    vehicleMarkers[unitId].setPopupContent(createPopupContent(vehicle));
+                }
+            } else {
+                // Se o marcador não existir (primeira carga), cria ele
+                renderAllMarkers();
+            }
+        }
+
+        function startRealTimeTracking() {
+            // Definimos o intervalo para 60 segundos (1 minuto) para evitar limites da API
+            const INTERVALO_UM_MINUTO = 60000;
+
+            if (trackingInterval) clearInterval(trackingInterval);
+
+            // Primeira execução imediata ao carregar
+            if (isTracking) {
+                fetchAllVehiclesPosition();
+            }
+
+            trackingInterval = setInterval(() => {
+                if (isTracking) {
+                    console.log('🔄 Iniciando atualização de telemetria (Intervalo: 1 min)');
+                    fetchAllVehiclesPosition();
+                }
+            }, INTERVALO_UM_MINUTO);
+
+            // O relógio da interface continua atualizando a cada segundo normalmente
+            setInterval(updateClock, 1000);
+        }
+
+        function updateLastUpdateTime() {
+            lastUpdateTime = Date.now();
+            const date = new Date();
+            document.getElementById('lastUpdate').innerHTML = `<i class="far fa-clock" style="margin-right: 4px;"></i> ${date.toLocaleTimeString()}`;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('lastUpdate').innerHTML = `<i class="far fa-clock" style="margin-right: 4px;"></i> ${now.toLocaleTimeString()}`;
+        }
+
+        function toggleTracking() {
+            isTracking = !isTracking;
+            showToast(isTracking ? '▶ Tracking ativado' : '⏸ Tracking pausado');
+
+            const statusDot = document.querySelector('.upd-dot');
+            if (statusDot) {
+                statusDot.style.background = isTracking ? '#2ecc71' : '#f39c12';
+            }
+        }
+        function initMap() {
+            // Centralizar em Santa Rita do Sapucaí como padrão
+            map = L.map('realMap', { zoomControl: false }).setView([-22.2568, -45.7035], 13);
+
+            // Configurar camada base baseada no tema atual
+            updateMapTheme();
+
+            // Se já houver veículos, centralizar neles
+            if (vehicles.length > 0) {
+                centerMapOnVehicles();
+            }
+        }
+
+        function updateMapTheme() {
+            // Remove camadas de tiles existentes para evitar sobreposição
+            map.eachLayer((layer) => {
+                if (layer instanceof L.TileLayer) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            const currentTheme = document.body.classList.contains('theme-light') ? 'light' : 'dark';
+
+            if (currentTheme === 'light') {
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap, © CartoDB'
+                }).addTo(map);
+            } else {
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '© OpenStreetMap, © CartoDB'
+                }).addTo(map);
+            }
+        }
+
+        function renderAllMarkers() {
+            // Remover marcadores existentes
+            Object.values(vehicleMarkers).forEach(marker => map.removeLayer(marker));
+            vehicleMarkers = {};
+
+            // Filtrar veículos sem coordenadas
+            const vehiclesWithPosition = vehicles.filter(v => v.lat != null && v.lng != null);
+
+            vehiclesWithPosition.forEach(vehicle => {
+                const marker = createVehicleMarker(vehicle);
+                marker.addTo(map);
+                vehicleMarkers[vehicle.id] = marker;
+            });
+
+            // Centralizar mapa se houver veículos
+            if (vehiclesWithPosition.length > 0 && !selectedVehicleId) {
+                centerMapOnVehicles();
+            }
+        }
+
+        function createVehicleMarker(vehicle) {
+            const statusColorMap = {
+                active: '#27ae60',
+                idle: '#f39c12',
+                off: '#bdc3c7',
+                alert: '#e74c3c'
+            };
+
+            const bgColor = statusColorMap[vehicle.status] || '#BE6004';
+
+            // Criar ícone personalizado
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `
+            <div style="
+                background: ${bgColor};
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 1px solid #fff;
+                box-shadow: 0 0 10px ${bgColor};
+                transition: all 0.3s ease;
+                position: relative;
+            ">
+                <i class="fas fa-bus-alt" style="color: white; font-size: 14px;"></i>
+                ${vehicle.speed > 0 ? `
+                    <div style="
+                        position: absolute;
+                        top: -10px;
+                        right: -10px;
+                        background: #BE6004;
+                        color: white;
+                        border-radius: 12px;
+                        padding: 2px 4px;
+                        font-size: 7px;
+                        font-weight: bold;
+                        border: 1px solid white;
+                    ">
+                        ${vehicle.speed} km/h
+                    </div>
+                ` : ''}
+                <div style="
+                    position: absolute;
+                    bottom: -25px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0,0,0,0.8);
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 3px;
+                    font-size: 9px;
+                    white-space: nowrap;
+                    border: 1px solid ${bgColor};
+                    backdrop-filter: blur(5px);
+                    opacity: 0.9;
+                ">
+                    ${vehicle.plate}
+                </div>
+            </div>
+        `,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16],
+                popupAnchor: [0, -16]
+            });
+
+            const marker = L.marker([vehicle.lat, vehicle.lng], { icon: icon });
+
+            // Adicionar popup
+            marker.bindPopup(createPopupContent(vehicle));
+
+            // Adicionar evento de clique
+            marker.on('click', () => selectVehicle(vehicle.id));
+
+            return marker;
+        }
+
+        function createPopupContent(vehicle) {
+            const speedClass = vehicle.speed > vehicle.maxSpeed ? 'red' : 'green';
+
+            return `
+        <div style="min-width: 250px;">
+            <div style="
+                background: #BE6004;
+                color: white;
+                padding: 10px 12px;
+                margin: -12px -12px 10px -12px;
+                border-radius: 8px 8px 0 0;
+            ">
+                <strong style="font-size: 14px;">${vehicle.name}</strong>
+            </div>
+            <div style="padding: 0 5px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="color: #999;">Placa:</span>
+                    <span style="font-weight: 600;">${vehicle.plate}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="color: #999;">Motorista:</span>
+                    <span>${vehicle.driver}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="color: #999;">Velocidade:</span>
+                    <span style="color: ${vehicle.speed > vehicle.maxSpeed ? '#e74c3c' : '#27ae60'}; font-weight: bold;">
+                        ${vehicle.speed} km/h
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="color: #999;">Ignição:</span>
+                    <span style="color: ${vehicle.ignition === 'Ligado' ? '#27ae60' : '#999'};">
+                        ${vehicle.ignition}
+                    </span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="color: #999;">Última atualização:</span>
+                    <span>${vehicle.lastUpdate}</span>
+                </div>
+                ${vehicle.event ? `
+                    <div style="
+                        background: rgba(231, 76, 60, 0.2);
+                        color: #e74c3c;
+                        padding: 5px 8px;
+                        border-radius: 4px;
+                        margin-top: 8px;
+                        font-size: 11px;
+                        font-weight: bold;
+                        text-align: center;
+                    ">
+                        ⚠️ ${vehicle.event}
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+        }
+
+        function centerMapOnVehicles() {
+            const vehiclesWithPosition = vehicles.filter(v => v.lat != null && v.lng != null);
+
+            if (vehiclesWithPosition.length === 0) return;
+
+            if (vehiclesWithPosition.length === 1) {
+                map.setView([vehiclesWithPosition[0].lat, vehiclesWithPosition[0].lng], 15);
+            } else {
+                const bounds = L.latLngBounds(vehiclesWithPosition.map(v => [v.lat, v.lng]));
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
+
+        function renderVehicleList(filter = '', statusFilter = 'all') {
+            const list = document.getElementById('vehicleList');
+            if (!list) return;
+
+            list.innerHTML = '';
+
+            const filtered = vehicles.filter(v => {
+                const matchText = v.name.toLowerCase().includes(filter.toLowerCase()) ||
+                    v.plate.toLowerCase().includes(filter.toLowerCase()) ||
+                    (v.driver && v.driver.toLowerCase().includes(filter.toLowerCase()));
+                const matchStatus = statusFilter === 'all' || v.status === statusFilter;
+                return matchText && matchStatus;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--brand-silver);"><i class="fas fa-search" style="font-size:24px;margin-bottom:10px;opacity:0.5;"></i><br>Nenhum veículo encontrado.</div>';
+                return;
+            }
+
+            filtered.forEach((v, index) => {
+                const div = document.createElement('div');
+                div.className = 'vehicle-item' + (v.id === selectedVehicleId ? ' selected' : '');
+                div.style.animationDelay = (index * 0.05) + 's';
+                div.onclick = () => selectVehicle(v.id);
+
+                const statusColorMap = {
+                    active: 'var(--status-active)',
+                    idle: 'var(--status-idle)',
+                    off: 'var(--status-off)',
+                    alert: 'var(--status-alert)'
+                };
+
+                div.innerHTML = `
+            <div class="vi-top">
+                <span class="vi-status-dot" style="background:${statusColorMap[v.status] || '#999'};"></span>
+                <span class="vi-name">${v.name}</span>
+                <span class="vi-plate">${v.plate}</span>
+            </div>
+            <div class="vi-mid">
+                <span class="vi-driver"><i class="far fa-user" style="margin-right:3px;"></i> ${v.driver || '—'}</span>
+                ${v.event ? `<span class="vi-event-badge"><i class="fas fa-exclamation-triangle" style="margin-right:2px;"></i> ${v.event}</span>` : ''}
+            </div>
+            <div class="vi-bottom">
+                <span class="vi-location"><i class="fas fa-map-marker-alt" style="margin-right:3px;font-size:9px;"></i> 
+                    ${v.lat ? `${v.lat.toFixed(6)}, ${v.lng?.toFixed(6)}` : v.location}
+                </span>
+                <span class="vi-speed ${v.speed > v.maxSpeed ? 'speeding' : ''}">
+                    ${v.status === 'off' ? '—' : '<i class="fas fa-tachometer-alt" style="margin-right:2px;"></i> ' + v.speed + ' km/h'}
+                </span>
+            </div>
+            <div style="font-size:9px;color:var(--brand-silver);text-align:right;margin-top:2px;">
+                <i class="far fa-clock"></i> ${v.lastUpdate}
+            </div>
+        `;
+                list.appendChild(div);
+            });
+        }
+
+        function updateStats() {
+            const active = vehicles.filter(v => v.status === 'active').length;
+            const idle = vehicles.filter(v => v.status === 'idle').length;
+            const off = vehicles.filter(v => v.status === 'off').length;
+            const alert = vehicles.filter(v => v.event).length;
+
+            document.getElementById('countAll').textContent = vehicles.length;
+            document.getElementById('countActive').textContent = active;
+            document.getElementById('countIdle').textContent = idle;
+            document.getElementById('countOff').textContent = off;
+
+            // Adicionar contador de alertas se existir
+            const alertPill = document.querySelector('.stat-pill[onclick*="alert"]');
+            if (alertPill) {
+                const alertNum = alertPill.querySelector('.stat-num');
+                if (alertNum) alertNum.textContent = alert;
+            }
+        }
+
+        function selectVehicle(id) {
+            selectedVehicleId = id;
+            renderVehicleList(
+                document.getElementById('vehicleSearch')?.value || '',
+                currentStatusFilter
+            );
+
+            const vehicle = vehicles.find(v => v.id === id);
+            if (!vehicle) return;
+
+            // Centralizar mapa no veículo selecionado
+            if (vehicle.lat && vehicle.lng) {
+                map.setView([vehicle.lat, vehicle.lng], 16);
+
+                // Abrir popup
+                if (vehicleMarkers[vehicle.id]) {
+                    vehicleMarkers[vehicle.id].openPopup();
+                }
+            }
+
+            showPopup(vehicle);
+        }
+
+        function filterByStatus(status, el) {
+            currentStatusFilter = status;
+            document.querySelectorAll('.stat-pill').forEach(p => p.classList.remove('active-filter'));
+            el.classList.add('active-filter');
+            renderVehicleList(
+                document.getElementById('vehicleSearch')?.value || '',
+                status
+            );
+
+            // Animate stats
+            const statNum = el.querySelector('.stat-num');
+            statNum.classList.add('loading');
+            setTimeout(() => statNum.classList.remove('loading'), 500);
+
+            showToast(`Filtrando: ${el.textContent.trim()}`);
+        }
+
+        function filterVehicles(q) {
+            renderVehicleList(q, currentStatusFilter);
+        }
+
+        function startTracking() {
+            setInterval(() => {
+                // Simulação de movimento aleatório (pequenos desvios lat/lng)
+                const moveLat = (Math.random() - 0.5) * 0.001;
+                const moveLng = (Math.random() - 0.5) * 0.001;
+
+                vehicleData.lat += moveLat;
+                vehicleData.lng += moveLng;
+                vehicleData.speed = Math.floor(Math.random() * (80 - 40 + 1)) + 40;
+
+                // Atualiza posição do marcador
+                const newPos = [vehicleData.lat, vehicleData.lng];
+                vehicleMarker.setLatLng(newPos);
+
+                // Faz o mapa seguir o veículo suavemente
+                map.panTo(newPos);
+
+                // Atualiza a barra de status e lista lateral
+                updateUI();
+            }, 3000); // Atualiza a cada 3 segundos
+        }
+
+        function updateUI() {
+            // Atualiza Relógio
+            const now = new Date();
+            document.getElementById('lastUpdate').innerHTML = `<i class="far fa-clock"></i> ${now.toLocaleTimeString()}`;
+
+            // Atualiza Lista Lateral (exemplo simplificado)
+            const list = document.getElementById('vehicleList');
+            list.innerHTML = `
+                <div class="vehicle-item selected">
+                    <div class="vi-top">
+                        <span class="vi-status-dot" style="background: var(--status-active);"></span>
+                        <span class="vi-name">${vehicleData.name}</span>
+                        <span class="vi-plate">${vehicleData.plate}</span>
+                    </div>
+                    <div class="vi-bottom">
+                        <span class="vi-location">Lat: ${vehicleData.lat.toFixed(4)}...</span>
+                        <span class="vi-speed"><i class="fas fa-tachometer-alt"></i> ${vehicleData.speed} km/h</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Funções de suporte que você já tinha
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.getElementById('mapArea').requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        const statusColor = {
+            active: 'var(--status-active)',
+            idle: 'var(--status-idle)',
+            off: 'var(--status-off)',
+        };
+
+
+
+        /* RENDER MAP MARKERS */
+        function renderMarkers() {
+            const container = document.getElementById('markersContainer');
+            container.innerHTML = '';
+            vehicles.forEach(v => {
+                const div = document.createElement('div');
+                div.className = 'vehicle-marker';
+                div.id = 'marker-' + v.id;
+                div.style.left = v.mapX + '%';
+                div.style.top = v.mapY + '%';
+                div.onclick = (e) => {
+                    e.stopPropagation();
+                    selectVehicle(v.id);
+                };
+
+                const borderColor = statusColor[v.status];
+                div.innerHTML = `
+                    <div class="marker-label">${v.plate}</div>
+                    <div class="marker-icon" style="background:${borderColor};border-color:${borderColor};">
+                        ${v.icon}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        /* SHOW POPUP */
+        function showPopup(v) {
+            const popup = document.getElementById('vehiclePopup');
+            document.getElementById('popupTitle').innerHTML = `<i class="fas fa-bus-alt" style="margin-right: 8px;"></i> ${v.name}`;
+
+            const speedClass = v.speed > v.maxSpeed ? 'red' : 'green';
+            const ignClass = v.ignition === 'Ligado' ? 'green' : '';
+
+            document.getElementById('popupBody').innerHTML = `
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-id-card" style="margin-right:5px;"></i> Placa</span>
+                    <span class="val">${v.plate}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-user" style="margin-right:5px;"></i> Motorista</span>
+                    <span class="val">${v.driver}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-tachometer-alt" style="margin-right:5px;"></i> Velocidade</span>
+                    <span class="val ${speedClass}">${v.status === 'off' ? '—' : v.speed + ' km/h'}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-key" style="margin-right:5px;"></i> Ignição</span>
+                    <span class="val ${ignClass}">${v.ignition}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-map-marker-alt" style="margin-right:5px;"></i> Localização</span>
+                    <span class="val" style="font-size:10.5px;">${v.location}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-road" style="margin-right:5px;"></i> Hodômetro</span>
+                    <span class="val">${v.odometer}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="lbl"><i class="far fa-clock" style="margin-right:5px;"></i> Atualização</span>
+                    <span class="val">${v.lastUpdate}</span>
+                </div>
+                ${v.event ? `
+                <div class="popup-row">
+                    <span class="lbl"><i class="fas fa-exclamation-triangle" style="margin-right:5px;"></i> Evento</span>
+                    <span class="val red">⚠ ${v.event}</span>
+                </div>` : ''}
+            `;
+
+            // Position popup near the marker
+            const marker = document.getElementById('marker-' + v.id);
+            const mapArea = document.getElementById('mapArea');
+            const mapRect = mapArea.getBoundingClientRect();
+            const markerRect = marker.getBoundingClientRect();
+
+            let left = markerRect.left - mapRect.left + 40;
+            let top = markerRect.top - mapRect.top - 20;
+
+            // Clamp so it doesn't go off map
+            if (left + 280 > mapRect.width) left = markerRect.left - mapRect.left - 290;
+            if (top + 320 > mapRect.height) top = mapRect.height - 330;
+            if (top < 0) top = 10;
+
+            popup.style.left = left + 'px';
+            popup.style.top = top + 'px';
+            popup.classList.add('show');
+        }
+
+        function closePopup() {
+            document.getElementById('vehiclePopup').classList.remove('show');
+            selectedVehicleId = null;
+            renderVehicleList(
+                document.getElementById('vehicleSearch').value,
+                currentStatusFilter
+            );
+            // Reset markers
+            document.querySelectorAll('.vehicle-marker').forEach(m => {
+                m.style.transform = 'scale(1)';
+                m.style.zIndex = '20';
+            });
+        }
+
+        /* MAP TYPE */
+        function setMapType(btn) {
+            document.querySelectorAll('.map-type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            showToast('Mapa alterado para: ' + btn.textContent.trim());
+
+            // Change map background based on type
+            const mapBg = document.querySelector('.map-bg');
+            const type = btn.textContent.trim();
+
+            mapBg.style.animation = 'none';
+            mapBg.offsetHeight; // Trigger reflow
+            mapBg.style.animation = 'scrollGrid 20s linear infinite';
+
+            if (type.includes('Satélite')) {
+                mapBg.style.backgroundColor = '#1a3a2a';
+            } else if (type.includes('Tráfego')) {
+                mapBg.style.backgroundColor = '#2a1a1a';
+            } else {
+                mapBg.style.backgroundColor = 'var(--map-bg)';
+            }
+        }
+
+        /* EVENT FILTER */
+        function toggleEvent(btn) {
+            btn.classList.toggle('active');
+            const eventName = btn.textContent.trim();
+            if (btn.classList.contains('active')) {
+                showToast(`Filtro "${eventName}" ativado`);
+                btn.style.animation = 'pulse 0.5s';
+                setTimeout(() => btn.style.animation = '', 500);
+            } else {
+                showToast(`Filtro "${eventName}" desativado`);
+            }
+        }
+
+        /* LOCATION PANEL */
+        function toggleLocationPanel() {
+            const panel = document.getElementById('locationPanel');
+            panel.classList.toggle('show');
+            if (panel.classList.contains('show')) {
+                showToast('Painel de localizações aberto');
+            }
+        }
+
+        /* FULLSCREEN */
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen?.();
+                document.getElementById('btnFullscreen').innerHTML = '<i class="fas fa-compress"></i>';
+                showToast('Modo tela cheia ativado');
+            } else {
+                document.exitFullscreen?.();
+                document.getElementById('btnFullscreen').innerHTML = '<i class="fas fa-expand"></i>';
+                showToast('Modo tela cheia desativado');
+            }
+        }
+
+        function showToast(msg, duration = 3000) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+
+            toast.innerHTML = msg;
+            toast.style.display = 'block';
+
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                toast.style.display = 'none';
+            }, duration);
+        }
+
+        /* ORGANIZATION CHANGE */
+        function changeOrganization(select) {
+            showToast('Organização alterada: ' + select.value);
+
+            // Animate vehicles
+            vehicles.forEach(v => {
+                v.mapX = 20 + Math.random() * 60;
+                v.mapY = 20 + Math.random() * 60;
+            });
+            renderMarkers();
+            renderVehicleList(
+                document.getElementById('vehicleSearch').value,
+                currentStatusFilter
+            );
+        }
+
+        /* LIVE CLOCK */
+        function updateClock() {
+            const now = new Date();
+            const hms = now.toTimeString().slice(0, 8);
+            document.getElementById('lastUpdate').innerHTML = '<i class="far fa-clock" style="margin-right: 4px;"></i> ' + hms;
+        }
+        setInterval(updateClock, 1000);
+
+        /* ANIMATE ACTIVE MARKERS (simulate movement) */
+        function startAnimations() {
+            if (animationInterval) clearInterval(animationInterval);
+
+            animationInterval = setInterval(() => {
+                vehicles.forEach(v => {
+                    if (v.status !== 'active') return;
+
+                    // Smooth movement
+                    const dx = (Math.random() - 0.5) * 0.8;
+                    const dy = (Math.random() - 0.5) * 0.8;
+                    v.mapX = Math.min(90, Math.max(5, v.mapX + dx));
+                    v.mapY = Math.min(85, Math.max(10, v.mapY + dy));
+
+                    const marker = document.getElementById('marker-' + v.id);
+                    if (marker) {
+                        marker.style.left = v.mapX + '%';
+                        marker.style.top = v.mapY + '%';
+
+                        // Add bounce effect
+                        marker.style.transform = 'scale(1.1)';
+                        setTimeout(() => {
+                            if (marker) marker.style.transform = '';
+                        }, 200);
+                    }
+
+                    // Vary speed with smooth transitions
+                    const speedChange = (Math.random() - 0.5) * 5;
+                    v.speed = Math.max(10, Math.min(v.maxSpeed + 10, v.speed + speedChange));
+
+                    // Random events
+                    if (Math.random() < 0.05) { // 5% chance to trigger event
+                        const events = ['Acel. Brusca', 'Frenagem Brusca', 'Curva Brusca', 'Exc. Velocidade'];
+                        v.event = events[Math.floor(Math.random() * events.length)];
+                        setTimeout(() => { v.event = null; }, 5000);
+                    }
+                });
+
+                // Refresh list without resetting scroll
+                renderVehicleList(
+                    document.getElementById('vehicleSearch').value,
+                    currentStatusFilter
+                );
+
+                // Update marker positions in popup if open
+                if (selectedVehicleId) {
+                    const selected = vehicles.find(v => v.id === selectedVehicleId);
+                    if (selected) {
+                        const popup = document.getElementById('vehiclePopup');
+                        if (popup.classList.contains('show')) {
+                            showPopup(selected);
+                        }
+                    }
+                }
+            }, 2000);
+        }
+
+        /* ADD RANDOM WEATHER EFFECT */
+        function createWeatherEffect() {
+            const mapArea = document.getElementById('mapArea');
+            const weatherEl = document.createElement('div');
+            weatherEl.style.position = 'absolute';
+            weatherEl.style.top = '0';
+            weatherEl.style.left = '0';
+            weatherEl.style.right = '0';
+            weatherEl.style.bottom = '0';
+            weatherEl.style.pointerEvents = 'none';
+            weatherEl.style.zIndex = '5';
+            weatherEl.style.background = 'linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 100%)';
+            weatherEl.style.animation = 'fadeInOut 3s ease-in-out';
+            mapArea.appendChild(weatherEl);
+
+            setTimeout(() => weatherEl.remove(), 3000);
+        }
+
+        /* Trigger random weather every 30 seconds */
+        setInterval(createWeatherEffect, 30000);
+
+        /* INIT */
+        renderVehicleList();
+        renderMarkers();
+        updateStats();
+        startAnimations();
+    </script>
+
+    </body>
+
+</html>
+
+
+
+
+
+
+
+
+

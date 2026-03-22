@@ -1,5 +1,6 @@
 :root {
-    --brand-orange: #f26522;
+    --brand-orange: #BE6004;
+    --brand-orange-gradient: #BE6004;
     --brand-silver: #9e9e9e;
     --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
@@ -68,101 +69,85 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Breadcrumb / Tabs - Adaptado para Track7 */
+/* Estilos do breadcrumb igual ao reports.html */
 .breadcrumb-bar {
-    background: var(--panel-bg);
-    padding: 0 24px;
-    border-bottom: 1px solid var(--border-color);
-    font-size: 13px;
     display: flex;
-    align-items: stretch;
-    gap: 0;
-    height: 42px;
-    position: relative;
-    z-index: 100;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 56px;
+    background: var(--card-bg-solid);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 24px;
+    animation: slideInDown 0.5s ease-out;
 }
 
 .breadcrumb-bar .tab {
-    display: flex;
-    align-items: center;
-    padding: 0 18px;
-    color: var(--brand-silver);
-    font-size: 13px;
+    padding: 8px 16px;
     cursor: pointer;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -1px;
-    white-space: nowrap;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 6px;
     transition: all 0.3s ease;
     position: relative;
-    overflow: hidden;
-}
-
-.breadcrumb-bar .tab::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 3px;
-    background: var(--brand-orange);
-    transition: width 0.3s ease;
 }
 
 .breadcrumb-bar .tab:hover {
     color: var(--brand-orange);
-}
-
-.breadcrumb-bar .tab:hover::after {
-    width: 100%;
+    background: var(--hover-bg);
+    border-bottom: 2px solid var(--brand-orange);
 }
 
 .breadcrumb-bar .tab.active {
     color: var(--brand-orange);
-    font-weight: 600;
+    background: var(--hover-bg);
 }
 
-.breadcrumb-bar .tab.active::after {
-    width: 0;
-}
-
-.breadcrumb-bar .tab.active:hover::after {
-    width: 0%;
-}
-
-.breadcrumb-bar .org-selector {
-    margin-left: auto;
+/* Seletor de organização igual ao reports.html */
+.org-selector {
     display: flex;
     align-items: center;
-    font-size: 12px;
-    color: var(--brand-silver);
-    gap: 5px;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
 }
 
-.breadcrumb-bar .org-selector select {
-    border: 1px solid var(--border-color);
-    outline: none;
-    font-size: 12px;
-    color: var(--brand-orange);
+.org-selector span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.org-selector select {
     background: var(--input-bg);
-    cursor: pointer;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 6px 30px 6px 12px;
+    color: var(--text-primary);
+    font-size: 13px;
     font-weight: 500;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: all 0.3s ease;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f26522' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+    min-width: 250px;
 }
 
-.breadcrumb-bar .org-selector select:hover {
+.org-selector select:focus {
     border-color: var(--brand-orange);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(242, 101, 34, 0.2);
+    box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.1);
 }
 
 .layout {
     display: flex;
-    height: calc(100vh - 117px);
-    /* 75px (nav) + 42px (tabs) */
+    height: calc(100vh - 180px);
+    gap: 15px;
     position: relative;
+    align-items: stretch;
 }
 
 /* SIDEBAR */
@@ -440,9 +425,8 @@ body {
 /* REPORT GRID */
 .report-grid {
     display: grid;
-    /* Aumentado o minmax para os cards ficarem mais largos ou caberem mais na linha */
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
 }
 
 .category-block {
@@ -1354,7 +1338,7 @@ body.theme-light {
     --border-color: #dddddd;
     --map-bg: #f0f0f0;
     --brand-silver: #999999;
-    --brand-orange: #f26522;
+    --brand-orange: #BE6004;
     --status-active: #27ae60;
     --status-idle: #f39c12;
     --status-off: #95a5a6;
@@ -1371,23 +1355,12 @@ body.theme-dark {
     --border-color: #404040;
     --map-bg: #1e1e1e;
     --brand-silver: #808080;
-    --brand-orange: #f26522;
+    --brand-orange: #BE6004;
     --status-active: #27ae60;
     --status-idle: #f39c12;
     --status-off: #7f8c8d;
     --status-alert: #e74c3c;
     --timeline-bg: rgba(255, 255, 255, 0.1);
-}
-
-/* Breadcrumb bar atualizada */
-.breadcrumb-bar {
-    height: 48px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
-    display: flex;
-    align-items: center;
-    padding: 0 24px;
-    gap: 20px;
 }
 
 .tab {
@@ -1402,6 +1375,10 @@ body.theme-dark {
 
 .tab:hover {
     color: var(--brand-orange);
+    border-bottom-color: var(--brand-orange);
+    /* Faz a linha laranja aparecer no hover */
+    background: var(--hover-bg);
+    /* Adiciona o fundo suave */
 }
 
 .tab.active {

@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../../public/img/meet360.png">
+    <title>Track7 - Motoristas</title>
+    <link rel="stylesheet" href="../global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../../components/topnav.js"></script>
+    <style>
+        /* ==================== LAYOUT PRINCIPAL ==================== */
+        .drivers-container-page {
+            padding: 0px 0px 30px 0px;
+            max-width: 1600px;
+            margin: 0 auto;
+            animation: fadeInScale 0.5s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .layout {
+            display: flex;
+            height: calc(100vh - 180px);
+            gap: 15px;
+            position: relative;
+            align-items: stretch;
+            margin-left: 30px;
+        }
+
+        /* ==================== SIDEBAR (mesmo formato do live-tracking) ==================== */
+        .filters-panel {
+            width: 350px;
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .filters-panel:hover {
+            border-color: rgba(242, 101, 34, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-box {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            animation: fadeIn 0.7s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-box i {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+            outline: none;
+        }
+
+        /* Área rolável da sidebar */
+        .filters-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .filters-content::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .filters-content::-webkit-scrollbar-track {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .filters-content::-webkit-scrollbar-thumb {
+            background: var(--brand-orange);
+            border-radius: 4px;
+        }
+
+        /* Seções da sidebar */
+        .filters-section {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--brand-orange);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title i {
+            font-size: 12px;
+        }
+
+        /* Status filters - chips estilo live-tracking */
+        .status-filters {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+            font-size: 13px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+        }
+
+        .filter-chip:hover {
+            background: rgba(242, 101, 34, 0.1);
+            transform: translateX(5px);
+            border-color: var(--brand-orange);
+        }
+
+        .filter-chip.active {
+            background: linear-gradient(135deg, rgba(242, 101, 34, 0.15), rgba(242, 101, 34, 0.05));
+            color: var(--brand-orange);
+            border-color: var(--brand-orange);
+        }
+
+        .filter-chip .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .filter-chip .count {
+            margin-left: auto;
+            font-size: 11px;
+            background: var(--border-color);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        /* Selects e inputs */
+        .filter-select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+        }
+
+        /* Botão limpar filtros */
+        .btn-clear {
+            width: 100%;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            color: var(--brand-silver);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .btn-clear:hover {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+            transform: translateY(-2px);
+        }
+
+        /* Stats da sidebar */
+        .sidebar-stats {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            background: var(--sidebar-header-bg);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--brand-silver);
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .stat-item i {
+            color: var(--brand-orange);
+            width: 20px;
+        }
+
+        /* Localize e altere este bloco */
+        .main-content {
+            flex: 1;
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            /* Mantém a toolbar fixa no topo */
+            transition: all 0.3s ease;
+            margin-right: 30px;
+            height: 100%;
+            /* Garante que ocupe a altura do .layout */
+            min-height: 0;
+            /* Permite que o conteúdo interno role */
+        }
+
+        .main-content:hover {
+            border-color: rgba(242, 101, 34, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Toolbar */
+        .content-toolbar {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--toolbar-bg);
+        }
+
+        .toolbar-search {
+            flex: 1;
+            position: relative;
+            max-width: 350px;
+        }
+
+        .toolbar-search i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--brand-silver);
+            font-size: 14px;
+        }
+
+        .toolbar-search input {
+            width: 100%;
+            padding: 10px 14px 10px 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .toolbar-search input:focus {
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+            outline: none;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--brand-orange), #ff8c52);
+            border: none;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(242, 101, 34, 0.4);
+        }
+
+        .btn-secondary {
+            padding: 10px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+            transform: translateY(-1px);
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .btn-icon:hover {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+            transform: scale(1.05);
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            margin: 0;
+            height: 3px;
+            background: var(--border-color);
+            display: none;
+        }
+
+        .progress-bar.show {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--brand-orange), #ff8c52);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .drivers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            animation: fadeIn 0.5s ease-out;
+            align-content: start;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .driver-card {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .driver-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--brand-orange);
+            box-shadow: 0 4px 12px rgba(190, 96, 4, 0.2);
+        }
+
+
+        .driver-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(242, 101, 34, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .driver-avatar i {
+            font-size: 20px;
+            color: var(--brand-orange);
+        }
+
+        .driver-status {
+            margin-left: auto;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+        }
+
+        .status-inactive {
+            background: rgba(149, 165, 166, 0.2);
+            color: #95a5a6;
+        }
+
+        .status-break {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+        }
+
+        .card-body {
+            padding: 10px 12px;
+        }
+
+        .driver-name {
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .driver-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .driver-category {
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+
+        .category-efetivo {
+            background: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+        }
+
+        .category-terceirizado {
+            background: rgba(52, 152, 219, 0.2);
+            color: #3498db;
+        }
+
+        .category-treinee {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+        }
+
+        .category-afastado {
+            background: rgba(149, 165, 166, 0.2);
+            color: #95a5a6;
+        }
+
+        .driver-cpf {
+            font-size: 9px;
+            color: var(--brand-silver);
+        }
+
+        .driver-vehicle,
+        .driver-contact {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+
+
+        .driver-vehicle i,
+        .driver-contact i {
+            color: var(--brand-orange);
+            width: 14px;
+            font-size: 10px;
+        }
+
+        .card-footer {
+            padding: 8px 12px;
+            background: var(--sidebar-header-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+
+        .driver-score {
+            text-align: center;
+        }
+
+        .score-value {
+            font-size: 14px;
+            font-weight: 800;
+            display: block;
+            line-height: 1.2;
+        }
+
+
+        .card-header {
+            padding: 10px 12px;
+            background: var(--sidebar-header-bg);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .score-label {
+            font-size: 8px;
+            color: var(--brand-silver);
+            text-transform: uppercase;
+        }
+
+        .driver-trips {
+            font-size: 10px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .driver-card:hover .card-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--card-bg-solid);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+        }
+
+        .action-btn:hover {
+            background: var(--brand-orange);
+            color: white;
+            border-color: var(--brand-orange);
+        }
+
+        /* ==================== TABLE VIEW ==================== */
+        .drivers-table-container {
+            overflow-x: auto;
+            border-radius: 16px;
+        }
+
+        .drivers-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            min-width: 1000px;
+        }
+
+        .drivers-table th {
+            background: var(--sidebar-header-bg);
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--brand-orange);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .drivers-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .drivers-table tbody tr:hover td {
+            background: rgba(242, 101, 34, 0.05);
+        }
+
+        .driver-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .driver-cell i {
+            font-size: 28px;
+            color: var(--brand-orange);
+        }
+
+        .driver-cell small {
+            color: var(--brand-silver);
+            font-size: 10px;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .score-bar {
+            width: 100px;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 3px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .score-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .score-bar span {
+            position: absolute;
+            right: -40px;
+            top: -4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .table-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-icon:hover {
+            background: var(--brand-orange);
+            color: white;
+            border-color: var(--brand-orange);
+        }
+
+        /* ==================== PAGINAÇÃO ==================== */
+        .pagination {
+            padding: 16px 20px;
+            border-top: 1px solid var(--border-color);
+            background: var(--toolbar-bg);
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .page-btn {
+            min-width: 38px;
+            height: 38px;
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+            transform: translateY(-1px);
+        }
+
+        .page-btn.active {
+            background: linear-gradient(135deg, var(--brand-orange), #ff8c52);
+            color: white;
+            border-color: var(--brand-orange);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .page-dots {
+            color: var(--brand-silver);
+            padding: 0 5px;
+        }
+
+        /* ==================== EMPTY STATE ==================== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--brand-silver);
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        /* ==================== MODAL ==================== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--modal-bg);
+            border-radius: 24px;
+            width: 700px;
+            max-width: 95vw;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            animation: modalSlideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-lg {
+            width: 900px;
+        }
+
+        @keyframes modalSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            padding: 18px 24px;
+            background: var(--modal-header-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--brand-orange);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .modal-close:hover {
+            background: var(--hover-bg);
+            color: var(--brand-orange);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(85vh - 130px);
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: var(--modal-header-bg);
+        }
+
+        /* Formulário */
+        .form-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .form-group.full-width {
+            flex: 0 0 100%;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--brand-silver);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group label i {
+            margin-right: 5px;
+            color: var(--brand-orange);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        /* Detalhes */
+        .details-container {
+            padding: 0;
+        }
+
+        .details-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .driver-avatar-large {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(242, 101, 34, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .driver-avatar-large i {
+            font-size: 56px;
+            color: var(--brand-orange);
+        }
+
+        .driver-title h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .driver-badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .category-badge {
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--hover-bg);
+            color: var(--brand-orange);
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .details-section {
+            background: var(--hover-bg);
+            border-radius: 16px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .details-section.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .details-section h4 {
+            font-size: 13px;
+            color: var(--brand-orange);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .detail-row {
+            display: flex;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .detail-label {
+            width: 100px;
+            color: var(--brand-silver);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            flex: 1;
+            color: var(--text-primary);
+        }
+
+        .detail-value.expired {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .detail-value.warning {
+            color: #f39c12;
+            font-weight: 600;
+        }
+
+        .medical-notes {
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--brand-orange);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 2100;
+            box-shadow: 0 8px 20px rgba(242, 101, 34, 0.4);
+            animation: toastSlide 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        @keyframes toastSlide {
+            from {
+                opacity: 0;
+                transform: translateX(50px) scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--sidebar-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-orange);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff8c52;
+        }
+
+        .drivers-container {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px;
+            min-height: 0;
+        }
+
+        .drivers-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .drivers-container::-webkit-scrollbar-track {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .drivers-container::-webkit-scrollbar-thumb {
+            background: var(--brand-orange);
+            border-radius: 4px;
+        }
+
+        .drivers-container::-webkit-scrollbar-thumb:hover {
+            background: #ff8c52;
+        }
+    </style>
+</head>
+
+<body class="theme-dark">
+    <top-navigation></top-navigation>
+
+    <div class="drivers-container-page">
+        <!-- Breadcrumb bar igual ao live-tracking -->
+        <div class="breadcrumb-bar">
+            <div style="display: flex; gap: 8px;">
+                <span class="tab active">
+                    <i class="fas fa-users" style="margin-right: 6px;"></i> Motoristas
+                </span>
+            </div>
+
+            <div class="org-selector">
+                <span><i class="far fa-building"></i> Organização:</span>
+                <select id="orgSelector" onchange="changeOrganization(this)">
+                    <option value="1">Track7 BR - Betânia</option>
+                    <option value="2">Track7 BR - Sul</option>
+                    <option value="3">Track7 BR - Norte</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="layout">
+            <!-- Sidebar - mesmo formato do live-tracking -->
+            <aside class="filters-panel">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="sidebarSearch" placeholder="Buscar motorista..."
+                        oninput="searchDrivers(this.value)">
+                </div>
+
+                <div class="filters-content">
+                    <div class="filters-section">
+                        <div class="section-title">
+                            <i class="fas fa-circle"></i> Status
+                        </div>
+                        <div class="status-filters">
+                            <div class="filter-chip active" onclick="filterByStatus('all', this)">
+                                <span class="dot" style="background: var(--brand-silver);"></span>
+                                Todos
+                                <span class="count" id="countAll">24</span>
+                            </div>
+                            <div class="filter-chip" onclick="filterByStatus('active', this)">
+                                <span class="dot" style="background: #27ae60;"></span>
+                                Ativos
+                                <span class="count" id="countActive">18</span>
+                            </div>
+                            <div class="filter-chip" onclick="filterByStatus('inactive', this)">
+                                <span class="dot" style="background: #95a5a6;"></span>
+                                Inativos
+                                <span class="count" id="countInactive">4</span>
+                            </div>
+                            <div class="filter-chip" onclick="filterByStatus('on_break', this)">
+                                <span class="dot" style="background: #f39c12;"></span>
+                                Em Pausa
+                                <span class="count" id="countBreak">2</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filters-section">
+                        <div class="section-title">
+                            <i class="fas fa-tag"></i> Categoria
+                        </div>
+                        <select class="filter-select" id="categoryFilter" onchange="filterByCategory(this.value)">
+                            <option value="all">Todas as categorias</option>
+                            <option value="efetivo">Efetivo</option>
+                            <option value="terceirizado">Terceirizado</option>
+                            <option value="treinee">Treinee</option>
+                            <option value="afastado">Afastado</option>
+                        </select>
+                    </div>
+
+                    <div class="filters-section">
+                        <div class="section-title">
+                            <i class="fas fa-truck"></i> Veículo Associado
+                        </div>
+                        <select class="filter-select" id="vehicleFilter" onchange="filterByVehicle(this.value)">
+                            <option value="all">Todos os veículos</option>
+                            <option value="with">Com veículo</option>
+                            <option value="without">Sem veículo</option>
+                        </select>
+                    </div>
+
+                    <div class="filters-section">
+                        <div class="section-title">
+                            <i class="fas fa-calendar-alt"></i> Período de Admissão
+                        </div>
+                        <input type="month" id="hireMonth" class="filter-input" placeholder="Mês/Ano"
+                            onchange="filterByHireMonth(this.value)">
+                    </div>
+
+                    <div class="filters-section">
+                        <button class="btn-clear" onclick="clearFilters()">
+                            <i class="fas fa-eraser"></i> Limpar Filtros
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-users"></i>
+                        <span id="totalDrivers">24 motoristas</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-truck"></i>
+                        <span id="assignedDrivers">18 com veículo</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <!-- Toolbar -->
+                <div class="content-toolbar">
+                    <div class="toolbar-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="mainSearch" placeholder="Buscar motorista por nome, CPF, CNH..."
+                            oninput="syncSearch(this.value)">
+                    </div>
+
+                    <div class="toolbar-actions">
+                        <button class="btn-primary" onclick="openDriverModal()">
+                            <i class="fas fa-plus"></i> Novo Motorista
+                        </button>
+                        <button class="btn-secondary" onclick="exportDrivers()">
+                            <i class="fas fa-download"></i> Exportar
+                        </button>
+                        <button class="btn-icon" onclick="toggleViewMode()" title="Alternar visualização">
+                            <i class="fas fa-th-large" id="viewModeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+
+                <!-- Drivers Container -->
+                <div class="drivers-container" id="driversContainer">
+                    <!-- Populado via JS -->
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="pagination"></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL DE MOTORISTA -->
+    <div class="modal-overlay" id="driverModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle"><i class="fas fa-user-plus"></i> <span>Novo Motorista</span></h2>
+                <button class="modal-close" onclick="closeDriverModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="driverForm" onsubmit="saveDriver(event)">
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label><i class="fas fa-user"></i> Nome Completo *</label>
+                            <input type="text" id="driverName" class="form-control" required
+                                placeholder="Digite o nome completo">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-id-card"></i> CPF *</label>
+                            <input type="text" id="driverCpf" class="form-control" required
+                                placeholder="000.000.000-00">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-id-card"></i> CNH *</label>
+                            <input type="text" id="driverCnh" class="form-control" required placeholder="00000000000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar"></i> Data de Nascimento</label>
+                            <input type="date" id="driverBirth" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-check"></i> Data de Admissão</label>
+                            <input type="date" id="driverHireDate" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-tag"></i> Categoria</label>
+                            <select id="driverCategory" class="form-control">
+                                <option value="efetivo">Efetivo</option>
+                                <option value="terceirizado">Terceirizado</option>
+                                <option value="treinee">Treinee</option>
+                                <option value="afastado">Afastado</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-truck"></i> Veículo Associado</label>
+                            <select id="driverVehicle" class="form-control">
+                                <option value="">Nenhum</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-envelope"></i> E-mail</label>
+                            <input type="email" id="driverEmail" class="form-control" placeholder="email@exemplo.com">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-phone"></i> Telefone</label>
+                            <input type="tel" id="driverPhone" class="form-control" placeholder="(00) 00000-0000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label><i class="fas fa-map-marker-alt"></i> Endereço</label>
+                            <input type="text" id="driverAddress" class="form-control"
+                                placeholder="Rua, número, bairro, cidade">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><i class="fas fa-toggle-on"></i> Status</label>
+                            <select id="driverStatus" class="form-control">
+                                <option value="active">Ativo</option>
+                                <option value="inactive">Inativo</option>
+                                <option value="on_break">Em Pausa</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-alt"></i> Validade CNH</label>
+                            <input type="date" id="driverCnhExpiry" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label><i class="fas fa-stethoscope"></i> Observações Médicas</label>
+                            <textarea id="driverMedical" class="form-control" rows="2"
+                                placeholder="Restrições médicas, exames..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeDriverModal()">Cancelar</button>
+                <button class="btn-primary" onclick="document.getElementById('driverForm').submit()">
+                    <i class="fas fa-save"></i> Salvar Motorista
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE DETALHES -->
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal modal-lg">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-circle"></i> <span id="detailsName">Detalhes do Motorista</span></h2>
+                <button class="modal-close" onclick="closeDetailsModal()">×</button>
+            </div>
+            <div class="modal-body" id="detailsBody"></div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeDetailsModal()">Fechar</button>
+                <button class="btn-primary" onclick="editFromDetails()"><i class="fas fa-edit"></i> Editar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">Operação realizada!</div>
+
+    <script>
+        // ==================== DADOS ====================
+        const vehicles = [
+            { id: 1, name: '1658 - M.B. OF 1722', plate: 'ABC-1D34' },
+            { id: 2, name: '1659 - M.B. OF 1418', plate: 'DEF-5E78' },
+            { id: 3, name: '3000 - M.B. OF 1722', plate: 'GHI-9F12' },
+            { id: 4, name: '3001 - VW 17-230 OD', plate: 'JKL-3G56' },
+            { id: 5, name: '3002 - Scania R 450', plate: 'MNO-7H90' },
+            { id: 6, name: '3003 - Volvo FH 460', plate: 'PQR-1I22' },
+            { id: 7, name: '3004 - Ford Cargo 2429', plate: 'STU-3J44' },
+            { id: 8, name: '3005 - Iveco Daily 70C17', plate: 'VWX-5K66' }
+        ];
+
+        const driversData = [
+            { id: 1, name: 'Carlos Antonio da Silva', cpf: '123.456.789-00', cnh: '12345678900', birth: '1985-03-15', hireDate: '2020-01-10', category: 'efetivo', vehicleId: 1, email: 'carlos.silva@email.com', phone: '(35) 98765-4321', address: 'Rua das Flores, 123 - Centro, Santa Rita do Sapucaí - MG', status: 'active', cnhExpiry: '2025-03-15', medical: 'Sem restrições', score: 98, totalTrips: 1245, accidents: 0, infractions: 2 },
+            { id: 2, name: 'Maria Aparecida Oliveira', cpf: '987.654.321-00', cnh: '98765432100', birth: '1990-07-22', hireDate: '2021-03-05', category: 'efetivo', vehicleId: 2, email: 'maria.oliveira@email.com', phone: '(35) 97654-3210', address: 'Av. Brasil, 500 - Jardim América, Pouso Alegre - MG', status: 'active', cnhExpiry: '2026-07-22', medical: 'Sem restrições', score: 95, totalTrips: 876, accidents: 1, infractions: 0 },
+            { id: 3, name: 'João Pedro Santos', cpf: '456.789.123-00', cnh: '45678912300', birth: '1982-11-30', hireDate: '2019-06-15', category: 'efetivo', vehicleId: 3, email: 'joao.santos@email.com', phone: '(35) 96543-2109', address: 'Rua XV de Novembro, 300 - Centro, Itajubá - MG', status: 'active', cnhExpiry: '2024-11-30', medical: 'Uso de óculos', score: 92, totalTrips: 1567, accidents: 2, infractions: 5 },
+            { id: 4, name: 'Ana Beatriz Lima', cpf: '789.123.456-00', cnh: '78912345600', birth: '1995-09-18', hireDate: '2022-01-20', category: 'treinee', vehicleId: 4, email: 'ana.lima@email.com', phone: '(35) 95432-1098', address: 'Rua Tiradentes, 150 - São João, Campanha - MG', status: 'active', cnhExpiry: '2027-09-18', medical: 'Sem restrições', score: 88, totalTrips: 234, accidents: 0, infractions: 1 },
+            { id: 5, name: 'Pedro Henrique Costa', cpf: '321.654.987-00', cnh: '32165498700', birth: '1978-05-12', hireDate: '2018-08-01', category: 'efetivo', vehicleId: 5, email: 'pedro.costa@email.com', phone: '(35) 94321-0987', address: 'Rua Coronel Pedro, 80 - Centro, São Lourenço - MG', status: 'active', cnhExpiry: '2025-05-12', medical: 'Diabetes controlada', score: 90, totalTrips: 1890, accidents: 1, infractions: 3 },
+            { id: 6, name: 'Luciana Ferreira', cpf: '654.987.321-00', cnh: '65498732100', birth: '1988-12-03', hireDate: '2020-11-10', category: 'efetivo', vehicleId: null, email: 'luciana.ferreira@email.com', phone: '(35) 93210-9876', address: 'Av. Dona Luiza, 200 - Centro, Caxambu - MG', status: 'on_break', cnhExpiry: '2026-12-03', medical: 'Sem restrições', score: 85, totalTrips: 654, accidents: 0, infractions: 2 },
+            { id: 7, name: 'Roberto Alves', cpf: '159.753.486-00', cnh: '15975348600', birth: '1975-08-25', hireDate: '2017-04-03', category: 'efetivo', vehicleId: 6, email: 'roberto.alves@email.com', phone: '(35) 92109-8765', address: 'Rua Benedito Valadares, 400 - Centro, Três Corações - MG', status: 'active', cnhExpiry: '2024-08-25', medical: 'Hipertensão controlada', score: 87, totalTrips: 2100, accidents: 3, infractions: 8 },
+            { id: 8, name: 'Fernanda Souza', cpf: '753.951.852-00', cnh: '75395185200', birth: '1992-02-14', hireDate: '2021-09-15', category: 'terceirizado', vehicleId: 7, email: 'fernanda.souza@email.com', phone: '(35) 91098-7654', address: 'Rua das Acácias, 75 - São Dimas, São Paulo - SP', status: 'active', cnhExpiry: '2027-02-14', medical: 'Sem restrições', score: 94, totalTrips: 543, accidents: 0, infractions: 1 },
+            { id: 9, name: 'Marcos Vinicius', cpf: '852.456.123-00', cnh: '85245612300', birth: '1980-06-19', hireDate: '2019-12-01', category: 'efetivo', vehicleId: 8, email: 'marcos.vinicius@email.com', phone: '(35) 90987-6543', address: 'Rua Ouro Preto, 250 - Funcionários, Belo Horizonte - MG', status: 'active', cnhExpiry: '2025-06-19', medical: 'Sem restrições', score: 91, totalTrips: 1432, accidents: 1, infractions: 4 },
+            { id: 10, name: 'Patrícia Gomes', cpf: '357.159.486-00', cnh: '35715948600', birth: '1983-10-08', hireDate: '2020-07-22', category: 'efetivo', vehicleId: null, email: 'patricia.gomes@email.com', phone: '(35) 99876-5432', address: 'Rua das Palmeiras, 320 - Centro, Varginha - MG', status: 'inactive', cnhExpiry: '2023-10-08', medical: 'Licença médica', score: 0, totalTrips: 765, accidents: 2, infractions: 3 }
+        ];
+
+        // ==================== VARIÁVEIS GLOBAIS ====================
+        let drivers = [];
+        let filteredDrivers = [];
+        let currentViewMode = 'grid';
+        let currentPage = 1;
+        let itemsPerPage = 24;
+        let selectedDriverId = null;
+        let currentFilters = {
+            status: 'all',
+            category: 'all',
+            vehicle: 'all',
+            search: '',
+            hireMonth: ''
+        };
+
+        // ==================== INICIALIZAÇÃO ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = `theme-${savedTheme}`;
+            loadDrivers();
+            populateVehicleSelect();
+        });
+
+        document.addEventListener('themeChanged', (e) => {
+            document.body.className = `theme-${e.detail.theme}`;
+        });
+
+        function loadDrivers() {
+            drivers = [...driversData];
+            filteredDrivers = [...drivers];
+            updateStats();
+            renderDrivers();
+        }
+
+        function populateVehicleSelect() {
+            const select = document.getElementById('driverVehicle');
+            select.innerHTML = '<option value="">Nenhum</option>';
+            vehicles.forEach(v => {
+                const option = document.createElement('option');
+                option.value = v.id;
+                option.textContent = `${v.name} - ${v.plate}`;
+                select.appendChild(option);
+            });
+        }
+
+        // ==================== FILTROS ====================
+        function filterByStatus(status, element) {
+            if (element) {
+                document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+                element.classList.add('active');
+            }
+            currentFilters.status = status;
+            applyFilters();
+        }
+
+        function filterByCategory(category) {
+            currentFilters.category = category;
+            applyFilters();
+        }
+
+        function filterByVehicle(vehicle) {
+            currentFilters.vehicle = vehicle;
+            applyFilters();
+        }
+
+        function filterByHireMonth(month) {
+            currentFilters.hireMonth = month;
+            applyFilters();
+        }
+
+        function searchDrivers(query) {
+            currentFilters.search = query.toLowerCase();
+            document.getElementById('mainSearch').value = query;
+            applyFilters();
+        }
+
+        function syncSearch(value) {
+            currentFilters.search = value.toLowerCase();
+            document.getElementById('sidebarSearch').value = value;
+            applyFilters();
+        }
+
+        function clearFilters() {
+            currentFilters = {
+                status: 'all',
+                category: 'all',
+                vehicle: 'all',
+                search: '',
+                hireMonth: ''
+            };
+
+            document.querySelectorAll('.filter-chip').forEach(el => el.classList.remove('active'));
+            document.querySelector('.filter-chip[onclick*="all"]').classList.add('active');
+            document.getElementById('categoryFilter').value = 'all';
+            document.getElementById('vehicleFilter').value = 'all';
+            document.getElementById('hireMonth').value = '';
+            document.getElementById('sidebarSearch').value = '';
+            document.getElementById('mainSearch').value = '';
+
+            applyFilters();
+        }
+
+        function applyFilters() {
+            filteredDrivers = drivers.filter(driver => {
+                if (currentFilters.status !== 'all' && driver.status !== currentFilters.status) return false;
+                if (currentFilters.category !== 'all' && driver.category !== currentFilters.category) return false;
+                if (currentFilters.vehicle === 'with' && !driver.vehicleId) return false;
+                if (currentFilters.vehicle === 'without' && driver.vehicleId) return false;
+                if (currentFilters.search) {
+                    const searchStr = currentFilters.search.toLowerCase();
+                    const matches = driver.name.toLowerCase().includes(searchStr) ||
+                        driver.cpf.includes(searchStr) ||
+                        driver.cnh.includes(searchStr) ||
+                        (driver.email && driver.email.toLowerCase().includes(searchStr));
+                    if (!matches) return false;
+                }
+                if (currentFilters.hireMonth && driver.hireDate) {
+                    const hireDate = driver.hireDate.substring(0, 7);
+                    if (hireDate !== currentFilters.hireMonth) return false;
+                }
+                return true;
+            });
+
+            currentPage = 1;
+            renderDrivers();
+            updateStats();
+        }
+
+        function updateStats() {
+            const active = drivers.filter(d => d.status === 'active').length;
+            const inactive = drivers.filter(d => d.status === 'inactive').length;
+            const onBreak = drivers.filter(d => d.status === 'on_break').length;
+            const withVehicle = drivers.filter(d => d.vehicleId).length;
+
+            document.getElementById('countAll').textContent = drivers.length;
+            document.getElementById('countActive').textContent = active;
+            document.getElementById('countInactive').textContent = inactive;
+            document.getElementById('countBreak').textContent = onBreak;
+            document.getElementById('totalDrivers').textContent = `${drivers.length} motoristas`;
+            document.getElementById('assignedDrivers').textContent = `${withVehicle} com veículo`;
+        }
+
+        // ==================== RENDERIZAÇÃO ====================
+        function renderDrivers() {
+            const container = document.getElementById('driversContainer');
+
+            if (filteredDrivers.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-user-slash"></i>
+                        <h3>Nenhum motorista encontrado</h3>
+                        <p>Tente ajustar os filtros ou cadastrar um novo motorista.</p>
+                        <button class="btn-primary" onclick="openDriverModal()">
+                            <i class="fas fa-plus"></i> Novo Motorista
+                        </button>
+                    </div>
+                `;
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = Math.min(start + itemsPerPage, filteredDrivers.length);
+            const pageDrivers = filteredDrivers.slice(start, end);
+
+            if (currentViewMode === 'grid') {
+                renderGridView(container, pageDrivers);
+            } else {
+                renderTableView(container, pageDrivers);
+            }
+
+            renderPagination();
+        }
+
+        function getScoreColor(score) {
+            if (score >= 90) return '#27ae60';
+            if (score >= 75) return '#f39c12';
+            return '#e74c3c';
+        }
+
+        function renderGridView(container, driversList) {
+            container.className = 'drivers-grid';
+            let html = '';
+
+            driversList.forEach(driver => {
+                const vehicle = vehicles.find(v => v.id === driver.vehicleId);
+                const statusClass = { 'active': 'status-active', 'inactive': 'status-inactive', 'on_break': 'status-break' }[driver.status] || '';
+                const statusText = { 'active': 'Ativo', 'inactive': 'Inativo', 'on_break': 'Em Pausa' }[driver.status] || '';
+                const categoryClass = { 'efetivo': 'category-efetivo', 'terceirizado': 'category-terceirizado', 'treinee': 'category-treinee', 'afastado': 'category-afastado' }[driver.category] || '';
+                const categoryText = { 'efetivo': 'Efetivo', 'terceirizado': 'Terceirizado', 'treinee': 'Treinee', 'afastado': 'Afastado' }[driver.category] || '';
+
+                // Formatar CPF para exibir apenas os últimos 4 dígitos (opcional, para economizar espaço)
+                const shortCpf = driver.cpf.length > 11 ? driver.cpf.slice(-4) : driver.cpf;
+
+                html += `
+                    <div class="driver-card" onclick="showDriverDetails(${driver.id})">
+                        <div class="card-header">
+                            <div class="driver-avatar"><i class="fas fa-user-circle"></i></div>
+                            <div class="driver-status ${statusClass}">${statusText}</div>
+                        </div>
+                        <div class="card-body">
+                            <h3 class="driver-name" title="${driver.name}">${driver.name}</h3>
+                            <div class="driver-info">
+                                <span class="driver-category ${categoryClass}">${categoryText}</span>
+                                <span class="driver-cpf">${shortCpf}</span>
+                            </div>
+                            <div class="driver-vehicle"><i class="fas fa-truck"></i> ${vehicle ? vehicle.plate : 'Sem veículo'}</div>
+                            <div class="driver-contact"><i class="fas fa-phone"></i> ${driver.phone || '—'}</div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="driver-score"><span class="score-value" style="color: ${getScoreColor(driver.score)}">${driver.score}%</span><span class="score-label">Perf.</span></div>
+                            <div class="driver-trips"><i class="fas fa-route"></i> ${driver.totalTrips}</div>
+                        </div>
+                        <div class="card-actions">
+                            <button class="action-btn" onclick="event.stopPropagation(); editDriver(${driver.id})"><i class="fas fa-edit"></i></button>
+                            <button class="action-btn" onclick="event.stopPropagation(); deleteDriver(${driver.id})"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderTableView(container, driversList) {
+            container.className = 'drivers-table-container';
+            let html = `
+                <table class="drivers-table">
+                    <thead><tr><th>Motorista</th><th>CPF/CNH</th><th>Status</th><th>Categoria</th><th>Veículo</th><th>Contato</th><th>Performance</th><th>Ações</th></tr></thead>
+                    <tbody>
+            `;
+
+            driversList.forEach(driver => {
+                const vehicle = vehicles.find(v => v.id === driver.vehicleId);
+                const statusClass = { 'active': 'status-active', 'inactive': 'status-inactive', 'on_break': 'status-break' }[driver.status] || '';
+                const statusText = { 'active': 'Ativo', 'inactive': 'Inativo', 'on_break': 'Em Pausa' }[driver.status] || '';
+
+                html += `
+                    <tr onclick="showDriverDetails(${driver.id})">
+                        <td><div class="driver-cell"><i class="fas fa-user-circle"></i><div><strong>${driver.name}</strong><small>ID: ${driver.id}</small></div></div></td>
+                        <td><div>${driver.cpf}</div><small>CNH: ${driver.cnh}</small></td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                        <td>${driver.category}</td>
+                        <td>${vehicle ? vehicle.plate : '—'}</td>
+                        <td><div><small>${driver.phone || '—'}</small></div><div><small>${driver.email || '—'}</small></div></td>
+                        <td><div class="score-bar"><div class="score-fill" style="width: ${driver.score}%; background: ${getScoreColor(driver.score)}"></div><span>${driver.score}%</span></div></td>
+                        <td onclick="event.stopPropagation()"><div class="table-actions"><button class="action-icon" onclick="editDriver(${driver.id})"><i class="fas fa-edit"></i></button><button class="action-icon" onclick="deleteDriver(${driver.id})"><i class="fas fa-trash"></i></button></div></td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredDrivers.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = '<div class="pagination-controls">';
+            html += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="changePage(${currentPage - 1})"><i class="fas fa-chevron-left"></i></button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<span class="page-dots">...</span>';
+                }
+            }
+
+            html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="changePage(${currentPage + 1})"><i class="fas fa-chevron-right"></i></button>`;
+            html += '</div>';
+            pagination.innerHTML = html;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderDrivers();
+        }
+
+        function toggleViewMode() {
+            currentViewMode = currentViewMode === 'grid' ? 'table' : 'grid';
+            const icon = document.getElementById('viewModeIcon');
+            icon.className = currentViewMode === 'grid' ? 'fas fa-th-large' : 'fas fa-list';
+            renderDrivers();
+        }
+
+        // ==================== CRUD ====================
+        function openDriverModal(driverId = null) {
+            selectedDriverId = driverId;
+            if (driverId) {
+                const driver = drivers.find(d => d.id === driverId);
+                if (driver) {
+                    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-edit"></i> <span>Editar Motorista</span>';
+                    document.getElementById('driverName').value = driver.name;
+                    document.getElementById('driverCpf').value = driver.cpf;
+                    document.getElementById('driverCnh').value = driver.cnh;
+                    document.getElementById('driverBirth').value = driver.birth || '';
+                    document.getElementById('driverHireDate').value = driver.hireDate || '';
+                    document.getElementById('driverCategory').value = driver.category;
+                    document.getElementById('driverVehicle').value = driver.vehicleId || '';
+                    document.getElementById('driverEmail').value = driver.email || '';
+                    document.getElementById('driverPhone').value = driver.phone || '';
+                    document.getElementById('driverAddress').value = driver.address || '';
+                    document.getElementById('driverStatus').value = driver.status;
+                    document.getElementById('driverCnhExpiry').value = driver.cnhExpiry || '';
+                    document.getElementById('driverMedical').value = driver.medical || '';
+                }
+            } else {
+                document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus"></i> <span>Novo Motorista</span>';
+                document.getElementById('driverForm').reset();
+            }
+            document.getElementById('driverModal').classList.add('open');
+        }
+
+        function closeDriverModal() {
+            document.getElementById('driverModal').classList.remove('open');
+            selectedDriverId = null;
+        }
+
+        function saveDriver(event) {
+            event.preventDefault();
+            showProgress(50);
+            setTimeout(() => {
+                showProgress(100);
+                setTimeout(() => {
+                    hideProgress();
+                    showToast(selectedDriverId ? 'Motorista atualizado com sucesso!' : 'Motorista cadastrado com sucesso!');
+                    closeDriverModal();
+                }, 300);
+            }, 500);
+        }
+
+        function showDriverDetails(driverId) {
+            const driver = drivers.find(d => d.id === driverId);
+            if (!driver) return;
+
+            const vehicle = vehicles.find(v => v.id === driver.vehicleId);
+            const statusClass = { 'active': 'status-active', 'inactive': 'status-inactive', 'on_break': 'status-break' }[driver.status] || '';
+            const statusText = { 'active': 'Ativo', 'inactive': 'Inativo', 'on_break': 'Em Pausa' }[driver.status] || '';
+            const categoryText = { 'efetivo': 'Efetivo', 'terceirizado': 'Terceirizado', 'treinee': 'Treinee', 'afastado': 'Afastado' }[driver.category] || '';
+
+            document.getElementById('detailsName').textContent = driver.name;
+            document.getElementById('detailsBody').innerHTML = `
+                <div class="details-container">
+                    <div class="details-header">
+                        <div class="driver-avatar-large"><i class="fas fa-user-circle"></i></div>
+                        <div class="driver-title"><h3>${driver.name}</h3><div class="driver-badges"><span class="status-badge ${statusClass}">${statusText}</span><span class="category-badge">${categoryText}</span></div></div>
+                    </div>
+                    <div class="details-grid">
+                        <div class="details-section"><h4><i class="fas fa-id-card"></i> Dados Pessoais</h4>
+                            <div class="detail-row"><span class="detail-label">CPF:</span><span class="detail-value">${driver.cpf}</span></div>
+                            <div class="detail-row"><span class="detail-label">CNH:</span><span class="detail-value">${driver.cnh}</span></div>
+                            <div class="detail-row"><span class="detail-label">Nascimento:</span><span class="detail-value">${driver.birth ? new Date(driver.birth).toLocaleDateString('pt-BR') : '—'}</span></div>
+                            <div class="detail-row"><span class="detail-label">Validade CNH:</span><span class="detail-value ${new Date(driver.cnhExpiry) < new Date() ? 'expired' : ''}">${driver.cnhExpiry ? new Date(driver.cnhExpiry).toLocaleDateString('pt-BR') : '—'}</span></div>
+                        </div>
+                        <div class="details-section"><h4><i class="fas fa-briefcase"></i> Dados Profissionais</h4>
+                            <div class="detail-row"><span class="detail-label">Admissão:</span><span class="detail-value">${driver.hireDate ? new Date(driver.hireDate).toLocaleDateString('pt-BR') : '—'}</span></div>
+                            <div class="detail-row"><span class="detail-label">Categoria:</span><span class="detail-value">${categoryText}</span></div>
+                            <div class="detail-row"><span class="detail-label">Veículo:</span><span class="detail-value">${vehicle ? `${vehicle.name} (${vehicle.plate})` : 'Não associado'}</span></div>
+                        </div>
+                        <div class="details-section"><h4><i class="fas fa-phone-alt"></i> Contato</h4>
+                            <div class="detail-row"><span class="detail-label">E-mail:</span><span class="detail-value">${driver.email || '—'}</span></div>
+                            <div class="detail-row"><span class="detail-label">Telefone:</span><span class="detail-value">${driver.phone || '—'}</span></div>
+                            <div class="detail-row"><span class="detail-label">Endereço:</span><span class="detail-value">${driver.address || '—'}</span></div>
+                        </div>
+                        <div class="details-section"><h4><i class="fas fa-chart-line"></i> Performance</h4>
+                            <div class="detail-row"><span class="detail-label">Score:</span><span class="detail-value" style="color: ${getScoreColor(driver.score)}; font-weight: bold;">${driver.score}%</span></div>
+                            <div class="detail-row"><span class="detail-label">Viagens:</span><span class="detail-value">${driver.totalTrips}</span></div>
+                            <div class="detail-row"><span class="detail-label">Acidentes:</span><span class="detail-value ${driver.accidents > 0 ? 'warning' : ''}">${driver.accidents}</span></div>
+                            <div class="detail-row"><span class="detail-label">Infrações:</span><span class="detail-value">${driver.infractions}</span></div>
+                        </div>
+                        <div class="details-section full-width"><h4><i class="fas fa-stethoscope"></i> Observações Médicas</h4><p class="medical-notes">${driver.medical || 'Nenhuma observação registrada.'}</p></div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('detailsModal').classList.add('open');
+        }
+
+        function closeDetailsModal() { document.getElementById('detailsModal').classList.remove('open'); }
+        function editFromDetails() { closeDetailsModal(); setTimeout(() => openDriverModal(selectedDriverId), 300); }
+        function editDriver(driverId) { openDriverModal(driverId); }
+
+        function deleteDriver(driverId) {
+            if (confirm('Tem certeza que deseja excluir este motorista?')) {
+                showProgress(50);
+                setTimeout(() => {
+                    drivers = drivers.filter(d => d.id !== driverId);
+                    applyFilters();
+                    showProgress(100);
+                    setTimeout(() => { hideProgress(); showToast('Motorista removido com sucesso!'); }, 200);
+                }, 500);
+            }
+        }
+
+        function exportDrivers() { showToast('Exportação concluída!'); }
+
+        function showProgress(value) {
+            const bar = document.getElementById('progressBar');
+            const fill = document.getElementById('progressFill');
+            bar.classList.add('show');
+            fill.style.width = value + '%';
+        }
+
+        function hideProgress() { document.getElementById('progressBar').classList.remove('show'); }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+
+        function changeOrganization(select) { showToast(`Organização alterada: ${select.options[select.selectedIndex].text}`); }
+    </script>
+</body>
+
+</html>

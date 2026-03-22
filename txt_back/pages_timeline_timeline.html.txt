@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="../../public/img/meet360.png">
+    <title>Track7 - Timeline</title>
+    <link rel="stylesheet" href="../global.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../../components/topnav.js"></script>
+    <style>
+        :root {
+            --brand-orange: #BE6004;
+            --brand-silver: #9e9e9e;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --status-moving: #27ae60;
+            --status-idle: #f39c12;
+            --status-stopped: #e74c3c;
+            --status-overspeed: #c0392b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Layout principal - sem sidebar */
+        .timeline-page {
+            padding: 12px 28px;
+            height: calc(100vh - 125px);
+            overflow-y: auto;
+            background: var(--bg-primary);
+        }
+
+        /* Seletor de ativo - estilo do configuration */
+        .asset-selector-card {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 10px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .asset-selector-card:hover {
+            border-color: rgba(242, 101, 34, 0.3);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .asset-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .asset-info h2 {
+            font-size: 18px;
+            color: var(--brand-orange);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .asset-info h2 i {
+            font-size: 24px;
+        }
+
+        .asset-select {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--input-bg);
+            padding: 8px 16px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .asset-select label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .asset-select select {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-weight: 500;
+            padding: 6px 24px 6px 8px;
+            cursor: pointer;
+            font-size: 13px;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23BE6004' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 4px center;
+        }
+
+        /* Filtros - estilo do configuration */
+        .filters-bar {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .filter-group label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--brand-orange);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--input-bg);
+            color: var(--text-primary);
+            font-size: 13px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .filter-group input:focus,
+        .filter-group select:focus {
+            border-color: var(--brand-orange);
+            box-shadow: 0 0 0 2px rgba(242, 101, 34, 0.1);
+        }
+
+        .date-range {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: var(--brand-orange);
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 38px;
+        }
+
+        .btn-primary:hover {
+            background: #d45512;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(242, 101, 34, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 30px;
+            padding: 8px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 38px;
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--brand-orange);
+            color: var(--brand-orange);
+        }
+
+        /* Timeline Cards - duas seções principais */
+        .timeline-section {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            margin-bottom: 28px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-section:hover {
+            border-color: rgba(242, 101, 34, 0.3);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-header {
+            padding: 18px 24px;
+            background: var(--sidebar-header-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header h3 {
+            font-size: 16px;
+            color: var(--brand-orange);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-stats {
+            font-size: 12px;
+            color: var(--brand-silver);
+            background: var(--hover-bg);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .timeline-wrapper {
+            padding: 20px 24px;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        /* Zoom hint */
+        .zoom-hint {
+            text-align: right;
+            font-size: 11px;
+            color: var(--brand-silver);
+            padding: 0 24px 12px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+        }
+
+        .zoom-hint span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Time ruler */
+        .time-ruler {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--brand-silver);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid var(--border-color);
+            min-width: 800px;
+        }
+
+        .timeline-track-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .track-label {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-primary);
+        }
+
+        .timeline-track {
+            position: relative;
+            height: 48px;
+            background: var(--track-bg);
+            border-radius: 8px;
+            overflow: visible;
+            border: 1px solid var(--border-color);
+            min-width: 800px;
+            cursor: pointer;
+        }
+
+        .event-block {
+            position: absolute;
+            height: 100%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            z-index: 5;
+        }
+
+        .event-block.event-moving {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+        }
+
+        .event-block.event-idle {
+            background: linear-gradient(135deg, #7f8c8d, #95a5a6);
+        }
+
+        .event-block.event-overspeed {
+            background: linear-gradient(135deg, #c0392b, #e74c3c);
+        }
+
+        .event-block.event-harsh-brake {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+
+        .event-block.event-sharp-turn {
+            background: linear-gradient(135deg, #8e44ad, #9b59b6);
+        }
+
+        .event-block:hover {
+            transform: scaleY(1.1);
+            z-index: 20;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .event-block::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: #fff;
+            padding: 8px 12px;
+            font-size: 11px;
+            border-radius: 6px;
+            white-space: nowrap;
+            z-index: 1000;
+            display: none;
+            border: 1px solid var(--brand-orange);
+            pointer-events: none;
+        }
+
+        .event-block:hover::after {
+            display: block;
+        }
+
+        .event-icon-marker {
+            position: absolute;
+            top: -20px;
+            transform: translateX(-50%);
+            color: var(--brand-orange);
+            font-size: 12px;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-color);
+            background: var(--hover-bg);
+        }
+
+        .metric-box {
+            padding: 12px 16px;
+            background: var(--card-bg-solid);
+            border-radius: 12px;
+            border-left: 3px solid var(--brand-orange);
+            transition: all 0.3s ease;
+        }
+
+        .metric-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(242, 101, 34, 0.15);
+        }
+
+        .metric-box i {
+            color: var(--brand-orange);
+            margin-right: 6px;
+        }
+
+        .metric-val {
+            font-size: 18px;
+            font-weight: 700;
+            display: block;
+            margin-top: 6px;
+            color: var(--text-primary);
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: var(--brand-silver);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Events List */
+        .events-list {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .events-list h4 {
+            font-size: 14px;
+            color: var(--brand-orange);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .event-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .event-item:hover {
+            background: var(--hover-bg);
+            border-radius: 8px;
+        }
+
+        .event-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .event-content {
+            flex: 1;
+        }
+
+        .event-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .event-time {
+            font-size: 11px;
+            color: var(--brand-silver);
+            display: flex;
+            gap: 12px;
+            margin-top: 2px;
+        }
+
+        .event-duration {
+            color: var(--brand-orange);
+            font-weight: 600;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--brand-silver);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 3px;
+            background: var(--border-color);
+            border-radius: 2px;
+            margin: 0 24px 16px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar.show {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--brand-orange);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--brand-orange);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 40px;
+            font-size: 13px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            z-index: 2100;
+            box-shadow: 0 4px 12px rgba(242, 101, 34, 0.3);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--sidebar-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--brand-orange);
+            border-radius: 3px;
+        }
+
+        .timeline-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+    </style>
+</head>
+
+<body class="theme-dark">
+    <top-navigation></top-navigation>
+
+    <!-- BREADCRUMB / TABS - Apenas Timeline de Eventos e Timeline de Viagens -->
+    <!-- BREADCRUMB / TABS - Apenas Timeline de Eventos e Timeline de Viagens -->
+    <div class="breadcrumb-bar">
+        <div style="display: flex; gap: 8px;">
+            <span class="tab active" onclick="switchTimelineTab(this, 'events')">
+                <i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> Timeline de Eventos
+            </span>
+            <span class="tab" onclick="switchTimelineTab(this, 'trips')">
+                <i class="fas fa-route" style="margin-right: 6px;"></i> Timeline de Viagens
+            </span>
+        </div>
+        <div class="org-selector">
+            <span><i class="far fa-building"></i> Organização:</span>
+            <select id="orgSelector" onchange="changeOrganization(this)">
+                <option>BR-Track7-Brazil / Track7 BR - Betânia</option>
+                <option>BR-Track7-Brazil / Track7 BR - Sul</option>
+                <option>BR-Track7-Brazil / Track7 BR - Norte</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="timeline-page">
+        <!-- Seletor de Ativo -->
+        <div class="asset-selector-card">
+            <div class="asset-info">
+                <h2><i class="fas fa-tachometer-alt"></i> <span id="assetNameDisplay">Selecione um ativo</span></h2>
+            </div>
+            <div class="asset-select">
+                <label><i class="fas fa-truck"></i> Ativo:</label>
+                <select id="assetSelect" onchange="onAssetChange(this.value)">
+                    <option value="">Selecione...</option>
+                </select>
+                <button class="btn-secondary" onclick="toggleAssetsModal(true)">
+                    <i class="fas fa-search"></i> Buscar
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-bar">
+            <div class="filter-group">
+                <label><i class="far fa-calendar-alt"></i> Data Início</label>
+                <input type="date" id="dateFrom">
+            </div>
+            <div class="filter-group">
+                <label><i class="far fa-calendar-alt"></i> Data Fim</label>
+                <input type="date" id="dateTo">
+            </div>
+            <div class="filter-group">
+                <label><i class="fas fa-clock"></i> Período</label>
+                <select id="periodSelect" onchange="updateDateRange(this)">
+                    <option value="today">Hoje</option>
+                    <option value="yesterday">Ontem</option>
+                    <option value="7days" selected>Últimos 7 dias</option>
+                    <option value="30days">Últimos 30 dias</option>
+                    <option value="month">Mês Corrente</option>
+                    <option value="custom">Personalizado</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="loadTimelineData()">
+                <i class="fas fa-chart-line"></i> Carregar Dados
+            </button>
+        </div>
+
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div id="noDataMessage" class="empty-state" style="display: none;">
+            <i class="fas fa-database"></i>
+            <p>Nenhum dado encontrado no período selecionado.</p>
+        </div>
+
+        <!-- TIMELINE DE EVENTOS -->
+        <div class="timeline-section" id="eventsSection" style="display: none;">
+            <div class="section-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Timeline de Eventos Críticos</h3>
+                <span class="section-stats" id="eventsStats">0 eventos</span>
+            </div>
+            <div class="zoom-hint">
+                <span><i class="fas fa-mouse-pointer"></i> Scroll horizontal para navegar</span>
+                <span><i class="fas fa-search-plus"></i> Ctrl + Scroll para zoom</span>
+            </div>
+            <div class="timeline-wrapper" id="eventsTimelineWrapper">
+                <div class="time-ruler" id="eventsTimeRuler"></div>
+                <div class="timeline-track-container">
+                    <div class="track-label"><i class="fas fa-exclamation-triangle"></i> Eventos de Condução</div>
+                    <div class="timeline-track" id="eventsTrack"></div>
+                </div>
+            </div>
+            <div class="metrics-grid" id="eventsMetrics"></div>
+            <div class="events-list" id="eventsList">
+                <h4><i class="fas fa-list"></i> Registro de Eventos</h4>
+                <div id="eventsListContainer"></div>
+            </div>
+        </div>
+
+        <!-- TIMELINE DE VIAGENS -->
+        <div class="timeline-section" id="tripsSection" style="display: none;">
+            <div class="section-header">
+                <h3><i class="fas fa-route"></i> Timeline de Viagens</h3>
+                <span class="section-stats" id="tripsStats">0 viagens</span>
+            </div>
+            <div class="zoom-hint">
+                <span><i class="fas fa-mouse-pointer"></i> Scroll horizontal para navegar</span>
+                <span><i class="fas fa-search-plus"></i> Ctrl + Scroll para zoom</span>
+            </div>
+            <div class="timeline-wrapper" id="tripsTimelineWrapper">
+                <div class="time-ruler" id="tripsTimeRuler"></div>
+                <div class="timeline-track-container">
+                    <div class="track-label"><i class="fas fa-play-circle"></i> Períodos em Movimento</div>
+                    <div class="timeline-track" id="tripsTrack"></div>
+                </div>
+            </div>
+            <div class="metrics-grid" id="tripsMetrics"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE ATIVOS -->
+    <div class="modal-overlay" id="assetsModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3><i class="fas fa-truck"></i> Selecionar Ativo</h3>
+                <i class="fas fa-times close-modal" onclick="toggleAssetsModal(false)"></i>
+            </div>
+            <div class="modal-body">
+                <div class="search-assets">
+                    <input type="text" id="assetSearch" placeholder="Buscar ativo..." onkeyup="filterAssets()">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div id="modalAssetsGrid" class="assets-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span>Mensagem</span></div>
+
+    <script>
+        const API = 'http://localhost:5000/api';
+        const AUTH_TOKEN = '67eba42da80819eb285dd8794678964707481B6FFB3E065405FE46F889143875DE5B3C3A';
+
+        let units = [];
+        let messages = [];
+        let currentUnitId = null;
+        let currentZoom = 1;
+        let currentTab = 'events';
+
+        const EVENT_MAP = {
+            101: { name: "Aceleração Brusca", icon: "fa-forward", color: "#e67e22" },
+            102: { name: "Frenagem Brusca", icon: "fa-stop-circle", color: "#e74c3c" },
+            103: { name: "Excesso de RPM", icon: "fa-tachometer-alt", color: "#f39c12" },
+            105: { name: "Marcha Lenta", icon: "fa-hourglass-half", color: "#3498db" },
+            107: { name: "Curva Brusca", icon: "fa-exchange-alt", color: "#e67e22" },
+            108: { name: "Excesso de Velocidade", icon: "fa-bolt", color: "#c0392b" }
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = `theme-${savedTheme}`;
+
+            const today = new Date();
+            const sevenDaysAgo = new Date(today);
+            sevenDaysAgo.setDate(today.getDate() - 7);
+            document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+            document.getElementById('dateFrom').value = sevenDaysAgo.toISOString().split('T')[0];
+
+            await authenticateAndLoadUnits();
+        });
+
+        document.addEventListener('themeChanged', (e) => {
+            document.body.className = `theme-${e.detail.theme}`;
+        });
+
+        // Função para alternar entre as abas
+        function switchTimelineTab(el, tab) {
+            document.querySelectorAll('.breadcrumb-bar .tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            currentTab = tab;
+
+            if (tab === 'events') {
+                document.getElementById('eventsSection').style.display = 'block';
+                document.getElementById('tripsSection').style.display = 'none';
+            } else {
+                document.getElementById('eventsSection').style.display = 'none';
+                document.getElementById('tripsSection').style.display = 'block';
+            }
+
+            showToast(`Visualizando: ${el.textContent.trim()}`);
+        }
+
+        // Zoom com scroll (Ctrl + Scroll)
+        document.querySelector('.timeline-page')?.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                currentZoom = Math.min(3, Math.max(0.5, currentZoom * delta));
+                applyZoom();
+            }
+        }, { passive: false });
+
+        function applyZoom() {
+            const wrappers = document.querySelectorAll('.timeline-wrapper');
+            wrappers.forEach(wrapper => {
+                const rulers = wrapper.querySelectorAll('.time-ruler');
+                const tracks = wrapper.querySelectorAll('.timeline-track');
+                rulers.forEach(r => r.style.width = (currentZoom * 100) + '%');
+                tracks.forEach(t => t.style.width = (currentZoom * 100) + '%');
+            });
+        }
+
+        async function authenticateAndLoadUnits() {
+            try {
+                const statusResponse = await fetch(`${API}/status`);
+                const statusData = await statusResponse.json();
+                if (!statusData.authenticated) {
+                    await fetch(`${API}/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: AUTH_TOKEN })
+                    });
+                }
+                await loadUnits();
+            } catch (error) {
+                console.error('Erro na autenticação:', error);
+                loadSimulatedUnits();
+            }
+        }
+
+        async function loadUnits() {
+            try {
+                const response = await fetch(`${API}/units`);
+                const data = await response.json();
+                if (data.units && data.units.length > 0) {
+                    units = data.units;
+                    updateAssetSelects();
+                    if (units.length > 0) selectAsset(units[0].id);
+                }
+            } catch (error) {
+                loadSimulatedUnits();
+            }
+        }
+
+        function loadSimulatedUnits() {
+            units = [
+                { id: 1, name: '3000 - M.B. OF 1722 (S)' },
+                { id: 2, name: '3001 - VW 17-230 OD' },
+                { id: 3, name: '3002 - Scania R 450' },
+                { id: 4, name: '3003 - Volvo FH 460' }
+            ];
+            updateAssetSelects();
+            if (units.length > 0) selectAsset(units[0].id);
+            showToast('✅ Dados simulados carregados');
+        }
+
+        function updateAssetSelects() {
+            const select = document.getElementById('assetSelect');
+            const modalGrid = document.getElementById('modalAssetsGrid');
+            select.innerHTML = '<option value="">Selecione...</option>';
+            modalGrid.innerHTML = '';
+            units.forEach(unit => {
+                select.innerHTML += `<option value="${unit.id}">${unit.name}</option>`;
+                const card = document.createElement('div');
+                card.className = 'asset-card';
+                card.setAttribute('data-id', unit.id);
+                card.setAttribute('data-name', unit.name.toLowerCase());
+                card.innerHTML = `<i class="fas fa-truck"></i><span>${unit.name}</span>`;
+                card.onclick = () => { selectAsset(unit.id); toggleAssetsModal(false); };
+                modalGrid.appendChild(card);
+            });
+        }
+
+        function selectAsset(id) {
+            currentUnitId = id;
+            const unit = units.find(u => u.id == id);
+            document.getElementById('assetNameDisplay').textContent = unit?.name || 'Ativo';
+            document.getElementById('assetSelect').value = id;
+        }
+
+        function onAssetChange(value) {
+            if (value) selectAsset(parseInt(value));
+        }
+
+        function toggleAssetsModal(show) {
+            document.getElementById('assetsModal').style.display = show ? 'flex' : 'none';
+            if (show) filterAssets();
+        }
+
+        function filterAssets() {
+            const term = document.getElementById('assetSearch').value.toLowerCase();
+            document.querySelectorAll('#modalAssetsGrid .asset-card').forEach(card => {
+                card.style.display = card.getAttribute('data-name').includes(term) ? 'flex' : 'none';
+            });
+        }
+
+        function updateDateRange(select) {
+            if (select.value === 'custom') return;
+            const today = new Date();
+            const from = document.getElementById('dateFrom');
+            const to = document.getElementById('dateTo');
+            to.value = today.toISOString().split('T')[0];
+            if (select.value === 'today') from.value = today.toISOString().split('T')[0];
+            else if (select.value === 'yesterday') {
+                const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+                from.value = yesterday.toISOString().split('T')[0];
+                to.value = yesterday.toISOString().split('T')[0];
+            } else if (select.value === '7days') {
+                const d = new Date(today); d.setDate(today.getDate() - 7);
+                from.value = d.toISOString().split('T')[0];
+            } else if (select.value === '30days') {
+                const d = new Date(today); d.setDate(today.getDate() - 30);
+                from.value = d.toISOString().split('T')[0];
+            } else if (select.value === 'month') {
+                from.value = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+            }
+        }
+
+        async function loadTimelineData() {
+            if (!currentUnitId) { showToast('⚠️ Selecione um ativo'); return; }
+
+            const loader = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+            loader.classList.add('show');
+            progressFill.style.width = '0%';
+
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const timeFrom = Math.floor(new Date(dateFrom).getTime() / 1000);
+            const timeTo = Math.floor(new Date(dateTo + 'T23:59:59').getTime() / 1000);
+
+            try {
+                const response = await fetch(`${API}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ unitId: parseInt(currentUnitId), timeFrom, timeTo, msgType: 1, maxCount: 100 })
+                });
+                const data = await response.json();
+                messages = data.messages || [];
+                progressFill.style.width = '100%';
+                setTimeout(() => loader.classList.remove('show'), 500);
+
+                if (messages.length === 0) {
+                    document.getElementById('noDataMessage').style.display = 'block';
+                    document.getElementById('eventsSection').style.display = 'none';
+                    document.getElementById('tripsSection').style.display = 'none';
+                } else {
+                    document.getElementById('noDataMessage').style.display = 'none';
+                    renderAllTimelines();
+                    // Mostrar a aba ativa
+                    if (currentTab === 'events') {
+                        document.getElementById('eventsSection').style.display = 'block';
+                        document.getElementById('tripsSection').style.display = 'none';
+                    } else {
+                        document.getElementById('eventsSection').style.display = 'none';
+                        document.getElementById('tripsSection').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                simulateTimelineData();
+                setTimeout(() => loader.classList.remove('show'), 500);
+            }
+        }
+
+        function simulateTimelineData() {
+            const now = Math.floor(Date.now() / 1000);
+            messages = [];
+            const eventTypes = [101, 102, 103, 105, 108, 107];
+            for (let i = 0; i < 30; i++) {
+                const time = now - (30 - i) * 1800;
+                const speed = i < 20 ? 40 + Math.random() * 50 : 0;
+                if (Math.random() > 0.7) {
+                    messages.push({ t: time, pos: { s: speed }, p: { d3: eventTypes[Math.floor(Math.random() * eventTypes.length)], d4: Math.floor(Math.random() * 20) } });
+                } else {
+                    messages.push({ t: time, pos: { s: speed }, p: {} });
+                }
+            }
+            messages.sort((a, b) => a.t - b.t);
+            renderAllTimelines();
+            if (currentTab === 'events') {
+                document.getElementById('eventsSection').style.display = 'block';
+                document.getElementById('tripsSection').style.display = 'none';
+            } else {
+                document.getElementById('eventsSection').style.display = 'none';
+                document.getElementById('tripsSection').style.display = 'block';
+            }
+        }
+
+        function renderAllTimelines() {
+            renderEventsTimeline();
+            renderTripsTimeline();
+        }
+
+        function renderEventsTimeline() {
+            if (!messages.length) return;
+            const firstTime = messages[0].t;
+            const lastTime = messages[messages.length - 1].t;
+            const totalDuration = lastTime - firstTime;
+
+            const ruler = document.getElementById('eventsTimeRuler');
+            ruler.innerHTML = '';
+            const startHour = new Date(firstTime * 1000).getHours();
+            for (let i = 0; i <= 8; i++) {
+                const hour = (startHour + i * 3) % 24;
+                ruler.innerHTML += `<span>${hour.toString().padStart(2, '0')}:00</span>`;
+            }
+
+            const track = document.getElementById('eventsTrack');
+            track.innerHTML = '';
+            messages.forEach(msg => {
+                const eventCode = msg.p?.d3;
+                if (eventCode && EVENT_MAP[eventCode]) {
+                    const timePos = ((msg.t - firstTime) / totalDuration) * 100;
+                    const event = EVENT_MAP[eventCode];
+                    const block = document.createElement('div');
+                    block.className = 'event-block';
+                    block.style.background = event.color;
+                    block.style.left = timePos + '%';
+                    block.style.width = '1.2%';
+                    block.style.borderRadius = '4px';
+                    const eventTime = new Date(msg.t * 1000).toLocaleTimeString('pt-BR');
+                    block.setAttribute('data-tip', `${event.name}\n${eventTime}\nVelocidade: ${msg.pos?.s || 0} km/h`);
+                    track.appendChild(block);
+                }
+            });
+
+            const events = messages.filter(m => m.p?.d3);
+            const eventTypesCount = {};
+            events.forEach(e => { const code = e.p.d3; if (EVENT_MAP[code]) eventTypesCount[EVENT_MAP[code].name] = (eventTypesCount[EVENT_MAP[code].name] || 0) + 1; });
+            document.getElementById('eventsStats').textContent = `${events.length} eventos`;
+            document.getElementById('eventsMetrics').innerHTML = Object.entries(eventTypesCount).slice(0, 6).map(([name, count]) => `
+                <div class="metric-box"><span class="metric-label"><i class="fas fa-chart-simple"></i> ${name}</span><span class="metric-val">${count}</span></div>
+            `).join('') || '<div class="metric-box"><span class="metric-label">Nenhum evento</span><span class="metric-val">0</span></div>';
+
+            const listContainer = document.getElementById('eventsListContainer');
+            listContainer.innerHTML = '';
+            events.slice().reverse().slice(0, 20).forEach(e => {
+                const code = e.p.d3;
+                const ev = EVENT_MAP[code] || { name: `Evento ${code}`, icon: 'fa-exclamation-circle', color: '#95a5a6' };
+                const div = document.createElement('div');
+                div.className = 'event-item';
+                div.innerHTML = `
+                    <div class="event-icon" style="background: ${ev.color}"><i class="fas ${ev.icon}"></i></div>
+                    <div class="event-content">
+                        <div class="event-title">${ev.name}</div>
+                        <div class="event-time"><i class="far fa-clock"></i> ${new Date(e.t * 1000).toLocaleString('pt-BR')} ${e.p?.d4 ? `<span class="event-duration"><i class="fas fa-hourglass-half"></i> ${e.p.d4}s</span>` : ''}</div>
+                    </div>
+                `;
+                listContainer.appendChild(div);
+            });
+        }
+
+        function renderTripsTimeline() {
+            if (!messages.length) return;
+            const firstTime = messages[0].t;
+            const lastTime = messages[messages.length - 1].t;
+            const totalDuration = lastTime - firstTime;
+
+            const ruler = document.getElementById('tripsTimeRuler');
+            ruler.innerHTML = '';
+            const startHour = new Date(firstTime * 1000).getHours();
+            for (let i = 0; i <= 8; i++) {
+                const hour = (startHour + i * 3) % 24;
+                ruler.innerHTML += `<span>${hour.toString().padStart(2, '0')}:00</span>`;
+            }
+
+            const track = document.getElementById('tripsTrack');
+            track.innerHTML = '';
+            let tripStart = null;
+            let tripStartPos = 0;
+            for (let i = 0; i < messages.length; i++) {
+                const speed = messages[i].pos?.s || 0;
+                const timePos = ((messages[i].t - firstTime) / totalDuration) * 100;
+                if (speed > 5 && !tripStart) {
+                    tripStart = messages[i].t;
+                    tripStartPos = timePos;
+                } else if (speed <= 5 && tripStart) {
+                    const width = timePos - tripStartPos;
+                    if (width > 0.5) {
+                        const block = document.createElement('div');
+                        block.className = 'event-block event-moving';
+                        block.style.left = tripStartPos + '%';
+                        block.style.width = width + '%';
+                        const duration = Math.round((messages[i].t - tripStart) / 60);
+                        block.setAttribute('data-tip', `Viagem\nDuração: ${duration} min`);
+                        track.appendChild(block);
+                    }
+                    tripStart = null;
+                }
+            }
+            if (tripStart) {
+                const block = document.createElement('div');
+                block.className = 'event-block event-moving';
+                block.style.left = tripStartPos + '%';
+                block.style.width = (100 - tripStartPos) + '%';
+                block.setAttribute('data-tip', `Viagem em andamento`);
+                track.appendChild(block);
+            }
+
+            const trips = [];
+            let inTrip = false;
+            for (let i = 0; i < messages.length; i++) {
+                const speed = messages[i].pos?.s || 0;
+                if (speed > 5 && !inTrip) { inTrip = true; trips.push({ start: messages[i].t }); }
+                else if (speed <= 5 && inTrip && trips.length) { trips[trips.length - 1].end = messages[i].t; inTrip = false; }
+            }
+            const totalMoving = trips.reduce((sum, t) => sum + (t.end ? t.end - t.start : 0), 0);
+            const avgSpeed = messages.filter(m => m.pos?.s > 0).reduce((sum, m) => sum + (m.pos.s || 0), 0) / (messages.filter(m => m.pos?.s > 0).length || 1);
+            document.getElementById('tripsStats').textContent = `${trips.length} viagens`;
+            document.getElementById('tripsMetrics').innerHTML = `
+                <div class="metric-box"><span class="metric-label"><i class="fas fa-clock"></i> Tempo em Movimento</span><span class="metric-val">${Math.round(totalMoving / 60)} min</span></div>
+                <div class="metric-box"><span class="metric-label"><i class="fas fa-tachometer-alt"></i> Velocidade Média</span><span class="metric-val">${Math.round(avgSpeed)} km/h</span></div>
+                <div class="metric-box"><span class="metric-label"><i class="fas fa-flag-checkered"></i> Total de Viagens</span><span class="metric-val">${trips.length}</span></div>
+            `;
+        }
+
+        function changeOrganization(select) {
+            showToast(`Organização alterada: ${select.value}`);
+        }
+
+        function showToast(msg, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.querySelector('span').textContent = msg;
+            toast.style.display = 'flex';
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => toast.style.display = 'none', duration);
+        }
+
+        window.onclick = (event) => {
+            const modal = document.getElementById('assetsModal');
+            if (event.target === modal) toggleAssetsModal(false);
+        };
+    </script>
+</body>
+
+</html>

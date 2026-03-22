@@ -1,0 +1,98 @@
+/* Estilo do Modal de Ativos */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: none;
+    /* Escondido por padrão */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-container {
+    background: var(--panel-bg);
+    width: 90%;
+    max-width: 500px;
+    border-radius: 12px;
+    border: 1px solid var(--brand-orange);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    animation: scaleUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-header {
+    padding: 15px 20px;
+    background: var(--sidebar-header-bg);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    color: var(--brand-orange);
+    font-size: 16px;
+    margin: 0;
+}
+
+.close-modal {
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 20px;
+    transition: color 0.3s;
+}
+
+.close-modal:hover {
+    color: var(--brand-orange);
+}
+
+.modal-body {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+/* Grid de Ativos dentro do Modal */
+.assets-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.asset-card {
+    background: var(--bg-primary);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.asset-card:hover {
+    border-color: var(--brand-orange);
+    background: var(--hover-bg);
+}
+
+@keyframes scaleUp {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+

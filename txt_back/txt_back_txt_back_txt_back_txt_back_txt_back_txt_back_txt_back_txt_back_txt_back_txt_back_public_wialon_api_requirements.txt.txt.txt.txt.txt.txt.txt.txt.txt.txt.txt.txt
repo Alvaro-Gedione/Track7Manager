@@ -1,0 +1,16 @@
+requests
+flask
+flask-cors
+pandas
+openpyxl
+python-dotenv
+
+
+
+
+
+
+
+
+
+

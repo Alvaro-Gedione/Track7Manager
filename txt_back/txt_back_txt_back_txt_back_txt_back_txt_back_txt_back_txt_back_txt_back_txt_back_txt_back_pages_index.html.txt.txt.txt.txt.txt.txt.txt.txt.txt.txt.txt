@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../public/img/meet360.png">
+    <title>Track7</title>
+    <link rel="stylesheet" href="global.css">
+    <link rel="stylesheet" href="index-specific.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../components/topnav.js"></script>
+</head>
+
+<body class="theme-dark">
+    <top-navigation></top-navigation>
+
+    <main class="container">
+        <a href="live-tracking/live-tracking.html" class="card">
+            <i class="fas fa-map-marker-alt"></i>
+            <span>Localização</span>
+        </a>
+
+        <a href="route-history/route-history.html" class="card">
+            <i class="fas fa-map"></i>
+            <span>Histórico de Rastreamento</span>
+        </a>
+
+        <a href="timeline/timeline.html" class="card">
+            <i class="fas fa-route"></i>
+            <span>Linha do Tempo</span>
+        </a>
+
+        <a href="reports/reports.html" class="card">
+            <i class="fas fa-file-alt"></i>
+            <span>Relatórios</span>
+        </a>
+
+        <a href="list/list.html" class="card">
+            <i class="fas fa-microchip"></i>
+            <span>Telemetria IoT</span>
+        </a>
+
+        <a href="drivers/drivers.html" class="card">
+            <i class="fas fa-user"></i>
+            <span>Motoristas</span>
+        </a>
+
+        <a href="assets/assets.html" class="card">
+            <i class="fas fa-car"></i>
+            <span>Ativos</span>
+        </a>
+
+        <a href="configuration/configuration.html" class="card">
+            <i class="fas fa-cog"></i>
+            <span>Configuração</span>
+        </a>
+    </main>
+
+    <div class="help-btn">
+        <i class="fas fa-headset"></i>
+    </div>
+
+    <script>
+        // Configurar tema inicial baseado no localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = `theme-${savedTheme}`;
+        });
+
+        // Ouvir mudanças de tema da navegação
+        document.addEventListener('themeChanged', (e) => {
+            document.body.className = `theme-${e.detail.theme}`;
+
+            // Atualizar cor do "7" na logo quando o tema mudar
+            const sevenSpan = document.querySelector('.brand-text span');
+            if (sevenSpan) {
+                sevenSpan.style.color = e.detail.theme === 'dark' ? '#ffffff' : '#000000';
+            }
+        });
+    </script>
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+

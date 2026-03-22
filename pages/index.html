@@ -4,60 +4,745 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="../public/meet360.png">
-    <title>Track7</title>
+    <link rel="icon" type="image/png" href="../public/img/meet360.png">
+    <title>Track7 - Dashboard</title>
     <link rel="stylesheet" href="global.css">
-    <link rel="stylesheet" href="index-specific.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="topnav.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../components/topnav.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --gradient-dark: linear-gradient(145deg, #1a1e24 0%, #0f1217 100%);
+            --card-hover-transform: translateY(-5px);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .kpi-card {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            transition: var(--transition-smooth);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--brand-orange), #ff8c42);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: var(--card-hover-transform);
+            border-color: var(--brand-orange);
+            box-shadow: 0 12px 40px rgba(190, 96, 4, 0.15);
+        }
+
+        .kpi-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .kpi-icon {
+            font-size: 2.2rem;
+            color: var(--brand-orange);
+            background: linear-gradient(135deg, rgba(190, 96, 4, 0.15), rgba(190, 96, 4, 0.05));
+            padding: 18px;
+            border-radius: 18px;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition-smooth);
+        }
+
+        .kpi-card:hover .kpi-icon {
+            transform: scale(1.1) rotate(5deg);
+            background: linear-gradient(135deg, rgba(190, 96, 4, 0.25), rgba(190, 96, 4, 0.1));
+        }
+
+        .kpi-info h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .kpi-info p {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin: 8px 0 4px;
+            color: var(--text-primary);
+            line-height: 1;
+            background: linear-gradient(135deg, #fff, #e0e0e0);
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .kpi-info small {
+            font-size: 0.8rem;
+            color: var(--brand-silver);
+            display: block;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .chart-container {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+            border-radius: 20px;
+            height: 400px;
+            transition: var(--transition-smooth);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container:hover {
+            border-color: var(--brand-orange);
+            box-shadow: 0 12px 40px rgba(190, 96, 4, 0.1);
+        }
+
+        /* Header do Dashboard com Organização Integrada */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px 25px;
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.5s ease;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-primary);
+        }
+
+        .dashboard-header h1 i {
+            color: var(--brand-orange);
+            font-size: 2rem;
+            background: rgba(190, 96, 4, 0.1);
+            padding: 12px;
+            border-radius: 14px;
+        }
+
+        .org-selector-modern {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(190, 96, 4, 0.08);
+            padding: 8px 18px;
+            border-radius: 50px;
+            border: 1px solid rgba(190, 96, 4, 0.2);
+            transition: var(--transition-smooth);
+        }
+
+        .org-selector-modern:hover {
+            background: rgba(190, 96, 4, 0.12);
+            border-color: var(--brand-orange);
+        }
+
+        .org-selector-modern span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .org-selector-modern span i {
+            color: var(--brand-orange);
+            font-size: 1.2rem;
+        }
+
+        .org-selector-modern select {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-weight: 500;
+            padding: 8px 30px 8px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23BE6004' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+        }
+
+        .org-selector-modern select option {
+            background: var(--card-bg-solid);
+            color: var(--text-primary);
+        }
+
+        .org-selector-modern select:focus {
+            outline: none;
+        }
+
+        .status-card {
+            background: var(--card-bg-solid);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            height: 400px;
+            transition: var(--transition-smooth);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-card:hover {
+            border-color: var(--brand-orange);
+            box-shadow: 0 12px 40px rgba(190, 96, 4, 0.1);
+        }
+
+        .status-card h3 {
+            color: var(--brand-orange);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.3rem;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(190, 96, 4, 0.2);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            transition: var(--transition-smooth);
+        }
+
+        .status-item:hover {
+            transform: translateX(5px);
+        }
+
+        .status-item span:first-child {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .status-item span:first-child i {
+            color: var(--brand-orange);
+            width: 24px;
+            font-size: 1.1rem;
+        }
+
+        .status-value {
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--status-active);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #1e2329, #161a20);
+            color: var(--text-primary);
+            padding: 15px 25px;
+            border-radius: 50px;
+            border-left: 4px solid var(--brand-orange);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            display: none;
+            z-index: 1000;
+            animation: slideInRight 0.3s ease;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .breadcrumb-bar {
+            display: none;
+            /* Remove o menu antigo */
+        }
+
+        .main {
+            padding: 20px 30px;
+            height: calc(100vh - 80px);
+            /* Altura total menos a topnav */
+            overflow-y: auto;
+            /* Habilita rolagem vertical */
+            overflow-x: hidden;
+            /* Esconde rolagem horizontal */
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .dashboard-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .org-selector-modern {
+                width: 100%;
+            }
+
+            .org-selector-modern select {
+                flex: 1;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            [style*="grid-template-columns: 2fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* Estilização da barra de rolagem */
+        .main::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .main::-webkit-scrollbar-track {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
+
+        .main::-webkit-scrollbar-thumb {
+            background: var(--brand-orange);
+            border-radius: 10px;
+            transition: var(--transition-smooth);
+        }
+
+        .main::-webkit-scrollbar-thumb:hover {
+            background: #ff8c42;
+        }
+
+        /* Para Firefox */
+        .main {
+            scrollbar-width: thin;
+            scrollbar-color: var(--brand-orange) var(--border-color);
+        }
+    </style>
 </head>
 
 <body class="theme-dark">
     <top-navigation></top-navigation>
 
-    <main class="container">
-        <a href="live-tracking.html" class="card">
-            <i class="fas fa-map-marked-alt"></i>
-            <span>Rastreamento ao Vivo</span>
-        </a>
+    <main class="main">
+        <!-- Header com Organização Integrada -->
+        <div class="dashboard-header">
+            <h1>
+                <i class="fas fa-chart-pie"></i>
+                Dashboard da Frota
+            </h1>
+            <div class="org-selector-modern">
+                <span>
+                    <i class="far fa-building"></i>
+                    Organização:
+                </span>
+                <select id="orgSelector" onchange="changeOrganization(this)">
+                    <option>BR-Track7-Brazil / Track7 BR - Betânia</option>
+                    <option>BR-Track7-Brazil / Track7 BR - Sul</option>
+                    <option>BR-Track7-Brazil / Track7 BR - Norte</option>
+                </select>
+            </div>
+        </div>
 
-        <a href="timeline.html" class="card">
-            <i class="fas fa-route"></i>
-            <span>Linha do Tempo</span>
-        </a>
+        <!-- Seção de KPIs -->
+        <div class="dashboard-grid">
+            <div class="kpi-card">
+                <i class="fas fa-tachometer-alt kpi-icon"></i>
+                <div class="kpi-info">
+                    <h3>Ativos na Frota</h3>
+                    <p id="totalUnits">--</p>
+                    <small>unidades cadastradas</small>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <i class="fas fa-check-circle kpi-icon" style="color: var(--status-active);"></i>
+                <div class="kpi-info">
+                    <h3>Veículos em Movimento</h3>
+                    <p id="activeVehicles">--</p>
+                    <small>online agora</small>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <i class="fas fa-exclamation-triangle kpi-icon" style="color: var(--status-alert);"></i>
+                <div class="kpi-info">
+                    <h3>Alertas (24h)</h3>
+                    <p id="totalAlerts">24</p>
+                    <small>eventos críticos</small>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <i class="fas fa-gas-pump kpi-icon"></i>
+                <div class="kpi-info">
+                    <h3>Consumo Médio</h3>
+                    <p id="avgFuel">2.8</p>
+                    <small>km/l na frota</small>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <i class="fas fa-clock kpi-icon"></i>
+                <div class="kpi-info">
+                    <h3>Horas Motorizadas</h3>
+                    <p id="engineHours">--</p>
+                    <small>hoje</small>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <i class="fas fa-road kpi-icon"></i>
+                <div class="kpi-info">
+                    <h3>Distância Total</h3>
+                    <p id="totalDistance">--</p>
+                    <small>km (24h)</small>
+                </div>
+            </div>
+        </div>
 
-        <a href="reports.html" class="card">
-            <i class="fas fa-file-alt"></i>
-            <span>Relatórios</span>
-        </a>
-
-        <a href="list.html" class="card">
-            <i class="fas fa-microchip"></i>
-            <span>Telemetria IoT</span>
-        </a>
+        <!-- Gráficos e Status -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: stretch;">
+            <div class="chart-container">
+                <canvas id="mainChart"></canvas>
+            </div>
+            <div class="status-card">
+                <h3>
+                    <i class="fas fa-server"></i>
+                    Status do Sistema
+                </h3>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <div class="status-item">
+                        <span><i class="fas fa-wifi"></i> API </span>
+                        <span class="status-value" id="apiStatus">Online</span>
+                    </div>
+                    <div class="status-item">
+                        <span><i class="fas fa-cloud"></i> Servidor</span>
+                        <span class="status-value" id="serverTime">--:--:--</span>
+                    </div>
+                    <div class="status-item">
+                        <span><i class="fas fa-database"></i> Última Atualização</span>
+                        <span class="status-value" id="lastUpdate">---</span>
+                    </div>
+                    <div class="status-item">
+                        <span><i class="fas fa-shield-alt"></i> Sessão</span>
+                        <span class="status-value" id="sessionStatus">Ativa</span>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <div class="help-btn">
-        <i class="fas fa-headset"></i>
-    </div>
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
 
     <script>
-        // Configurar tema inicial baseado no localStorage
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.body.className = `theme-${savedTheme}`;
+
+            // Carregar dados da API
+            await loadDashboardData();
+            updateClock();
+            setInterval(updateClock, 1000);
         });
 
-        // Ouvir mudanças de tema da navegação
+        // Ouvir mudanças de tema
         document.addEventListener('themeChanged', (e) => {
             document.body.className = `theme-${e.detail.theme}`;
-
-            // Atualizar cor do "7" na logo quando o tema mudar
-            const sevenSpan = document.querySelector('.brand-text span');
-            if (sevenSpan) {
-                sevenSpan.style.color = e.detail.theme === 'dark' ? '#ffffff' : '#000000';
-            }
         });
+
+        async function loadDashboardData() {
+            try {
+                // Carregar total de unidades
+                const resp = await fetch('/api/units');
+                if (!resp.ok) throw new Error('Falha na rede');
+                const data = await resp.json();
+
+                const totalUnits = data.units?.length || 0;
+                document.getElementById('totalUnits').innerText = totalUnits;
+
+                // Simular outros dados
+                const activeCount = Math.floor(totalUnits * 0.65);
+                document.getElementById('activeVehicles').innerText = activeCount;
+                document.getElementById('engineHours').innerText = (totalUnits * 4.2).toFixed(0);
+                document.getElementById('totalDistance').innerText = (totalUnits * 85).toFixed(0);
+                document.getElementById('avgFuel').innerText = (2.5 + (totalUnits * 0.01)).toFixed(1);
+                document.getElementById('totalAlerts').innerText = Math.floor(totalUnits * 2.3) + 5;
+
+                // Verificar status da API
+                const statusResp = await fetch('/api/status');
+                if (statusResp.ok) {
+                    const statusData = await statusResp.json();
+                    const apiEl = document.getElementById('apiStatus');
+                    const sessionEl = document.getElementById('sessionStatus');
+
+                    if (statusData.authenticated) {
+                        apiEl.innerText = 'Online';
+                        apiEl.style.color = 'var(--status-active)';
+                        sessionEl.innerText = 'Ativa';
+                        sessionEl.style.color = 'var(--status-active)';
+                    } else {
+                        apiEl.innerText = 'Offline';
+                        apiEl.style.color = 'var(--status-alert)';
+                        sessionEl.innerText = 'Inativa';
+                        sessionEl.style.color = 'var(--status-alert)';
+                    }
+                }
+            } catch (e) {
+                console.error("Erro ao buscar dados", e);
+                document.getElementById('totalUnits').innerText = 'Erro';
+                document.getElementById('activeVehicles').innerText = '--';
+                document.getElementById('apiStatus').innerText = 'Offline';
+                document.getElementById('apiStatus').style.color = 'var(--status-alert)';
+            }
+
+            updateChart();
+        }
+
+        function updateChart() {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+
+            if (window.myChart) {
+                window.myChart.destroy();
+            }
+
+            window.myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['00h', '04h', '08h', '12h', '16h', '20h', '24h'],
+                    datasets: [
+                        {
+                            label: 'Alertas de Velocidade',
+                            data: [2, 5, 12, 19, 25, 22, 15],
+                            borderColor: '#BE6004',
+                            backgroundColor: 'rgba(190, 96, 4, 0.1)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#BE6004',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Aceleração Brusca',
+                            data: [1, 3, 8, 14, 18, 16, 9],
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 3,
+                            pointBackgroundColor: '#e74c3c',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#a0a0a0',
+                                usePointStyle: true,
+                                pointStyle: 'circle',
+                                padding: 20,
+                                font: { size: 12 }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Eventos nas Últimas 24 Horas',
+                            color: 'var(--text-primary)',
+                            font: { size: 16, weight: '600' },
+                            padding: { bottom: 25 }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1e2329',
+                            titleColor: '#fff',
+                            bodyColor: '#a0a0a0',
+                            borderColor: '#BE6004',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(160, 160, 160, 0.1)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#a0a0a0',
+                                padding: 10,
+                                font: { size: 11 }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#a0a0a0',
+                                font: { size: 11 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('serverTime').innerText = now.toLocaleTimeString('pt-BR');
+            document.getElementById('lastUpdate').innerText = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
+        }
+
+        function changeOrganization(select) {
+            const org = select.value;
+            showToast('Organização alterada: ' + org, 2000);
+
+            // Simular recarga de dados
+            setTimeout(() => {
+                const newUnitCount = Math.floor(Math.random() * 50) + 20;
+
+                // Animar a mudança dos números
+                animateValue('totalUnits', parseInt(document.getElementById('totalUnits').innerText) || 0, newUnitCount, 500);
+
+                const activeCount = Math.floor(newUnitCount * 0.7);
+                animateValue('activeVehicles', parseInt(document.getElementById('activeVehicles').innerText) || 0, activeCount, 500);
+
+                document.getElementById('engineHours').innerText = (newUnitCount * 3.8).toFixed(0);
+                document.getElementById('totalDistance').innerText = (newUnitCount * 92).toFixed(0);
+                document.getElementById('avgFuel').innerText = (2.4 + (newUnitCount * 0.015)).toFixed(1);
+                document.getElementById('totalAlerts').innerText = Math.floor(newUnitCount * 1.8) + 2;
+
+                // Atualizar gráfico
+                if (window.myChart) {
+                    window.myChart.data.datasets[0].data = [
+                        Math.floor(Math.random() * 10) + 1,
+                        Math.floor(Math.random() * 15) + 2,
+                        Math.floor(Math.random() * 20) + 5,
+                        Math.floor(Math.random() * 25) + 10,
+                        Math.floor(Math.random() * 30) + 15,
+                        Math.floor(Math.random() * 25) + 10,
+                        Math.floor(Math.random() * 15) + 3
+                    ];
+                    window.myChart.data.datasets[1].data = [
+                        Math.floor(Math.random() * 5) + 1,
+                        Math.floor(Math.random() * 8) + 2,
+                        Math.floor(Math.random() * 12) + 3,
+                        Math.floor(Math.random() * 16) + 5,
+                        Math.floor(Math.random() * 20) + 8,
+                        Math.floor(Math.random() * 15) + 5,
+                        Math.floor(Math.random() * 8) + 2
+                    ];
+                    window.myChart.update();
+                }
+            }, 300);
+        }
+
+        function animateValue(elementId, start, end, duration) {
+            const element = document.getElementById(elementId);
+            const range = end - start;
+            const increment = range / (duration / 16);
+            let current = start;
+
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= end) {
+                    current = end;
+                    clearInterval(timer);
+                }
+                element.innerText = Math.floor(current);
+            }, 16);
+        }
+
+        function showToast(msg, duration = 3000) {
+            const toast = document.getElementById('toast');
+            toast.innerHTML = msg;
+            toast.style.display = 'block';
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                toast.style.display = 'none';
+            }, duration);
+        }
     </script>
 </body>
 

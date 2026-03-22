@@ -1,0 +1,51 @@
+"""Script auxiliar: substitui caracteres unicode no main.py por equivalentes ASCII."""
+import re
+
+path = "main.py"
+
+replacements = [
+    ("\u2192", "->"),    # seta direita
+    ("\u2714", "[OK]"),  # check mark
+    ("\u2705", "[OK]"),  # check mark verde
+    ("\u26a0", "[!]"),   # aviso
+    ("\U0001f4cd", "[U]"),      # pin
+    ("\U0001f4ca", "[EXPORT]"), # grafico
+    ("\U0001f511", "[AUTH]"),   # chave
+    ("\U0001f512", "[OK]"),     # cadeado
+    ("\U0001f550", "[OK]"),     # relogio
+    ("\U0001f4e1", "[INFO]"),   # antena
+    ("\u2022", "-"),            # bullet
+    ("\u2500", "-"),            # linha horizontal
+    ("\u2502", "|"),            # linha vertical
+    ("\u251c", "+"),            # T esquerdo
+    ("\u2524", "+"),            # T direito
+    ("\u2518", "+"),            # canto inferior direito
+    ("\u250c", "+"),            # canto superior esquerdo
+]
+
+with open(path, "r", encoding="utf-8") as f:
+    content = f.read()
+
+original = content
+for old, new in replacements:
+    content = content.replace(old, new)
+
+changed = sum(1 for o, n in replacements if o in original)
+with open(path, "w", encoding="utf-8") as f:
+    f.write(content)
+
+print(f"Feito. {changed} tipo(s) de caractere(s) substituido(s).")
+lines = content.count("\n")
+print(f"Total de linhas no arquivo: {lines}")
+
+# Verifica se ainda tem chars nao-ASCII problemáticos no stdout
+found = [(i+1, repr(line)) for i, line in enumerate(content.splitlines())
+         if any(ord(c) > 127 for c in line)]
+if found:
+    print(f"Ainda ha {len(found)} linha(s) com caracteres nao-ASCII:")
+    for lineno, line in found[:10]:
+        print(f"  Linha {lineno}: {line[:100]}")
+else:
+    print("Arquivo limpo: nenhum caracter nao-ASCII encontrado.")
+
+

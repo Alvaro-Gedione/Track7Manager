@@ -1,0 +1,363 @@
+/**
+ * export.js - Versão Premium Track7
+ * Exportação de relatórios com formatação profissional
+ * CORREÇÃO: Eventos e Logo
+ */
+
+// Mapeamento completo dos eventos (com todos os códigos)
+const EVENT_MAP = {
+    101: "Aceleração Brusca",
+    102: "Freada Brusca",
+    103: "Excesso de RPM",
+    104: "Alta Rotação", // Adicionado caso exista
+    105: "Marcha Lenta",
+    106: "Batendo Transmissão",
+    107: "Curva Brusca",
+    108: "Excesso de Velocidade",
+    109: "RPM Parado",
+    110: "Fora da Faixa Verde",
+    // Aliases caso venha como string
+    "101": "Aceleração Brusca",
+    "102": "Freada Brusca",
+    "103": "Excesso de RPM",
+    "104": "Alta Rotação",
+    "105": "Marcha Lenta",
+    "106": "Batendo Transmissão",
+    "107": "Curva Brusca",
+    "108": "Excesso de Velocidade",
+    "109": "RPM Parado",
+    "110": "Fora da Faixa Verde"
+};
+
+// Cores por tipo de evento (para formatação)
+const EVENT_COLORS = {
+    "Aceleração Brusca": "#e74c3c",
+    "Freada Brusca": "#e67e22",
+    "Excesso de RPM": "#f39c12",
+    "Marcha Lenta": "#3498db",
+    "Batendo Transmissão": "#9b59b6",
+    "Curva Brusca": "#e67e22",
+    "Excesso de Velocidade": "#c0392b",
+    "RPM Parado": "#7f8c8d",
+    "Fora da Faixa Verde": "#27ae60"
+};
+
+// Cores corporativas Track7
+const CORES = {
+    primary: "#BE6004",    // Laranja
+    secondary: "#9e9e9e",  // Prata
+    dark: "#121212",
+    light: "#f5f5f5",
+    success: "#27ae60",
+    danger: "#e74c3c",
+    warning: "#f39c12"
+};
+
+/**
+ * DEBUG: Função para inspecionar os dados
+ */
+/**
+ * DEBUG: Função para inspecionar os dados
+ */
+function debugDados() {
+    console.log("=== DEBUG DOS DADOS ===");
+    console.log("rptFiltered:", rptFiltered);
+    if (rptFiltered && rptFiltered.length > 0) {
+        console.log("Primeiro item completo:", rptFiltered[0]);
+        console.log("Colunas raiz:", Object.keys(rptFiltered[0]));
+
+        // Verifica estrutura de parâmetros
+        if (rptFiltered[0].p) {
+            console.log("Parâmetros (p):", rptFiltered[0].p);
+            console.log("  d1 (RPM):", rptFiltered[0].p.d1);
+            console.log("  d2 (Vel):", rptFiltered[0].p.d2);
+            console.log("  d3 (Evento):", rptFiltered[0].p.d3);
+            console.log("  d4 (Duração):", rptFiltered[0].p.d4);
+            console.log("  d5 (Pico):", rptFiltered[0].p.d5);
+        }
+
+        // Fallback
+        console.log("user_d3 (fallback):", rptFiltered[0].user_d3);
+    }
+}
+
+function prepareData() {
+    if (!rptFiltered || !rptFiltered.length) return [];
+
+    return rptFiltered.map((row) => {
+        // Filtro de Evento (Código e Nome)
+        let eventoCodigo = row.p_user_d3 !== undefined ? String(row.p_user_d3).trim() : "";
+        let nomeEvento = EVENT_MAP[eventoCodigo] || (eventoCodigo ? `Evento ${eventoCodigo}` : "Log");
+
+        // Novas Colunas solicitadas
+        let retornoEvento = row.p_user_d5 !== undefined ? row.p_user_d5 : "0";
+        let motorista = row.p_user_d6 !== undefined ? row.p_user_d6 : "Não Identificado";
+
+        return {
+            unidade: row.unit || "N/A",
+            dataHora: row.dt || "N/A",
+            coordenadas: (row.lat && row.lon) ? `${row.lat}, ${row.lon}` : "N/A",
+            evento: nomeEvento,
+            eventoCodigo: eventoCodigo,
+            retorno: retornoEvento, // user_d5
+            motorista: motorista,   // user_d6
+            duracao: Number(row.p_user_d4) || 0
+        };
+    });
+}
+
+// Função para carregar o logo via URL do servidor (evita ERR_FILE_NOT_FOUND)
+// Função para carregar o logo via caminho relativo
+function gerarLogoBase64() {
+    return new Promise((resolve) => {
+        const img = new Image();
+        // Caminho relativo para a pasta public
+        img.src = "../../public/img/logo_track7.png";
+        img.crossOrigin = "anonymous"; // Adicionado para evitar problemas de CORS
+        img.onload = function () {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => {
+            console.warn("Logo não encontrado no caminho ../public/img/logo_track7.png. Prosseguindo sem imagem.");
+            resolve(null);
+        };
+    });
+}
+
+// Gera gráfico de barras ignorando eventos irrelevantes
+async function gerarGraficoBase64(dadosFiltrados) {
+    const contagem = {};
+    dadosFiltrados.forEach(d => {
+        contagem[d.evento] = (contagem[d.evento] || 0) + 1;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = 500;
+    canvas.height = 250;
+    const ctx = canvas.getContext('2d');
+
+    const meuGrafico = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(contagem),
+            datasets: [{
+                label: 'Ocorrências',
+                data: Object.values(contagem),
+                backgroundColor: '#BE6004',
+                borderRadius: 5
+            }]
+        },
+        options: {
+            responsive: false,
+            animation: false, // Obrigatório para exportação imediata
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'Distribuição de Alertas Críticos', color: '#666' }
+            }
+        }
+    });
+
+    // Pequena pausa para garantir que o Chart.js desenhou no canvas
+    await new Promise(r => setTimeout(r, 150));
+    const base64 = canvas.toDataURL('image/png');
+    meuGrafico.destroy(); // Limpa memória
+    return base64;
+}
+
+async function exportToPDF() {
+    try {
+        showToast("🔄 Gerando Relatório com Indicadores...", 2000);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+        // 1. Preparação e Filtragem (Ignora Evento 0 e não mapeados)
+        const todosDados = prepareData();
+        const dadosValidos = todosDados.filter(d =>
+            d.eventoCodigo !== "0" && d.eventoCodigo !== "" && EVENT_MAP[d.eventoCodigo] !== undefined
+        );
+
+        if (!dadosValidos.length) {
+            showToast("⚠️ Nenhum evento crítico encontrado para os indicadores.");
+            return;
+        }
+
+        // 2. Cálculos de Desempenho
+        const totalAlertas = dadosValidos.length;
+        const somaDuracao = dadosValidos.reduce((acc, curr) => acc + curr.duracao, 0);
+        const mediaDuracao = (somaDuracao / totalAlertas).toFixed(1);
+
+        // 3. Cabeçalho com Logo
+        const logoBase64 = await gerarLogoBase64();
+        if (logoBase64) {
+            doc.addImage(logoBase64, 'PNG', 10, 8, 35, 12);
+        }
+
+        doc.setFontSize(16);
+        doc.setTextColor(242, 101, 34); // Laranja Track7
+        doc.text("ANÁLISE DE TELEMETRIA E COMPORTAMENTO", 50, 16);
+
+        // 4. Painel de Indicadores (KPIs) - SEM a CLASSIFICAÇÃO
+        doc.setFillColor(245, 245, 245);
+        doc.roundedRect(10, 25, 277, 14, 1, 1, 'F'); // Fundo cinza claro
+
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.setFont("helvetica", "normal");
+        doc.text("TOTAL DE ALERTAS", 15, 31);
+        doc.text("DURAÇÃO MÉDIA", 60, 31);
+        doc.text("PERÍODO", 105, 31);
+        // REMOVIDO: doc.text("CLASSIFICAÇÃO", 230, 31);
+
+        doc.setFontSize(11);
+        doc.setTextColor(40);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${totalAlertas}`, 15, 36);
+        doc.text(`${mediaDuracao} segundos`, 60, 36);
+        doc.text(`${_selectedPeriodLabel || "Personalizado"}`, 105, 36);
+
+        // REMOVIDA a lógica visual da classificação com corStatus
+
+        // 5. Gráfico Analítico (Posicionado à direita da tabela)
+        const imgGrafico = await gerarGraficoBase64(dadosValidos);
+        doc.addImage(imgGrafico, 'PNG', 190, 48, 90, 45);
+
+        // 6. Tabela com Motorista e Retorno (Focada em user_d6 e user_d5)
+        doc.autoTable({
+            head: [["Unidade", "Data/Hora", "Motorista", "Evento", "Retorno", "Duração"]],
+            body: dadosValidos.map(d => [
+                d.unidade,
+                d.dataHora,
+                d.motorista,
+                d.evento,
+                d.retorno,
+                d.duracao + 's'
+            ]),
+            startY: 48,
+            margin: { right: 105 },
+            theme: 'grid',
+            styles: { fontSize: 7.5, cellPadding: 2, overflow: 'linebreak' },
+            headStyles: { fillColor: [242, 101, 34], textColor: [255, 255, 255] },
+            columnStyles: {
+                2: { fontStyle: 'bold' }, // Motorista em destaque
+                4: { halign: 'center' }   // Retorno centralizado
+            }
+        });
+
+        doc.save(`Track7_Relatorio_Executivo_${Date.now()}.pdf`);
+        showToast("✅ PDF gerado com indicadores de performance!");
+
+    } catch (error) {
+        console.error("Erro na exportação:", error);
+        showToast("❌ Erro ao processar indicadores no PDF.");
+    }
+}
+
+/**
+ * EXPORTAÇÃO XLSX - Excel
+ */
+function exportToXLSX() {
+    try {
+        showToast("🔄 Gerando Excel...", 2000);
+
+        const dados = prepareData();
+        if (!dados.length) {
+            showToast("❌ Nenhum dado para exportar");
+            return;
+        }
+
+        const wb = XLSX.utils.book_new();
+
+        const dadosExcel = dados.map(item => ({
+            "Unidade": item.unidade,
+            "Data/Hora": item.dataHora,
+            "Coordenadas": item.coordenadas,
+            "RPM": item.rpm,
+            "Velocidade (km/h)": item.velocidade,
+            "Evento": item.evento,
+            "Duração (s)": item.duracao,
+            "Pico": item.pico
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(dadosExcel);
+
+        ws['!cols'] = [
+            { wch: 20 }, { wch: 18 }, { wch: 25 }, { wch: 10 },
+            { wch: 12 }, { wch: 25 }, { wch: 12 }, { wch: 10 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, "Telemetria");
+        XLSX.writeFile(wb, `Track7_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+        showToast("✅ Excel gerado com sucesso!");
+
+    } catch (error) {
+        console.error("Erro no Excel:", error);
+        showToast("❌ Erro: " + error.message);
+    }
+}
+
+/**
+ * EXPORTAÇÃO CSV
+ */
+function exportToCSV() {
+    try {
+        const dados = prepareData();
+        if (!dados.length) {
+            showToast("❌ Nenhum dado para exportar");
+            return;
+        }
+
+        const dadosCSV = dados.map(item => ({
+            "Unidade": item.unidade,
+            "Data/Hora": item.dataHora,
+            "Coordenadas": item.coordenadas,
+            "RPM": item.rpm,
+            "Velocidade": item.velocidade,
+            "Evento": item.evento,
+            "Duração": item.duracao,
+            "Pico": item.pico
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(dadosCSV);
+        const csv = XLSX.utils.sheet_to_csv(ws);
+
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `Track7_${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+
+        showToast("✅ CSV gerado com sucesso!");
+
+    } catch (error) {
+        console.error("Erro no CSV:", error);
+        showToast("❌ Erro: " + error.message);
+    }
+}
+
+// Melhorar função showToast se não existir
+if (typeof showToast !== 'function') {
+    window.showToast = function (msg, duration = 3000) {
+        console.log("TOAST:", msg);
+        const toast = document.getElementById('toast');
+        if (toast) {
+            toast.querySelector('span').textContent = msg;
+            toast.style.display = 'flex';
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                toast.style.display = 'none';
+            }, duration);
+        } else {
+            alert(msg);
+        }
+    };
+}
+
+
+
+

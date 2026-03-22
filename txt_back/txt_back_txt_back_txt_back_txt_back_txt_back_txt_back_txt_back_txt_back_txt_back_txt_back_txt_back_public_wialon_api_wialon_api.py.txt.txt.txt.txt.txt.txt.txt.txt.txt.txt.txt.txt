@@ -1,0 +1,179 @@
+import requests
+import json
+import hashlib
+from config import WIALON_HOST
+
+
+class WialonAPI:
+    def __init__(self):
+        self.host = WIALON_HOST
+        self.sid = None
+
+    def _request(self, svc: str, params: dict) -> dict:
+        """Método base para todas as requisições POST à API."""
+        url = f"{self.host}/wialon/ajax.html"
+        payload = {
+            "svc": svc,
+            "params": json.dumps(params),
+            "sid": self.sid or ""
+        }
+        response = requests.post(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        response.raise_for_status()
+        result = response.json()
+
+        # Tratamento de erro da API
+        if isinstance(result, dict) and "error" in result:
+            raise Exception(f"Erro Wialon API [{svc}]: código {result['error']} — {result}")
+
+        return result
+
+    # ------------------------------------------------------------------ #
+    #  AUTENTICAÇÃO                                                        #
+    # ------------------------------------------------------------------ #
+
+    def login_with_password(self, username: str, password: str) -> str:
+        """
+        Faz login com usuário e senha.
+        A Wialon Remote API aceita login direto com senha via token/login
+        após gerar o token via core/use_auth_hash ou diretamente com
+        o método token/login passando as credenciais.
+
+        Na prática, o fluxo mais simples é usar o endpoint de login
+        passando usuário e senha diretamente (método legacy ainda suportado).
+        """
+        url = f"{self.host}/wialon/ajax.html"
+
+        # MD5 da senha (formato exigido pelo Wialon para login direto)
+        password_md5 = hashlib.md5(password.encode("utf-8")).hexdigest()
+
+        payload = {
+            "svc": "core/login",
+            "params": json.dumps({
+                "user": username,
+                "password": password_md5,
+                "fl": 1  # flag: retorna dados do usuário logado
+            }),
+            "sid": ""
+        }
+
+        response = requests.post(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        response.raise_for_status()
+        result = response.json()
+
+        if "error" in result:
+            raise Exception(
+                f"Falha no login: código {result['error']}\n"
+                f"Dica: verifique usuário/senha e se o IP tem permissão no Wialon."
+            )
+
+        self.sid = result["eid"]
+        print(f"[OK] Login bem-sucedido. SID: {self.sid[:10]}...")
+        return self.sid
+
+    def login_with_token(self, token: str) -> str:
+        """Faz login com um token pré-gerado."""
+        result = self._request("token/login", {"token": token, "fl": 1})
+        self.sid = result["eid"]
+        print(f"[OK] Login via token bem-sucedido. SID: {self.sid[:10]}...")
+        return self.sid
+
+    def logout(self):
+        """Encerra a sessão."""
+        try:
+            self._request("core/logout", {})
+            print("[OK] Sessao encerrada.")
+        except Exception as e:
+            print(f"[AVISO] ao encerrar sessao: {e}")
+
+    def set_timezone(self, tz_offset: int = 0):
+        """
+        Define o fuso horário da sessão.
+        tz_offset em segundos: -10800 = UTC-3 (Brasília)
+        A API aceita apenas: tzOffset (int) e language (text).
+        """
+        self._request("render/set_locale", {
+            "tzOffset": tz_offset,
+            "language": "pt"
+        })
+        print(f"[OK] Fuso horario definido (offset: {tz_offset}s)")
+
+    # ------------------------------------------------------------------ #
+    #  UNIDADES                                                            #
+    # ------------------------------------------------------------------ #
+
+    def get_all_units(self) -> list:
+        """
+        Retorna todas as unidades disponíveis para o usuário logado.
+        Flag 1 = propriedades gerais (nome, id, etc.)
+        """
+        result = self._request("core/search_items", {
+            "spec": {
+                "itemsType": "avl_unit",
+                "propName": "sys_name",
+                "propValueMask": "*",       # todas as unidades
+                "sortType": "sys_name"
+            },
+            "force": 1,
+            "flags": 1,                    # flag 1: dados gerais
+            "from": 0,
+            "to": 0
+        })
+
+        units = result.get("items", [])
+        print(f"[INFO] {len(units)} unidade(s) encontrada(s).")
+        return units
+
+    # ------------------------------------------------------------------ #
+    #  MENSAGENS                                                           #
+    # ------------------------------------------------------------------ #
+
+    def load_messages(
+        self,
+        unit_id: int,
+        time_from: int,
+        time_to: int,
+        msg_type: int = 1,
+        max_count: int = 0xFFFFFFFF
+    ) -> dict:
+        """
+        Carrega mensagens de uma unidade específica.
+
+        Parâmetros:
+            unit_id   — ID da unidade
+            time_from — timestamp Unix de início
+            time_to   — timestamp Unix de fim
+            msg_type  — tipo de mensagem (1 = Data Messages)
+            max_count — número máximo de mensagens
+        """
+        result = self._request("messages/load_interval", {
+            "itemId": unit_id,
+            "timeFrom": time_from,
+            "timeTo": time_to,
+            "flags": msg_type,       # 1 = Data Messages (raw)
+            "flagsMask": 0xFF,       # máscara padrão
+            "loadCount": max_count
+        })
+        return result
+
+    def unload_messages(self):
+        """Descarrega mensagens da sessão atual (libera memória no servidor)."""
+        self._request("messages/unload", {})
+
+
+
+
+
+
+
+
+
+
+

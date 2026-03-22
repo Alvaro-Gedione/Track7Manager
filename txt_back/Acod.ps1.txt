@@ -1,0 +1,47 @@
+# Paths for Meet360 project
+$projects = @(
+    @{ 
+        Origem  = "C:\Users\alvar\Meet360\Track7Manager"; 
+        Destino = "C:\Users\alvar\Meet360\Track7Manager\txt_back"; 
+        Final   = "C:\Users\alvar\Meet360\tudo_combinado\tudo_combinado_Track7Manager.txt";
+        Filtro  = "*"
+    }
+)
+
+foreach ($p in $projects) {
+    # Ensure directories exist
+    if (!(Test-Path $p.Destino)) { New-Item -ItemType Directory -Path $p.Destino | Out-Null }
+    if (!(Test-Path (Split-Path $p.Final))) { New-Item -ItemType Directory -Path (Split-Path $p.Final) | Out-Null }
+
+    $conteudoAcumulado = New-Object System.Collections.Generic.List[string]
+
+    # Ajuste aqui: Filtrando para NÃO processar a pasta de destino
+    Get-ChildItem -Path $p.Origem -Recurse -File -Filter $p.Filtro | Where-Object { 
+        $_.FullName -notlike "$($p.Destino)*" -and $_.FullName -ne $p.Final 
+    } | ForEach-Object {
+        
+        $caminhoRelativo = $_.FullName.Substring($p.Origem.Length).TrimStart('\')
+        # Substitui caracteres que podem quebrar o caminho do arquivo
+        $nomeFinal = ($caminhoRelativo.Replace('\', '_').Replace(':', '_')) + ".txt"
+        $destinoIndividual = Join-Path $p.Destino $nomeFinal
+
+        # Read the source file
+        try {
+            $fileContent = Get-Content $_.FullName -Raw -ErrorAction Stop
+
+            # Save individual txt copy
+            $fileContent | Set-Content $destinoIndividual
+
+            # Add to the list with headers
+            $conteudoAcumulado.Add("`n#### Início de $nomeFinal ####`n")
+            $conteudoAcumulado.Add($fileContent)
+            $conteudoAcumulado.Add("`n#### Fim de $nomeFinal ####`n")
+        } catch {
+            Write-Warning "Não foi possível ler o arquivo: $($_.FullName)"
+        }
+    }
+
+    # Write everything at once
+    $conteudoAcumulado | Out-File -FilePath $p.Final -Encoding utf8 -Force
+    Write-Host "Concluído: $($p.Final)" -ForegroundColor Green
+}

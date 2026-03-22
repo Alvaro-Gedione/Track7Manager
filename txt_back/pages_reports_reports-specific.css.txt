@@ -1,0 +1,12 @@
+/* REPORT GRID */
+.report-grid {
+    display: grid !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.category-block {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
