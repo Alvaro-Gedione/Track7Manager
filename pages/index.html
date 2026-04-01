@@ -675,8 +675,14 @@
         }
 
         function changeOrganization(select) {
-            const org = select.value;
-            showToast('Organização alterada: ' + org, 2000);
+            const orgId = select.value;
+
+            // Chama a função global que salva no localStorage
+            if (typeof updateSelectedCompany === "function") {
+                updateSelectedCompany(orgId);
+            }
+
+            showToast('Organização alterada: ' + orgId, 2000);
 
             // Simular recarga de dados
             setTimeout(() => {

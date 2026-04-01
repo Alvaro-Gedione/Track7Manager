@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../../components/topnav.js"></script>
+    <script src="../../components/organization.js"></script>
     <style>
         /* ===== ANIMATIONS ===== */
         @keyframes fadeInScale {
@@ -138,7 +139,7 @@
 
         /* ===== HISTORY PANEL (SIDEBAR) ===== */
         .history-panel {
-            width: 350px;
+            width: 450px;
             background: var(--card-bg-solid);
             border: 1px solid var(--border-color);
             border-radius: 24px;
@@ -431,26 +432,95 @@
             background: var(--input-bg);
         }
 
+        /* ===== TRIPS TABLE (nova estrutura - sem espaçamento) ===== */
+        .trips-main-table {
+            margin-top: 0;
+            /* Remove margem superior */
+            border: 1px solid var(--border-color);
+            border-radius: 0;
+            /* Borda quadrada */
+            overflow: hidden;
+            background: var(--card-bg-solid);
+        }
+
+        /* Remove o espaçamento entre a tabela principal e a tabela de viagens */
         .trips-subtable-cell {
-            overflow: visible !important;
             padding: 0 !important;
             background: var(--bg-secondary);
         }
 
         .trips-subtable-container {
-            animation: slideExpand 0.3s ease;
             overflow: visible !important;
-            padding: 12px;
+            padding: 0;
+            /* Remove padding */
             background: var(--bg-secondary);
-            border-radius: 12px;
-            margin: 5px 0;
         }
 
-        .trips-main-table {
-            margin-top: 10px;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            overflow: hidden;
+        /* Estilo para a tabela de viagens - agora usando table */
+        .trips-main-table table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .trips-main-table th {
+            width: 100px;
+            text-align: center;
+            padding: 12px 8px;
+            color: var(--brand-orange);
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+        }
+
+        .trips-main-table td {
+            text-align: center;
+            padding: 0px 10px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+            color: var(--text-primary);
+            position: static;
+            background: var(--bg-secondary-sub);
+        }
+
+        /* Remove a borda inferior da última linha */
+        .trips-main-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Estilo para as linhas da tabela de viagens */
+        .trip-table-row {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: var(--card-bg-solid);
+        }
+
+        .trip-table-row:hover {
+            background: var(--hover-bg);
+            transform: translateX(5px);
+            z-index: 50;
+        }
+
+        /* Remove bordas arredondadas do container de subtrips */
+        .subtrips-container {
+            padding: 0;
+            background: var(--bg-secondary);
+            animation: slideExpand 0.3s ease;
+        }
+
+        .subtrips-container td {
+            padding: 0 !important;
+            border-bottom: none;
+        }
+
+        /* Ajuste para o conteúdo dos subtrips */
+        .subtrips-container>div {
+            padding: 15px;
+            background: var(--bg-secondary);
         }
 
         .trips-table-header {
@@ -542,13 +612,6 @@
         .trip-summary-item span:last-child {
             color: var(--text-primary);
             font-weight: 600;
-        }
-
-        /* ===== SUBTRIPS TABLE ===== */
-        .subtrips-container {
-            padding: 15px;
-            background: var(--bg-secondary);
-            animation: slideExpand 0.3s ease;
         }
 
         .subtrips-header {
@@ -663,7 +726,7 @@
             position: absolute;
             right: 0;
             top: 35px;
-            z-index: 10000;
+            z-index: 9998;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
         }
 
@@ -1284,6 +1347,11 @@
             background: var(--brand-orange);
             border-radius: 3px;
         }
+
+        .vehicles-table th:nth-child(5) {
+            min-width: 90px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 
@@ -1307,10 +1375,7 @@
 
             <div class="org-selector">
                 <span><i class="far fa-building"></i> Organização:</span>
-                <select id="orgSelector" onchange="changeOrganization(this)">
-                    <option value="1">Track7 BR - Betânia</option>
-                    <option value="2">Track7 BR - Sul</option>
-                    <option value="3">Track7 BR - Norte</option>
+                <select id="companySelect" onchange="updateSelectedCompany(this.value)">
                 </select>
             </div>
         </div>
@@ -1511,7 +1576,7 @@
         let vehicleMarker = null;
         let startMarker = null;
         let endMarker = null;
-        let routeLayer; // used by old selectVehicle path
+        let routeLayer;
         let currentRoutePoints = [];
         let isPlaying = false;
         let currentPlaybackMultiplier = 1;
@@ -1522,6 +1587,8 @@
         let selectedVehicleId = null;
         let searchTerm = '';
         let theme = localStorage.getItem('theme') || 'dark';
+        let isLoadingData = false;   // ← NOVO: controla loading
+        let stopMarkers = [];        // ← NOVO: marcadores de parada no mapa
 
         let activeFilters = {
             startDate: null,
@@ -1772,137 +1839,129 @@ ${isExpanded ? `
 <tr class="trips-subtable-row">
     <td colspan="5" class="trips-subtable-cell">
         <div class="trips-subtable-container">
-            <div class="trip-summary">
-                <div class="trip-summary-item">
-                    <i class="fas fa-route"></i>
-                    <span>Total de viagens:</span>
-                    <span>${totalTrips}</span>
-                </div>
-                <div class="trip-summary-item">
-                    <i class="fas fa-road"></i>
-                    <span>Distância total:</span>
-                    <span>${totalTripDistance.toFixed(0)} km</span>
-                </div>
-                <div class="trip-summary-item">
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Velocidade média:</span>
-                    <span>${Math.round(avgTripSpeed)} km/h</span>
-                </div>
-                <div class="trip-summary-item">
-                    <i class="fas fa-parking"></i>
-                    <span>Paradas totais:</span>
-                    <span>${totalStops}</span>
-                </div>
-            </div>
-
             <div class="trips-main-table">
-                <div class="trips-table-header">
-                    <span>Horário (Início - Fim)</span>
-                    <span>Duração</span>
-                    <span>Distância</span>
-                    <span>Vel. Máx</span>
-                    <span>Paradas</span>
-                    <span></span>
-                    <span></span>
-                </div>
-                ${vehicle.trips.map(trip => `
-                    <div class="trip-row" onclick="toggleTripSubtrips(${vehicle.id}, ${trip.id}, event)">
-                        <div class="trip-cell">
-                            <i class="far fa-clock"></i>
-                            <strong>${formatDateTime(trip.start)} - ${formatDateTime(trip.end)}</strong>
-                        </div>
-                        <div class="trip-cell">
-                            <i class="fas fa-hourglass-half"></i> ${trip.duration}
-                        </div>
-                        <div class="trip-cell">
-                            <i class="fas fa-road"></i> ${trip.distance} km
-                        </div>
-                        <div class="trip-cell">
-                            <i class="fas fa-tachometer-alt"></i> ${trip.maxSpeed} km/h
-                        </div>
-                        <div class="trip-cell">
-                            <i class="fas fa-parking"></i> ${trip.stops} stops
-                        </div>
-                        <div class="dropdown">
-                            <button class="expand-btn" onclick="toggleDropdown(event, 'trip-drop-${vehicle.id}-${trip.id}')">
-                                <i class="fas fa-ellipsis-v"></i>
-                            </button>
-                            <div class="dropdown-menu" id="trip-drop-${vehicle.id}-${trip.id}">
-                                <button class="dropdown-item" onclick="showTripOnMap(${vehicle.id}, ${trip.id}, event)">
-                                    <i class="fas fa-map-marker-alt"></i> Ver no Mapa
-                                </button>
-                                <button class="dropdown-item" onclick="showTripTimeline(${vehicle.id}, ${trip.id}, event)">
-                                    <i class="fas fa-route"></i> Mostrar cronograma de viagem
-                                </button>
-                                <button class="dropdown-item" onclick="openGoogleEarth(${vehicle.id}, ${trip.id}, event)">
-                                    <i class="fas fa-globe-americas"></i> Google Earth
-                                </button>
-                            </div>
-                        </div>
-                        <div class="trip-cell">
-                            <i class="fas fa-chevron-down trip-expand-icon" id="trip-icon-${vehicle.id}-${trip.id}"></i>
-                        </div>
-                    </div>
-
-                    <div class="subtrips-container" id="subtrips-${vehicle.id}-${trip.id}" style="display: none; grid-column: 1 / -1;">
-                        <table class="subtrips-table">
-                            <thead>
-                                <tr>
-                                    <th>Partida</th>
-                                    <th>Chegada</th>
-                                    <th>Duração</th>
-                                    <th>Distância (Km)</th>
-                                    <th>Velocidade Máx. (Km/h)</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${trip.subtrips && trip.subtrips.length
-                        ? trip.subtrips.map((sub, subIndex) => `
-                                            <tr>
-                                                <td>${formatDateTime(sub.partida)}</td>
-                                                <td>${formatDateTime(sub.chegada)}</td>
-                                                <td>${sub.duracao}</td>
-                                                <td>${sub.distancia}</td>
-                                                <td class="${sub.velocidadeMax > 80 ? 'highlight-speed' : ''}">
-                                                    ${sub.velocidadeMax}
-                                                </td>
-                                                <td style="text-align:center;">
-                                                    <div class="dropdown">
-                                                        <button class="expand-btn" onclick="toggleDropdown(event, 'sub-drop-${vehicle.id}-${trip.id}-${subIndex}')">
-                                                            <i class="fas fa-ellipsis-h"></i>
-                                                        </button>
-                                                        <div class="dropdown-menu" id="sub-drop-${vehicle.id}-${trip.id}-${subIndex}">
-                                                            <button class="dropdown-item" onclick="showSubTripOnMap(${vehicle.id}, ${trip.id}, ${subIndex}, event)">
-                                                                <i class="fas fa-map-marked-alt"></i> Mostrar no Mapa
-                                                            </button>
-                                                            <button class="dropdown-item" onclick="showSubTripTimeline(${vehicle.id}, ${trip.id}, ${subIndex}, event)">
-                                                                <i class="fas fa-route"></i> Mostrar cronograma
-                                                            </button>
-                                                            <button class="dropdown-item" onclick="openGoogleEarthForSubTrip(${vehicle.id}, ${trip.id}, ${subIndex}, event)">
-                                                                <i class="fas fa-globe-americas"></i> Google Earth
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        `).join('')
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Início</th>
+                            <th>Fim</th>
+                            <th>Duração</th>
+                            <th>Distância</th>
+                            <th>Vel. Máx</th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${vehicle.trips.map(trip => `
+                            <tr class="trip-table-row" onclick="toggleTripSubtrips(${vehicle.id}, ${trip.id}, event)" style="cursor: pointer;">
+                                <td>
+                                    <i style="color: var(--brand-orange); margin-right: 8px;"></i>
+                                    <strong>${formatDateTime(trip.start)}</strong>
+                                </td>
+                                <td>
+                                    <i style="color: var(--brand-orange); margin-right: 8px;"></i>
+                                    <strong>${formatDateTime(trip.end)}</strong>
+                                </td>
+                                <td>
+                                    <i style="color: var(--brand-orange); margin-right: 8px;"></i>
+                                    ${trip.duration}
+                                </td>
+                                <td>
+                                    <i style="color: var(--brand-orange); margin-right: 8px;"></i>
+                                    ${trip.distance} km
+                                </td>
+                                <td>
+                                    <i style="color: var(--brand-orange); margin-right: 8px;"></i>
+                                    ${trip.maxSpeed} km/h
+                                </td>
+                                <td>
+                                    <div class="dropdown">
+                                        <button class="expand-btn" onclick="toggleDropdown(event, 'trip-drop-${vehicle.id}-${trip.id}')">
+                                            <i class="fas fa-ellipsis-v"></i>
+                                        </button>
+                                        <div class="dropdown-menu" id="trip-drop-${vehicle.id}-${trip.id}">
+                                            <button class="dropdown-item" onclick="showTripOnMap(${vehicle.id}, ${trip.id}, event)">
+                                                <i class="fas fa-map-marker-alt"></i> Ver no Mapa
+                                            </button>
+                                            <button class="dropdown-item" onclick="showTripTimeline(${vehicle.id}, ${trip.id}, event)">
+                                                <i class="fas fa-route"></i> Mostrar cronograma de viagem
+                                            </button>
+                                            <button class="dropdown-item" onclick="openGoogleEarth(${vehicle.id}, ${trip.id}, event)">
+                                                <i class="fas fa-globe-americas"></i> Google Earth
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <i class="fas fa-chevron-down trip-expand-icon" id="trip-icon-${vehicle.id}-${trip.id}" style="color: var(--brand-orange); transition: transform 0.3s ease;"></i>
+                                </td>
+                            </tr>
+                            <tr class="subtrips-container" id="subtrips-${vehicle.id}-${trip.id}" style="display: none;">
+                                <td colspan="7" style="padding: 0;">
+                                    <div style="padding: 15px; background: var(--bg-secondary);">
+                                        <table class="subtrips-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                                            <thead>
+                                                <tr>
+                                                    <th style="text-align: left; padding: 8px 6px;">Partida</th>
+                                                    <th style="text-align: left; padding: 8px 6px;">Chegada</th>
+                                                    <th style="text-align: left; padding: 8px 6px;">Duração</th>
+                                                    <th style="text-align: left; padding: 8px 6px;">Distância</th>
+                                                    <th style="text-align: left; padding: 8px 18px;">Vel. Máx.</th>
+                                                    <th style="text-align: left; padding: 8px 6px;"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                ${trip.subtrips && trip.subtrips.length ? trip.subtrips.map((sub, subIndex) => `
+                                                        <tr>
+                                                            <td style="padding: 8px 6px;">${formatDateTime(sub.partida)}</td>
+                                                            <td style="padding: 8px 6px;">${formatDateTime(sub.chegada)}</td>
+                                                            <td style="padding: 8px 6px;">${sub.duracao}</td>
+                                                            <td style="padding: 8px 6px;">${sub.distancia} km</td>
+                                                            <td style="padding: 8px 6px; text-align: center;" class="${sub.velocidadeMax > 80 ? 'highlight-speed' : ''}">${sub.velocidadeMax} km/h</td>
+                                                            <td style="text-align:center;">
+                                                                <div class="dropdown">
+                                                                    <button class="expand-btn" onclick="toggleDropdown(event, 'sub-drop-${vehicle.id}-${trip.id}-${subIndex}')">
+                                                                        <i class="fas fa-ellipsis-v"></i>
+                                                                    </button>
+                                                                    <div class="dropdown-menu" id="sub-drop-${vehicle.id}-${trip.id}-${subIndex}">
+                                                                        <button class="dropdown-item" onclick="showSubTripOnMap(${vehicle.id}, ${trip.id}, ${subIndex}, event)">
+                                                                            <i class="fas fa-map-marked-alt"></i> Mostrar no Mapa
+                                                                        </button>
+                                                                        <button class="dropdown-item" onclick="showSubTripTimeline(${vehicle.id}, ${trip.id}, ${subIndex}, event)">
+                                                                            <i class="fas fa-route"></i> Mostrar cronograma
+                                                                        </button>
+                                                                        <button class="dropdown-item" onclick="openGoogleEarthForSubTrip(${vehicle.id}, ${trip.id}, ${subIndex}, event)">
+                                                                            <i class="fas fa-globe-americas"></i> Google Earth
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    `).join('')
                         : `
-                                            <tr>
-                                                <td colspan="6" style="text-align:center; color: var(--text-secondary);">
-                                                    <i class="fas fa-info-circle"></i> Nenhum trecho de movimento registrado
-                                                </td>
-                                            </tr>
-                                        `
+                                                        <tr>
+                                                            <td colspan="6" style="text-align:center; padding: 20px; color: var(--text-secondary);">
+                                                                <i class="fas fa-info-circle"></i> Nenhum trecho de movimento registrado
+                                                            </td>
+                                                        </tr>
+                                                    `
                     }
-                            </tbody>
-                        </table>
-                    </div>
-                `).join('')}
-                ${vehicle.trips.length === 0 ? `
-                    <div style="text-align: center; padding: 30px; color: var(--text-secondary);">
-                        <i class="fas fa-info-circle"></i> Nenhuma viagem registrada neste período
-                    </div>` : ''}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                        ${vehicle.trips.length === 0 ? `
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 30px; color: var(--text-secondary);">
+                                    <i class="fas fa-info-circle"></i> Nenhuma viagem registrada neste período
+                                </td>
+                            </tr>
+                        ` : ''}
+                    </tbody>
+                </table>
             </div>
         </div>
     </td>
@@ -2278,10 +2337,18 @@ ${isExpanded ? `
             const container = document.getElementById(`subtrips-${vehicleId}-${tripId}`);
             const icon = document.getElementById(`trip-icon-${vehicleId}-${tripId}`);
             const isHidden = container.style.display === 'none';
-            container.style.display = isHidden ? 'block' : 'none';
+
+            // Fecha outros containers abertos (opcional)
+            document.querySelectorAll('.subtrips-container').forEach(c => {
+                if (c.id !== `subtrips-${vehicleId}-${tripId}`) {
+                    c.style.display = 'none';
+                }
+            });
+
+            container.style.display = isHidden ? 'table-row' : 'none';
             if (icon) {
-                if (isHidden) icon.classList.add('rotated');
-                else icon.classList.remove('rotated');
+                if (isHidden) icon.style.transform = 'rotate(180deg)';
+                else icon.style.transform = 'rotate(0deg)';
             }
         }
 

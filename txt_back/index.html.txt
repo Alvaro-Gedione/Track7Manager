@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="refresh" content="0; url=./pages/index.html" />
+    <script type="text/javascript">
+        window.location.href = "./pages/index.html"
+    </script>
+    <title>Track7Manager Redirect</title>
+</head>
+
+<body>
+    Se você não for redirecionado, <a href="./pages/index.html">clique aqui</a>.
+</body>
+
+</html>

@@ -42,7 +42,6 @@
         <div class="org-selector">
             <span><i class="far fa-building"></i> Organização:</span>
             <select id="companySelect" onchange="updateSelectedCompany(this.value)">
-                <option value="">Todas as Empresas</option>
             </select>
         </div>
     </div>
@@ -471,31 +470,6 @@
         let _selectedPeriodLabel = '';
         let _reportTitle = '';
 
-        async function loadCompanies() {
-            const select = document.getElementById('companySelect');
-            if (!select) return;
-
-            // Se você moveu os dados para o organization.js conforme conversamos:
-            const data = window.Track7Data || { clients: [] };
-
-            let options = '<option value="">Todas as Empresas</option>';
-
-            if (data.clients.length > 0) {
-                // Se houver dados centralizados
-                data.clients.forEach(c => {
-                    options += `<option value="${c.id}">${c.tradeName}</option>`;
-                });
-            } else {
-                // Fallback: Se ainda não centralizou, vamos usar as unidades da API
-                const units = await loadUnitsForModal();
-                units.forEach(u => {
-                    options += `<option value="${u.id}">${u.name}</option>`;
-                });
-            }
-
-            select.innerHTML = options;
-        }
-
         async function loadUnitsForModal() {
             if (_unitsCache.length > 0) return _unitsCache;
             try {
@@ -513,9 +487,6 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.body.className = `theme-${savedTheme}`;
-
-            // 1. Primeiro popula o select com as empresas (essencial para o organization.js encontrar o valor)
-            await loadCompanies();
             try {
                 const st = await fetch(`${API}/status`);
                 const sd = await st.json();

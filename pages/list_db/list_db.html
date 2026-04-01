@@ -42,7 +42,6 @@
             margin-left: 30px;
         }
 
-        /* Sidebar no formato do live-tracking */
         .filters-panel {
             width: 350px;
             background: var(--card-bg-solid);
@@ -55,16 +54,13 @@
             transition: all 0.3s ease;
         }
 
-        /* Adicione esta nova classe para a área rolável */
         .filters-content {
             flex: 1;
             overflow-y: auto;
-            /* Permite rolagem vertical */
             overflow-x: hidden;
             padding-bottom: 16px;
         }
 
-        /* Personalizar a barra de rolagem da sidebar */
         .filters-content::-webkit-scrollbar {
             width: 4px;
         }
@@ -79,20 +75,14 @@
             border-radius: 4px;
         }
 
-        .filters-content::-webkit-scrollbar-thumb:hover {
-            background: #ff8c52;
-        }
-
         .filters-panel:hover {
             border-color: rgba(242, 101, 34, 0.3);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
-        /* Search box igual ao live-tracking */
         .search-box {
             padding: 15px 20px;
             border-bottom: 1px solid var(--border-color);
-            animation: fadeIn 0.7s ease-out;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -120,7 +110,6 @@
             outline: none;
         }
 
-        /* Filtros Section */
         .filters-section {
             padding: 16px 20px;
             border-bottom: 1px solid var(--border-color);
@@ -138,11 +127,6 @@
             gap: 8px;
         }
 
-        .section-title i {
-            font-size: 12px;
-        }
-
-        /* Lista de unidades no estilo da lista de veículos */
         .units-list {
             max-height: 200px;
             overflow-y: auto;
@@ -177,11 +161,6 @@
             width: 16px;
             height: 16px;
             cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-
-        .unit-row:hover input[type=checkbox] {
-            transform: scale(1.1);
         }
 
         .unit-row.all-row {
@@ -204,7 +183,6 @@
             display: inline-block;
         }
 
-        /* Pills no estilo do live-tracking */
         .pills {
             display: flex;
             gap: 8px;
@@ -223,26 +201,6 @@
             background: var(--input-bg);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             white-space: nowrap;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .pill::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(242, 101, 34, 0.15);
-            transform: translate(-50%, -50%);
-            transition: width 0.5s, height 0.5s;
-        }
-
-        .pill:hover::before {
-            width: 150px;
-            height: 150px;
         }
 
         .pill:hover {
@@ -258,7 +216,6 @@
             box-shadow: 0 4px 12px rgba(242, 101, 34, 0.3);
         }
 
-        /* Date picker */
         .date-pair {
             display: none;
             flex-direction: column;
@@ -289,16 +246,8 @@
             background: var(--input-bg);
             color: var(--text-primary);
             font-size: 12px;
-            transition: all 0.3s ease;
         }
 
-        .dp-row input:focus {
-            outline: none;
-            border-color: var(--brand-orange);
-            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
-        }
-
-        /* Selects */
         .filter-select {
             width: 100%;
             padding: 8px 12px;
@@ -308,15 +257,8 @@
             color: var(--text-primary);
             font-size: 12px;
             margin-bottom: 12px;
-            transition: all 0.3s ease;
         }
 
-        .filter-select:focus {
-            outline: none;
-            border-color: var(--brand-orange);
-        }
-
-        /* Checkbox row */
         .chk-row {
             display: flex;
             align-items: center;
@@ -325,17 +267,41 @@
             font-size: 12px;
             color: var(--text-secondary);
             cursor: pointer;
-            padding: 6px 0;
         }
 
-        .chk-row input {
-            accent-color: var(--brand-orange);
-            width: 16px;
-            height: 16px;
+        .auto-refresh-control {
+            margin: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .auto-refresh-toggle {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 40px;
+            background: var(--input-bg);
+            color: var(--brand-silver);
+            font-size: 11px;
+            font-weight: 600;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Status e progresso */
+        .auto-refresh-toggle.active {
+            background: var(--brand-orange);
+            color: white;
+            border-color: var(--brand-orange);
+        }
+
+        .auto-refresh-indicator {
+            font-size: 10px;
+            color: var(--brand-silver);
+        }
+
         .sb-status {
             margin: 12px 20px;
             padding: 10px 14px;
@@ -384,22 +350,8 @@
             background: linear-gradient(90deg, var(--brand-orange), #ff8c52);
             width: 0%;
             transition: width 0.3s ease;
-            animation: pulseProgress 1.5s infinite;
         }
 
-        @keyframes pulseProgress {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.6;
-            }
-        }
-
-        /* Botão executar */
         .btn-exec {
             margin: 16px 20px;
             padding: 12px 0;
@@ -415,26 +367,6 @@
             justify-content: center;
             gap: 8px;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-exec::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
-            transform: translate(-50%, -50%);
-            transition: width 0.6s, height 0.6s;
-        }
-
-        .btn-exec:hover::before {
-            width: 300px;
-            height: 300px;
         }
 
         .btn-exec:hover:not(:disabled) {
@@ -445,10 +377,8 @@
         .btn-exec:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
         }
 
-        /* Main area */
         .main-area {
             flex: 1;
             background: var(--card-bg-solid);
@@ -457,16 +387,9 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            transition: all 0.3s ease;
             margin-right: 30px;
         }
 
-        .main-area:hover {
-            border-color: rgba(242, 101, 34, 0.3);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Summary strip */
         .summary-strip {
             background: var(--toolbar-bg);
             border-bottom: 1px solid var(--border-color);
@@ -493,14 +416,12 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            line-height: 1.2;
         }
 
         .sg .sl {
             font-size: 10px;
             color: var(--brand-silver);
             text-transform: uppercase;
-            letter-spacing: 0.4px;
         }
 
         .strip-sep {
@@ -509,7 +430,6 @@
             background: var(--border-color);
         }
 
-        /* Toolbar */
         .result-toolbar {
             background: var(--toolbar-bg);
             border-bottom: 1px solid var(--border-color);
@@ -532,20 +452,12 @@
             font-size: 12px;
             background: var(--input-bg);
             color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
-
-        .result-toolbar input:focus {
-            outline: none;
-            border-color: var(--brand-orange);
-            box-shadow: 0 0 0 3px rgba(242, 101, 34, 0.1);
         }
 
         .tb-right {
             margin-left: auto;
             display: flex;
             gap: 10px;
-            align-items: center;
         }
 
         .btn-sm {
@@ -557,20 +469,16 @@
             font-weight: 600;
             cursor: pointer;
             color: var(--brand-silver);
-            transition: all 0.3s ease;
         }
 
         .btn-sm:hover {
             border-color: var(--brand-orange);
             color: var(--brand-orange);
-            transform: translateY(-1px);
         }
 
-        /* Table */
         .table-wrap {
             flex: 1;
             overflow: auto;
-            padding: 0;
         }
 
         table {
@@ -591,50 +499,17 @@
             font-weight: 700;
             color: var(--brand-silver);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
             cursor: pointer;
-            user-select: none;
-            transition: all 0.2s ease;
         }
 
         thead th:hover {
             color: var(--brand-orange);
         }
 
-        thead th.sorted {
-            color: var(--brand-orange);
-        }
-
-        thead th.unit-col {
-            background: var(--sidebar-header-bg);
-            color: var(--brand-orange);
-        }
-
-        .sort-icon {
-            opacity: 0.4;
-            font-size: 9px;
-            margin-left: 4px;
-        }
-
-        thead th.sorted .sort-icon {
-            opacity: 1;
-        }
-
-        tbody tr {
-            border-bottom: 1px solid var(--border-color);
-            transition: all 0.2s ease;
-        }
-
-        tbody tr:hover {
-            background: rgba(242, 101, 34, 0.05);
-        }
-
         td {
             padding: 10px 12px;
             color: var(--text-primary);
             white-space: nowrap;
-            vertical-align: middle;
         }
 
         td.mono {
@@ -646,9 +521,6 @@
         td.unit-cell {
             font-weight: 700;
             color: var(--brand-orange);
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .badge {
@@ -694,7 +566,6 @@
             margin-right: 6px;
         }
 
-        /* Empty state */
         .empty-state {
             display: flex;
             flex-direction: column;
@@ -703,7 +574,6 @@
             height: 100%;
             color: var(--brand-silver);
             gap: 12px;
-            font-size: 13px;
         }
 
         .empty-state .icon {
@@ -711,7 +581,6 @@
             opacity: 0.3;
         }
 
-        /* Pagination */
         .pag-bar {
             background: var(--toolbar-bg);
             border-top: 1px solid var(--border-color);
@@ -720,7 +589,6 @@
             align-items: center;
             gap: 12px;
             font-size: 12px;
-            color: var(--brand-silver);
         }
 
         .pag-bar.hidden {
@@ -740,19 +608,6 @@
             background: var(--input-bg);
             font-size: 11px;
             cursor: pointer;
-            color: var(--text-primary);
-            transition: all 0.3s ease;
-        }
-
-        .pg-btn:hover:not(:disabled) {
-            border-color: var(--brand-orange);
-            color: var(--brand-orange);
-            transform: translateY(-1px);
-        }
-
-        .pg-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
         }
 
         .pg-btn.active {
@@ -776,7 +631,6 @@
             }
         }
 
-        /* Toast */
         .toast {
             position: fixed;
             bottom: 30px;
@@ -790,24 +644,8 @@
             gap: 10px;
             z-index: 2100;
             box-shadow: 0 8px 20px rgba(242, 101, 34, 0.4);
-            animation: toastSlide 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            font-size: 13px;
-            font-weight: 500;
         }
 
-        @keyframes toastSlide {
-            from {
-                opacity: 0;
-                transform: translateX(50px) scale(0.8);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateX(0) scale(1);
-            }
-        }
-
-        /* Scrollbar */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
@@ -821,10 +659,6 @@
             background: var(--brand-orange);
             border-radius: 3px;
         }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #ff8c52;
-        }
     </style>
 </head>
 
@@ -832,37 +666,33 @@
     <top-navigation></top-navigation>
 
     <div class="list-container">
-        <!-- Breadcrumb bar igual ao live-tracking -->
         <div class="breadcrumb-bar">
             <div style="display: flex; gap: 8px;">
-                <span class="tab active" onclick="location.href='list.html'">
+                <span class="tab active">
                     <i class="fas fa-list-alt" style="margin-right: 6px;"></i> Log de Mensagens
                 </span>
             </div>
-
             <div class="org-selector">
                 <span><i class="far fa-building"></i> Organização:</span>
-                <select id="companySelect" onchange="updateSelectedCompany(this.value)">
+                <select id="companySelect">
                 </select>
             </div>
         </div>
 
         <div class="layout">
-            <!-- Filters Panel - mesmo formato do vehicle-panel do live-tracking -->
             <aside class="filters-panel">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
                     <input type="text" id="unitSearch" placeholder="Buscar unidade..." oninput="filterUnitList()">
                 </div>
 
-                <!-- Área rolável - tudo que deve rolar fica dentro deste div -->
                 <div class="filters-content">
                     <div class="filters-section">
                         <div class="section-title">
                             <i class="fas fa-tachometer-alt"></i> Unidades / Equipamentos
                         </div>
                         <div class="units-list" id="unitListWrap">
-                            <div class="unit-row all-row" id="rowAll" onclick="toggleAll()">
+                            <div class="unit-row all-row" onclick="toggleAll()">
                                 <input type="checkbox" id="chkAll" /> Todos os equipamentos
                             </div>
                         </div>
@@ -878,7 +708,6 @@
                             <span class="pill" onclick="setQuick(this,'yesterday')">Ontem</span>
                             <span class="pill" onclick="setQuick(this,'week')">7 dias</span>
                             <span class="pill active" onclick="setQuick(this,'month')">30 dias</span>
-                            <span class="pill" onclick="setQuick(this,'ytd')">Ano atual</span>
                             <span class="pill" onclick="setQuick(this,'custom')">Personalizado</span>
                         </div>
                         <div class="date-pair" id="customDates">
@@ -895,50 +724,39 @@
 
                     <div class="filters-section">
                         <div class="section-title">
-                            <i class="fas fa-envelope"></i> Tipo de Mensagem
-                        </div>
-                        <select class="filter-select" id="msgType">
-                            <option value="1">Mensagens de dados (GPS)</option>
-                            <option value="256">Mensagens customizadas</option>
-                            <option value="2">Mensagens SMS</option>
-                            <option value="4">Dados inválidos</option>
-                        </select>
-
-                        <div class="section-title" style="margin-top: 12px;">
-                            <i class="fas fa-layer-group"></i> Limite por Unidade
+                            <i class="fas fa-layer-group"></i> Limite de Registros
                         </div>
                         <select class="filter-select" id="maxMsgs">
-                            <option value="50" selected>50 mensagens</option>
-                            <option value="1000">1.000 mensagens</option>
-                            <option value="5000">5.000 mensagens</option>
-                            <option value="10000">10.000 mensagens</option>
-                            <option value="50000">50.000 mensagens</option>
-                            <option value="4294967295">Sem limite</option>
+                            <option value="50" selected>50 registros</option>
+                            <option value="100">100 registros</option>
+                            <option value="500">500 registros</option>
+                            <option value="1000">1.000 registros</option>
+                            <option value="5000">5.000 registros</option>
                         </select>
 
-                        <label class="chk-row">
-                            <input type="checkbox" id="chkParams" checked> Exibir parâmetros extras
-                        </label>
                         <label class="chk-row">
                             <input type="checkbox" id="chkOnlyPos"> Somente com GPS válido
                         </label>
                     </div>
 
+                    <div class="auto-refresh-control">
+                        <button class="auto-refresh-toggle" id="autoRefreshBtn" onclick="toggleAutoRefresh()">
+                            <i class="fas fa-sync-alt"></i> Auto-Refresh
+                        </button>
+                        <span class="auto-refresh-indicator" id="autoRefreshIndicator">Desligado</span>
+                    </div>
                     <div class="sb-status" id="sbStatus"></div>
                     <div class="progress-bar" id="progressBar">
-                        <div class="pb-fill" id="pbFill" style="width:0%"></div>
+                        <div class="pb-fill" id="pbFill"></div>
                     </div>
                 </div>
 
-                <!-- Botão executar fica fora da área rolável (fixo na parte inferior) -->
                 <button class="btn-exec" id="btnExec" onclick="execute()">
                     <span id="btnContent"><i class="fas fa-play"></i> Executar Consulta</span>
                 </button>
             </aside>
 
-            <!-- Main Area -->
             <main class="main-area">
-                <!-- Summary Strip -->
                 <div class="summary-strip hidden" id="summaryStrip">
                     <div class="sg">
                         <div class="sv" id="sumTotal">0</div>
@@ -956,16 +774,6 @@
                     </div>
                     <div class="strip-sep"></div>
                     <div class="sg">
-                        <div class="sv" id="sumMaxSpd">--</div>
-                        <div class="sl">Vel. Máx.</div>
-                    </div>
-                    <div class="strip-sep"></div>
-                    <div class="sg">
-                        <div class="sv" id="sumAvgSpd">--</div>
-                        <div class="sl">Vel. Média</div>
-                    </div>
-                    <div class="strip-sep"></div>
-                    <div class="sg">
                         <div class="sv" id="sumWithPos">--</div>
                         <div class="sl">Com GPS</div>
                     </div>
@@ -976,24 +784,20 @@
                     </div>
                 </div>
 
-                <!-- Toolbar -->
                 <div class="result-toolbar hidden" id="resultToolbar">
                     <input type="text" id="searchInput" placeholder="Filtrar em qualquer coluna..."
                         oninput="applySearch()" />
                     <div class="tb-right">
                         <button class="btn-sm" onclick="exportCSV()"><i class="fas fa-file-csv"></i> CSV</button>
                         <button class="btn-sm" onclick="exportJSON()"><i class="fas fa-file-code"></i> JSON</button>
-                        <span style="font-size: 11px; color: var(--brand-silver);" id="pageInfo"></span>
+                        <span id="pageInfo"></span>
                     </div>
                 </div>
 
-                <!-- Table -->
                 <div class="table-wrap">
                     <div class="empty-state" id="emptyState">
                         <div class="icon"><i class="fas fa-database"></i></div>
                         <div>Selecione equipamentos e clique em <strong>Executar</strong></div>
-                        <div style="font-size: 11px; color: var(--brand-silver);">Todos os campos disponíveis do log
-                            serão exibidos</div>
                     </div>
                     <table id="dataTable" style="display: none;">
                         <thead id="tHead"></thead>
@@ -1001,7 +805,6 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
                 <div class="pag-bar hidden" id="pagBar">
                     <span id="pagInfo"></span>
                     <div class="pag-right" id="pagBtns"></div>
@@ -1016,7 +819,10 @@
     </div>
 
     <script>
-        const API = 'http://localhost:5000/api';
+        // Configuração Supabase
+        const SUPABASE_URL = 'https://uoovvwxnerpqeksuogvi.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvb3Z2d3huZXJwcWVrc3VvZ3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0NjQzNzAsImV4cCI6MjA5MDA0MDM3MH0.D8Em--Kxf5sJH2jzmUqOV9aG_zOhRh9REjIisqooClA';
+
         const PAGE_SIZE = 200;
 
         let allUnits = [];
@@ -1027,47 +833,152 @@
         let currentPage = 1;
         let sortCol = null, sortAsc = true;
         let timeFrom = 0, timeTo = 0;
+        let autoRefreshTimer = null;
+        let isAutoRefreshing = false;
+        let currentUnitIds = [];
+
 
         function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
             const icon = toast.querySelector('i');
             const msgSpan = document.getElementById('toastMessage');
-            if (type === 'success') {
-                icon.className = 'fas fa-check-circle';
-                toast.style.background = 'var(--brand-orange)';
-            } else {
-                icon.className = 'fas fa-exclamation-circle';
-                toast.style.background = '#e74c3c';
-            }
+            icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+            toast.style.background = type === 'success' ? 'var(--brand-orange)' : '#e74c3c';
             msgSpan.textContent = msg;
             toast.style.display = 'flex';
-            setTimeout(() => { toast.style.display = 'none'; }, 3000);
-        }
-
-        function changeOrganization(select) {
-            showToast(`Organização alterada: ${select.options[select.selectedIndex].text}`);
+            setTimeout(() => toast.style.display = 'none', 3000);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme') || 'dark';
             document.body.className = `theme-${savedTheme}`;
             applyPeriod('month');
-            checkServer();
+            loadUnitsFromSupabase();
+
+            // Configurar listeners de data
+            ['dtFrom', 'dtTo'].forEach(id => {
+                document.getElementById(id).addEventListener('change', () => {
+                    const fv = document.getElementById('dtFrom').value;
+                    const tv = document.getElementById('dtTo').value;
+                    if (fv) timeFrom = Math.floor(new Date(fv).getTime() / 1000);
+                    if (tv) timeTo = Math.floor(new Date(tv).getTime() / 1000);
+
+                    const customPill = document.querySelector('#periodPills .pill:last-child');
+                    document.querySelectorAll('#periodPills .pill').forEach(p => p.classList.remove('active'));
+                    if (customPill) customPill.classList.add('active');
+                    document.getElementById('customDates').classList.add('show');
+                });
+            });
         });
 
         document.addEventListener('themeChanged', (e) => {
             document.body.className = `theme-${e.detail.theme}`;
         });
 
+        async function loadUnitsFromSupabase() {
+            try {
+                setStatus('loading', 'Carregando unidades do banco...');
+
+                // Tentar carregar da tabela unidades
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/unidades?select=imei,nome&order=nome.asc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    // Se a tabela não existe, tentar buscar IMEIs únicos da telemetria
+                    console.warn('Tabela unidades não encontrada, buscando IMEIs da telemetria...');
+                    await loadUnitsFromTelemetria();
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data && data.length > 0) {
+                    allUnits = data.map(u => ({ id: u.imei, name: u.nome || u.imei }));
+                    renderUnitList(allUnits);
+                    setStatus('info', `${allUnits.length} unidade(s) carregada(s).`);
+                } else {
+                    // Se não há unidades cadastradas, buscar da telemetria
+                    await loadUnitsFromTelemetria();
+                }
+
+            } catch (error) {
+                console.error('Erro ao carregar unidades:', error);
+                // Fallback: buscar IMEIs da tabela de telemetria
+                await loadUnitsFromTelemetria();
+            }
+        }
+
+        async function loadUnitsFromTelemetria() {
+            try {
+                setStatus('loading', 'Buscando IMEIs dos dados de telemetria...');
+
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/telemetria_live?select=imei&order=imei.asc`, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Extrair IMEIs únicos
+                const imeisMap = new Map();
+                data.forEach(row => {
+                    if (row.imei && !imeisMap.has(row.imei)) {
+                        imeisMap.set(row.imei, { id: row.imei, name: `Equipamento ${row.imei.slice(-6)}` });
+                    }
+                });
+
+                allUnits = Array.from(imeisMap.values());
+
+                if (allUnits.length > 0) {
+                    renderUnitList(allUnits);
+                    setStatus('info', `${allUnits.length} unidade(s) encontrada(s) na telemetria.`);
+                    showToast(`${allUnits.length} equipamentos encontrados nos dados de telemetria`, 'success');
+                } else {
+                    // Último recurso: dados mock para demonstração
+                    setStatus('error', 'Nenhum dado encontrado. Usando modo demonstração.');
+                    loadMockUnits();
+                }
+
+            } catch (error) {
+                console.error('Erro ao buscar IMEIs da telemetria:', error);
+                setStatus('error', 'Não foi possível conectar ao Supabase. Verifique sua conexão.');
+                loadMockUnits();
+            }
+        }
+
+        function loadMockUnits() {
+            allUnits = [
+                { id: '356566071214393', name: 'VEÍCULO A - GALILEOSKY' },
+                { id: '356566071214394', name: 'VEÍCULO B - GALILEOSKY' },
+                { id: '356566071214395', name: 'VEÍCULO C - GALILEOSKY' }
+            ];
+            renderUnitList(allUnits);
+            setStatus('info', 'MODO DEMONSTRAÇÃO: Dados mockados para teste.');
+            showToast('Modo demonstração ativado. Os dados exibidos são exemplos.', 'error');
+        }
+
         function renderUnitList(units) {
             const wrap = document.getElementById('unitListWrap');
-            [...wrap.querySelectorAll('.unit-item')].forEach(el => el.remove());
+            const allRow = wrap.querySelector('.all-row');
+            wrap.innerHTML = '';
+            wrap.appendChild(allRow);
+
             units.forEach(u => {
                 const row = document.createElement('label');
                 row.className = 'unit-row unit-item';
                 row.dataset.id = u.id;
                 row.dataset.name = u.name;
-                row.innerHTML = `<input type="checkbox" class="unit-chk" value="${u.id}" onchange="updateSelCount()"> <span>${escapeHtml(u.name)}</span>`;
+                row.innerHTML = `<input type="checkbox" class="unit-chk" value="${escapeHtml(u.id)}"> <span>${escapeHtml(u.name)}</span>`;
                 wrap.appendChild(row);
             });
             updateSelCount();
@@ -1084,7 +995,7 @@
             const chkAll = document.getElementById('chkAll');
             chkAll.checked = !chkAll.checked;
             const checked = chkAll.checked;
-            document.querySelectorAll('.unit-chk').forEach(c => {
+            document.querySelectorAll('.unit-chk:not(:disabled)').forEach(c => {
                 if (c.closest('.unit-item').style.display !== 'none') c.checked = checked;
             });
             updateSelCount();
@@ -1099,6 +1010,9 @@
                 sel.length === 0 ? 'Nenhuma unidade selecionada' :
                     sel.length === all.length ? `Todos os ${all.length} equipamentos selecionados` :
                         `${sel.length} de ${all.length} selecionado(s)`;
+
+            // Salva os IDs das unidades selecionadas para o auto-refresh
+            currentUnitIds = sel.map(c => c.value);
         }
 
         function getSelectedUnits() {
@@ -1108,157 +1022,165 @@
             });
         }
 
-        async function checkServer() {
-            try {
-                const r = await fetch(`${API}/status`);
-                const d = await r.json();
-                setStatus('info', 'Servidor conectado');
-                if (d.authenticated) {
-                    await loadUnits();
-                    setStatus('info', 'Sessão ativa. Selecione equipamentos e execute.');
-                } else {
-                    await doLogin();
-                }
-            } catch (e) {
-                setStatus('error', 'Servidor offline. Execute: python server.py na pasta wialon_api/');
-            }
-        }
-
-        async function doLogin() {
-            setStatus('loading', 'Autenticando no Wialon...');
-            try {
-                const r = await fetch(`${API}/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: '67eba42da80819eb285dd8794678964707481B6FFB3E065405FE46F889143875DE5B3C3A' })
-                });
-                const d = await r.json();
-                if (d.error) throw new Error(d.error);
-                setStatus('info', 'Login OK. Carregando unidades...');
-                await loadUnits();
-            } catch (e) {
-                setStatus('error', 'Login falhou: ' + e.message);
-            }
-        }
-
-        async function loadUnits() {
-            const r = await fetch(`${API}/units`);
-            const d = await r.json();
-            if (d.error) { setStatus('error', d.error); return; }
-            allUnits = d.units;
-            renderUnitList(allUnits);
-            setStatus('info', d.units.length + ' unidade(s). Selecione e execute.');
-        }
-
         async function execute() {
             const units = getSelectedUnits();
-            if (!units.length) { setStatus('error', 'Selecione pelo menos uma unidade.'); return; }
+            if (!units.length) {
+                setStatus('error', 'Selecione pelo menos uma unidade.');
+                return;
+            }
 
-            const msgType = parseInt(document.getElementById('msgType').value);
             const maxCount = parseInt(document.getElementById('maxMsgs').value);
             const onlyPos = document.getElementById('chkOnlyPos').checked;
-            const showParams = document.getElementById('chkParams').checked;
 
             setBusy(true);
             showProgress();
 
-            let allMsgs = [];
-            let allParamSet = new Set();
-
-            for (let i = 0; i < units.length; i++) {
-                const u = units[i];
-                const pct = Math.round(((i + 1) / units.length) * 100);
-                document.getElementById('pbFill').style.width = pct + '%';
-                setStatus('loading', `Carregando ${i + 1}/${units.length}: ${u.name}...`);
-
-                try {
-                    const r = await fetch(`${API}/messages`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ unitId: u.id, timeFrom, timeTo, msgType, maxCount })
-                    });
-                    const d = await r.json();
-                    if (d.error) throw new Error(d.error);
-
-                    const msgs = d.messages || [];
-                    msgs.forEach(m => {
-                        m._unitName = u.name;
-                        m._unitId = u.id;
-                        Object.keys(m.p || {}).forEach(k => allParamSet.add(k));
-                    });
-                    allMsgs = allMsgs.concat(msgs);
-                } catch (e) {
-                    setStatus('error', `Erro em "${u.name}": ${e.message}`);
+            try {
+                const imeiList = units.map(u => `"${u.id}"`).join(',');
+                let dateFilter = '';
+                if (timeFrom > 0 && timeTo > 0) {
+                    const fromDate = new Date(timeFrom * 1000).toISOString();
+                    const toDate = new Date(timeTo * 1000).toISOString();
+                    dateFilter = `&timestamp=gte.${fromDate}&timestamp=lte.${toDate}`;
                 }
-            }
 
-            buildTable(allMsgs, allParamSet, onlyPos, showParams);
-            setStatus('info', allMsgs.length.toLocaleString('pt-BR') + ' mensagens de ' + units.length + ' unidade(s).');
-            setBusy(false);
-            hideProgress();
+                const url = `${SUPABASE_URL}/rest/v1/telemetria_live?imei=in.(${imeiList})${dateFilter}&order=timestamp.desc&limit=${maxCount}`;
+
+                setStatus('loading', `Consultando ${units.length} unidade(s)...`);
+
+                const response = await fetch(url, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                let data = await response.json();
+
+                if (onlyPos) {
+                    data = data.filter(row => row.latitude !== null && row.longitude !== null);
+                }
+
+                buildTable(data);
+
+                const totalMsg = data.length;
+                setStatus('info', `${totalMsg.toLocaleString('pt-BR')} mensagens de ${units.length} unidade(s).`);
+
+                if (isAutoRefreshing) {
+                    currentUnitIds = units.map(u => u.id);
+                }
+
+            } catch (error) {
+                console.error('Erro na consulta:', error);
+                setStatus('error', 'Erro na consulta: ' + error.message);
+                showToast('Erro ao consultar dados: ' + error.message, 'error');
+                buildMockData(units);
+            } finally {
+                setBusy(false);
+                hideProgress();
+            }
         }
 
-        function buildTable(msgs, paramSetArg, onlyPos, showParams) {
-            allParamKeys = paramSetArg || new Set();
-            const paramKeys = [...allParamKeys].sort();
+        function buildMockData(units) {
+            // Dados mock para demonstração quando não há conexão
+            const mockData = [];
+            const now = new Date();
 
-            const cols = [
-                { key: '_idx', label: '#', mono: true, unitCol: false },
-                { key: 'unit', label: 'Unidade', mono: false, unitCol: true },
-                { key: 'dt', label: 'Data / Hora', mono: true, unitCol: false },
-                { key: 'lat', label: 'Latitude', mono: true, unitCol: false },
-                { key: 'lon', label: 'Longitude', mono: true, unitCol: false },
-                { key: 'spd', label: 'Vel. (km/h)', speed: true, unitCol: false },
-                { key: 'course', label: 'Curso (°)', mono: false, unitCol: false },
-                { key: 'alt', label: 'Alt. (m)', mono: false, unitCol: false },
-                { key: 'sat', label: 'Sats', sat: true, unitCol: false },
-                { key: 'flags', label: 'Flags', mono: true, unitCol: false },
-            ];
-            if (showParams) paramKeys.forEach(k => cols.push({ key: 'p_' + k, label: k, param: true }));
-            colHeaders = cols;
+            for (let i = 0; i < 20; i++) {
+                const date = new Date(now.getTime() - i * 60000);
+                mockData.push({
+                    imei: units[0]?.id || '356566071214393',
+                    timestamp: date.toISOString(),
+                    latitude: -23.5505 + (Math.random() - 0.5) * 0.01,
+                    longitude: -46.6333 + (Math.random() - 0.5) * 0.01,
+                    velocidade: Math.floor(Math.random() * 100),
+                    ignicao: Math.random() > 0.3,
+                    sats: Math.floor(Math.random() * 12) + 3,
+                    atributos: {
+                        adc0: Math.floor(Math.random() * 5000),
+                        temperatura: 20 + Math.random() * 15,
+                        hodometro: 10000 + Math.floor(Math.random() * 5000)
+                    }
+                });
+            }
 
-            let rows = [];
-            msgs.forEach((m, idx) => {
-                const pos = m.pos || {};
-                if (onlyPos && !pos.y) return;
-                const row = {
-                    _idx: idx + 1,
-                    unit: m._unitName || '',
-                    t: m.t || 0,
-                    dt: tsToStr(m.t),
-                    lat: pos.y != null ? pos.y.toFixed(6) : '',
-                    lon: pos.x != null ? pos.x.toFixed(6) : '',
-                    spd: pos.s != null ? pos.s : '',
-                    course: pos.c != null ? pos.c : '',
-                    alt: pos.z != null ? pos.z : '',
-                    sat: pos.sc != null ? pos.sc : '',
-                    flags: m.f != null ? m.f : '',
-                };
-                if (showParams) {
-                    const p = m.p || {};
-                    paramKeys.forEach(k => {
-                        const v = p[k];
-                        row['p_' + k] = (v != null && typeof v === 'object') ? (v.v != null ? v.v : (v.x != null ? v.x : JSON.stringify(v))) : (v != null ? v : '');
-                    });
+            buildTable(mockData);
+            setStatus('info', `MODO DEMO: ${mockData.length} registros mockados exibidos.`);
+            showToast('Modo demonstração: dados fictícios', 'error');
+        }
+
+        function buildTable(msgs) {
+            let dynamicKeys = new Set();
+            msgs.forEach(m => {
+                if (m.atributos && typeof m.atributos === 'object') {
+                    Object.keys(m.atributos).forEach(k => dynamicKeys.add(k));
                 }
-                rows.push(row);
             });
 
-            const speeds = rows.map(r => parseFloat(r.spd)).filter(v => !isNaN(v) && v >= 0);
-            const unitSet = new Set(rows.map(r => r.unit));
-            document.getElementById('sumTotal').textContent = rows.length.toLocaleString('pt-BR');
+            colHeaders = [
+                { key: 'imei', label: 'IMEI', unitCol: true },
+                { key: 'timestamp', label: 'Data/Hora', mono: true },
+                { key: 'latitude', label: 'Latitude', mono: true },
+                { key: 'longitude', label: 'Longitude', mono: true },
+                { key: 'velocidade', label: 'Vel. (km/h)', speed: true },
+                { key: 'ignicao', label: 'Ignição' },
+                { key: 'sats', label: 'Sats', sat: true }
+            ];
+
+            const paramKeys = [...dynamicKeys].sort();
+            paramKeys.forEach(k => {
+                colHeaders.push({ key: 'p_' + k, label: k, param: true });
+            });
+
+            allParamKeys = new Set(paramKeys);
+
+            allRows = msgs.map((m, idx) => {
+                const row = {
+                    _idx: idx + 1,
+                    imei: m.imei || '',
+                    timestamp: m.timestamp ? new Date(m.timestamp).toLocaleString('pt-BR') : '',
+                    latitude: m.latitude != null ? m.latitude.toFixed(6) : '',
+                    longitude: m.longitude != null ? m.longitude.toFixed(6) : '',
+                    velocidade: m.velocidade != null ? m.velocidade : '',
+                    ignicao: m.ignicao != null ? (m.ignicao ? 'LIGADO' : 'DESLIGADO') : '',
+                    sats: m.sats != null ? m.sats : '',
+                    raw_timestamp: m.timestamp
+                };
+
+                if (m.atributos && typeof m.atributos === 'object') {
+                    paramKeys.forEach(k => {
+                        const v = m.atributos[k];
+                        if (v !== undefined && v !== null) {
+                            row['p_' + k] = typeof v === 'object' ? (v.v || v.x || JSON.stringify(v)) : v;
+                        } else {
+                            row['p_' + k] = '';
+                        }
+                    });
+                }
+
+                return row;
+            });
+
+            const speeds = allRows.map(r => parseFloat(r.velocidade)).filter(v => !isNaN(v));
+            const unitSet = new Set(allRows.map(r => r.imei));
+            const withPos = allRows.filter(r => r.latitude && r.longitude).length;
+
+            document.getElementById('sumTotal').textContent = allRows.length.toLocaleString('pt-BR');
             document.getElementById('sumUnits').textContent = unitSet.size;
-            document.getElementById('sumMaxSpd').textContent = (speeds.length ? Math.max(...speeds) : 0) + ' km/h';
-            document.getElementById('sumAvgSpd').textContent = (speeds.length ? (speeds.reduce((a, b) => a + b, 0) / speeds.length).toFixed(1) : 0) + ' km/h';
-            document.getElementById('sumWithPos').textContent = rows.filter(r => r.lat).length.toLocaleString('pt-BR');
+            document.getElementById('sumWithPos').textContent = withPos.toLocaleString('pt-BR');
             document.getElementById('sumParamKeys').textContent = allParamKeys.size;
-            if (rows.length >= 2) {
-                const first = rows[0].dt.slice(0, 10), last = rows[rows.length - 1].dt.slice(0, 10);
+
+            if (allRows.length >= 2) {
+                const first = allRows[0].timestamp.slice(0, 10);
+                const last = allRows[allRows.length - 1].timestamp.slice(0, 10);
                 document.getElementById('sumPeriod').textContent = first + ' → ' + last;
             }
 
-            allRows = rows;
-            filtered = [...rows];
+            filtered = [...allRows];
             currentPage = 1;
             renderTable();
         }
@@ -1271,17 +1193,23 @@
             const pagBar = document.getElementById('pagBar');
 
             if (!filtered.length) {
-                table.style.display = 'none'; empty.style.display = 'flex';
-                strip.classList.add('hidden'); toolbar.classList.add('hidden'); pagBar.classList.add('hidden');
+                table.style.display = 'none';
+                empty.style.display = 'flex';
+                strip.classList.add('hidden');
+                toolbar.classList.add('hidden');
+                pagBar.classList.add('hidden');
                 return;
             }
 
-            empty.style.display = 'none'; table.style.display = '';
-            strip.classList.remove('hidden'); toolbar.classList.remove('hidden'); pagBar.classList.remove('hidden');
+            empty.style.display = 'none';
+            table.style.display = '';
+            strip.classList.remove('hidden');
+            toolbar.classList.remove('hidden');
+            pagBar.classList.remove('hidden');
 
             document.getElementById('tHead').innerHTML = '<tr>' + colHeaders.map(c =>
-                `<th onclick="sortBy('${c.key}')" class="${c.unitCol ? 'unit-col' : ''} ${sortCol === c.key ? 'sorted' : ''}">
-                    ${escapeHtml(c.label)}<span class="sort-icon">${sortCol === c.key ? (sortAsc ? '▲' : '▼') : '⇅'}</span>
+                `<th onclick="sortBy('${c.key}')" class="${c.unitCol ? 'unit-col' : ''}">
+                    ${escapeHtml(c.label)}
                 </th>`
             ).join('') + '</tr>';
 
@@ -1289,23 +1217,24 @@
             const page = filtered.slice(start, start + PAGE_SIZE);
 
             document.getElementById('tBody').innerHTML = page.map(row => {
-                const spd = parseFloat(row.spd);
-                const hasSpd = !isNaN(spd);
-                const spdColor = spd > 90 ? '#e74c3c' : spd > 60 ? '#f39c12' : '#27ae60';
-                const spdCls = spd > 90 ? 'bg-red' : spd > 60 ? 'bg-orange' : 'bg-green';
-                const spdW = hasSpd ? Math.min(spd / 120 * 36, 36) : 0;
-
                 const cells = colHeaders.map(c => {
                     const v = row[c.key];
                     const str = v != null && v !== '' ? String(v) : '';
+
                     if (c.key === '_idx') return `<td style="color: #666;">${v}</td>`;
-                    if (c.unitCol) return `<td class="unit-cell" title="${escapeHtml(str)}">${escapeHtml(str)}</td>`;
-                    if (c.speed && hasSpd) return `<td><span class="speed-bar" style="width:${spdW}px;background:${spdColor};"></span><span class="badge ${spdCls}">${spd} km/h</span></td>`;
-                    if (c.sat && str) return `<td><span class="badge ${parseInt(str) >= 4 ? 'bg-green' : 'bg-red'}">${str}</span></td>`;
-                    if (c.key === 'flags' && str) return `<td class="mono">0x${(parseInt(str) || 0).toString(16).toUpperCase()}</td>`;
-                    if (c.param) return str ? `<td><span class="param-tag">${escapeHtml(str)}</span></td>` : `<td style="color: #444;">-</td>`;
-                    if (c.mono) return `<td class="mono">${str || '<span style="color:#444;">-</span>'}</td>`;
-                    return `<td>${str || '<span style="color:#444;">-</span>'}</td>`;
+                    if (c.unitCol) return `<td class="unit-cell">${escapeHtml(str)}</td>`;
+                    if (c.speed && !isNaN(parseFloat(v))) {
+                        const spd = parseFloat(v);
+                        const cls = spd > 90 ? 'bg-red' : spd > 60 ? 'bg-orange' : 'bg-green';
+                        return `<td><span class="badge ${cls}">${spd} km/h</span></td>`;
+                    }
+                    if (c.sat && str) {
+                        const cls = parseInt(str) >= 4 ? 'bg-green' : 'bg-red';
+                        return `<td><span class="badge ${cls}">${str}</span></td>`;
+                    }
+                    if (c.param && str) return `<td><span class="param-tag">${escapeHtml(str)}</span></td>`;
+                    if (c.mono) return `<td class="mono">${str || '-'}</td>`;
+                    return `<td>${str || '-'}</td>`;
                 });
                 return `<tr>${cells.join('')}</tr>`;
             }).join('');
@@ -1319,33 +1248,40 @@
             const start = (currentPage - 1) * PAGE_SIZE + 1;
             const end = Math.min(currentPage * PAGE_SIZE, total);
 
-            document.getElementById('pagInfo').textContent = `Exibindo ${start.toLocaleString('pt-BR')}-${end.toLocaleString('pt-BR')} de ${total.toLocaleString('pt-BR')}`;
+            document.getElementById('pagInfo').textContent = `Exibindo ${start}-${end} de ${total}`;
             document.getElementById('pageInfo').textContent = `Pág. ${currentPage}/${totalPages}`;
 
             const btns = document.getElementById('pagBtns');
             btns.innerHTML = '';
+
             const add = (label, pg, active) => {
                 const b = document.createElement('button');
                 b.className = 'pg-btn' + (active ? ' active' : '');
-                b.innerHTML = label;
+                b.textContent = label;
                 b.disabled = pg < 1 || pg > totalPages || active;
                 b.onclick = () => { currentPage = pg; renderTable(); };
                 btns.appendChild(b);
             };
-            add('‹ Anterior', currentPage - 1, false);
-            const pages = new Set([1, totalPages, currentPage, currentPage - 1, currentPage + 1].filter(p => p >= 1 && p <= totalPages));
-            let last = 0;
-            [...pages].sort((a, b) => a - b).forEach(p => {
-                if (last && p - last > 1) { const sp = document.createElement('span'); sp.textContent = '...'; sp.style.cssText = 'padding:4px;color:#666;'; btns.appendChild(sp); }
-                add(p, p, p === currentPage); last = p;
-            });
-            add('Próximo ›', currentPage + 1, false);
+
+            add('‹', currentPage - 1, false);
+
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, startPage + 4);
+
+            for (let i = startPage; i <= endPage; i++) {
+                add(i, i, i === currentPage);
+            }
+
+            add('›', currentPage + 1, false);
         }
 
         function applySearch() {
             const q = document.getElementById('searchInput').value.toLowerCase();
             filtered = !q ? [...allRows] : allRows.filter(row =>
-                colHeaders.some(c => { const v = row[c.key]; return v != null && String(v).toLowerCase().includes(q); })
+                colHeaders.some(c => {
+                    const v = row[c.key];
+                    return v != null && String(v).toLowerCase().includes(q);
+                })
             );
             currentPage = 1;
             renderTable();
@@ -1356,7 +1292,13 @@
             sortCol = col;
             filtered.sort((a, b) => {
                 let va = a[col], vb = b[col];
-                if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) { va = parseFloat(va); vb = parseFloat(vb); }
+                if (col === 'timestamp' && a.raw_timestamp && b.raw_timestamp) {
+                    va = new Date(a.raw_timestamp).getTime();
+                    vb = new Date(b.raw_timestamp).getTime();
+                } else if (!isNaN(parseFloat(va)) && !isNaN(parseFloat(vb))) {
+                    va = parseFloat(va);
+                    vb = parseFloat(vb);
+                }
                 if (va < vb) return sortAsc ? -1 : 1;
                 if (va > vb) return sortAsc ? 1 : -1;
                 return 0;
@@ -1369,60 +1311,187 @@
             document.querySelectorAll('#periodPills .pill').forEach(p => p.classList.remove('active'));
             el.classList.add('active');
             const cd = document.getElementById('customDates');
-            if (period === 'custom') { cd.classList.add('show'); return; }
+            if (period === 'custom') {
+                cd.classList.add('show');
+                return;
+            }
             cd.classList.remove('show');
             applyPeriod(period);
         }
 
         function applyPeriod(period) {
             const now = Math.floor(Date.now() / 1000);
-            const d = new Date(); d.setHours(0, 0, 0, 0);
+            const d = new Date();
+            d.setHours(0, 0, 0, 0);
             const tod = Math.floor(d.getTime() / 1000);
+
             switch (period) {
                 case 'today': timeFrom = tod; timeTo = now; break;
                 case 'yesterday': timeFrom = tod - 86400; timeTo = tod - 1; break;
                 case 'week': timeFrom = now - 7 * 86400; timeTo = now; break;
                 case 'month': timeFrom = now - 30 * 86400; timeTo = now; break;
-                case 'ytd': timeFrom = Math.floor(new Date(d.getFullYear(), 0, 1).getTime() / 1000); timeTo = now; break;
             }
+
             const fmt = ts => new Date(ts * 1000).toISOString().slice(0, 16);
             const fi = document.getElementById('dtFrom'), ti = document.getElementById('dtTo');
             if (fi) fi.value = fmt(timeFrom);
             if (ti) ti.value = fmt(timeTo);
         }
 
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('autoRefreshBtn');
+            const indicator = document.getElementById('autoRefreshIndicator');
+
+            if (autoRefreshTimer) {
+                // Desliga o auto-refresh
+                clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
+                isAutoRefreshing = false;
+                btn.classList.remove('active');
+                indicator.textContent = 'Desligado';
+                showToast('Atualização automática desligada');
+            } else {
+                // Liga o auto-refresh
+                if (currentUnitIds.length === 0) {
+                    showToast('Selecione equipamentos antes de ativar auto-refresh', 'error');
+                    return;
+                }
+                autoRefreshTimer = setInterval(() => executeAutoRefresh(), 5000);
+                isAutoRefreshing = true;
+                btn.classList.add('active');
+                indicator.textContent = 'Ativo (5s)';
+                showToast('Atualização automática: 5 segundos');
+            }
+        }
+
+        async function executeAutoRefresh() {
+            if (!isAutoRefreshing) return;
+
+            const units = currentUnitIds.map(id => {
+                const unit = allUnits.find(u => u.id === id);
+                return { id, name: unit ? unit.name : id };
+            });
+
+            if (!units.length) return;
+
+            const maxCount = parseInt(document.getElementById('maxMsgs').value);
+            const onlyPos = document.getElementById('chkOnlyPos').checked;
+
+            try {
+                const imeiList = units.map(u => `"${u.id}"`).join(',');
+                let dateFilter = '';
+                if (timeFrom > 0 && timeTo > 0) {
+                    const fromDate = new Date(timeFrom * 1000).toISOString();
+                    const toDate = new Date(timeTo * 1000).toISOString();
+                    dateFilter = `&timestamp=gte.${fromDate}&timestamp=lte.${toDate}`;
+                }
+
+                const url = `${SUPABASE_URL}/rest/v1/telemetria_live?imei=in.(${imeiList})${dateFilter}&order=timestamp.desc&limit=${maxCount}`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Erro na consulta');
+
+                let data = await response.json();
+                if (onlyPos) {
+                    data = data.filter(row => row.latitude !== null && row.longitude !== null);
+                }
+
+                buildTable(data);
+
+                // Atualiza o indicador com o horário do último refresh
+                const indicator = document.getElementById('autoRefreshIndicator');
+                const now = new Date().toLocaleTimeString('pt-BR');
+                if (indicator.textContent.includes('Ativo')) {
+                    indicator.textContent = `Ativo (${now})`;
+                }
+
+            } catch (error) {
+                console.error('Auto-refresh error:', error);
+                // Não mostra toast para não incomodar o usuário
+            }
+        }
+
         function exportCSV() {
-            if (!filtered.length) { showToast('Sem dados para exportar.', 'error'); return; }
-            const hdr = colHeaders.map(c => '"' + c.label + '"').join(',');
-            const rows = filtered.map(r => colHeaders.map(c => { const v = r[c.key]; return v != null && v !== '' ? '"' + String(v).replace(/"/g, '""') + '"' : '""'; }).join(','));
-            download('wialon_log.csv', 'data:text/csv;charset=utf-8,' + encodeURIComponent([hdr, ...rows].join('\n')));
-            showToast(`CSV exportado — ${filtered.length.toLocaleString('pt-BR')} linhas.`);
+            if (!filtered.length) {
+                showToast('Sem dados para exportar.', 'error');
+                return;
+            }
+            const hdr = colHeaders.filter(c => c.key !== '_idx').map(c => `"${c.label}"`).join(',');
+            const rows = filtered.map(r => {
+                return colHeaders.filter(c => c.key !== '_idx').map(c => {
+                    const v = r[c.key];
+                    return v != null && v !== '' ? `"${String(v).replace(/"/g, '""')}"` : '""';
+                }).join(',');
+            });
+            const blob = new Blob([hdr + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'track7_log.csv';
+            link.click();
+            URL.revokeObjectURL(link.href);
+            showToast(`CSV exportado — ${filtered.length} linhas.`);
         }
 
         function exportJSON() {
-            if (!filtered.length) { showToast('Sem dados para exportar.', 'error'); return; }
-            const data = filtered.map(r => { const o = {}; colHeaders.forEach(c => { if (c.key !== '_idx') o[c.key] = r[c.key]; }); return o; });
-            download('wialon_log.json', 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data, null, 2)));
-            showToast(`JSON exportado — ${filtered.length.toLocaleString('pt-BR')} registros.`);
+            if (!filtered.length) {
+                showToast('Sem dados para exportar.', 'error');
+                return;
+            }
+            const data = filtered.map(r => {
+                const o = {};
+                colHeaders.forEach(c => {
+                    if (c.key !== '_idx') o[c.key] = r[c.key];
+                });
+                return o;
+            });
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'track7_log.json';
+            link.click();
+            URL.revokeObjectURL(link.href);
+            showToast(`JSON exportado — ${filtered.length} registros.`);
         }
 
-        function download(name, href) { const a = document.createElement('a'); a.href = href; a.download = name; a.click(); }
+        function escapeHtml(s) {
+            if (s === undefined || s === null) return '';
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
 
-        function tsToStr(ts) { if (!ts) return ''; const d = new Date(ts * 1000); return d.toLocaleString('pt-BR'); }
-        function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-        function setStatus(type, msg) { const el = document.getElementById('sbStatus'); el.className = 'sb-status ' + type; el.textContent = msg; }
-        function setBusy(b) { const btn = document.getElementById('btnExec'); btn.disabled = b; document.getElementById('btnContent').innerHTML = b ? '<div class="spinner"></div> Carregando...' : '<i class="fas fa-play"></i> Executar Consulta'; }
-        function showProgress() { document.getElementById('progressBar').classList.add('show'); }
-        function hideProgress() { document.getElementById('progressBar').classList.remove('show'); }
+        function setStatus(type, msg) {
+            const el = document.getElementById('sbStatus');
+            el.className = 'sb-status ' + type;
+            el.textContent = msg;
+        }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            ['dtFrom', 'dtTo'].forEach(id => {
-                document.getElementById(id).addEventListener('change', () => {
-                    const fv = document.getElementById('dtFrom').value, tv = document.getElementById('dtTo').value;
-                    if (fv) timeFrom = Math.floor(new Date(fv).getTime() / 1000);
-                    if (tv) timeTo = Math.floor(new Date(tv).getTime() / 1000);
-                });
-            });
+        function setBusy(b) {
+            const btn = document.getElementById('btnExec');
+            btn.disabled = b;
+            document.getElementById('btnContent').innerHTML = b ? '<div class="spinner"></div> Carregando...' : '<i class="fas fa-play"></i> Executar Consulta';
+        }
+
+        function showProgress() {
+            const pb = document.getElementById('progressBar');
+            pb.classList.add('show');
+            document.getElementById('pbFill').style.width = '100%';
+        }
+
+        function hideProgress() {
+            const pb = document.getElementById('progressBar');
+            pb.classList.remove('show');
+            document.getElementById('pbFill').style.width = '0%';
+        }
+        
+        window.addEventListener('beforeunload', () => {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+            }
         });
     </script>
 </body>

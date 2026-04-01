@@ -11,8 +11,9 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../../components/topnav.js"></script>
+    <script src="../../components/organization.js"></script>
     <style>
-        /* Animações extras específicas para live-tracking */
+        /* AnimaçÃµes extras especÃ­ficas para live-tracking */
         .tracking-container {
             padding: 0px 0px 30px 0px;
             max-width: 1600px;
@@ -91,7 +92,7 @@
             color: var(--brand-silver);
         }
 
-        /* Stats Pills - versão melhorada com dots coloridos em círculos perfeitos */
+        /* Stats Pills - versão melhorada com dots coloridos em cÃ­rculos perfeitos */
         .panel-stats {
             display: flex;
             gap: 12px;
@@ -164,7 +165,7 @@
             color: transparent;
         }
 
-        /* Dots/Círculos coloridos para os botões - AGORA SÃO CÍRCULOS PERFEITOS */
+        /* Dots/CÃ­rculos coloridos para os botÃµes - AGORA SÃƒO CÃRCULOS PERFEITOS */
         .stat-pill .status-dot {
             width: 12px;
             height: 12px;
@@ -237,7 +238,7 @@
             margin-bottom: 8px;
         }
 
-        /* Status dots na lista de veículos - AGORA SÃO CÍRCULOS PERFEITOS */
+        /* Status dots na lista de veí­culos - AGORA SÃƒO CÃRCULOS PERFEITOS */
         .vi-status-dot {
             width: 10px;
             height: 10px;
@@ -348,7 +349,7 @@
             background: var(--map-bg);
         }
 
-        /* Map controls - seguindo padrão dos botões */
+        /* Map controls - seguindo padrão dos botÃµes */
         .map-controls {
             position: absolute;
             top: 20px;
@@ -745,7 +746,7 @@
             width: 100%;
         }
 
-        /* Botão de ícone padrão da marca */
+        /* Botão de Ã­cone padrão da marca */
         .btn-icon {
             width: 32px !important;
             height: 32px !important;
@@ -957,7 +958,7 @@
             color: var(--brand-orange);
         }
 
-        /* Dots do modal de filtros - AGORA SÃO CÍRCULOS PERFEITOS */
+        /* Dots do modal de filtros - AGORA SÃƒO CÃRCULOS PERFEITOS */
         .status-dot-filter {
             width: 12px;
             height: 12px;
@@ -1058,7 +1059,7 @@
             box-shadow: 0 4px 12px rgba(242, 101, 34, 0.3);
         }
 
-        /* Forçar ícone do filtro a ser branco */
+        /* Forçar Ã­cone do filtro a ser branco */
         .btn-icon i,
         .btn-icon .fas,
         .btn-icon .fa-sliders-h {
@@ -1086,10 +1087,7 @@
 
             <div class="org-selector">
                 <span><i class="far fa-building"></i> Organização:</span>
-                <select id="orgSelector" onchange="changeOrganization(this)">
-                    <option value="1">Track7 BR - Betânia</option>
-                    <option value="2">Track7 BR - Sul</option>
-                    <option value="3">Track7 BR - Norte</option>
+                <select id="companySelect" onchange="updateSelectedCompany(this.value)">
                 </select>
             </div>
         </div>
@@ -1100,7 +1098,7 @@
                 <div class="config-sidebar">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Buscar veículos..."
+                        <input type="text" id="searchInput" placeholder="Buscar veí­culos..."
                             onkeyup="filterVehicles(this.value)">
                         <button class="btn-icon" id="filterBtn" title="Filtros" onclick="openVehicleFilter()">
                             <i class="fas fa-sliders-h"></i>
@@ -1108,7 +1106,7 @@
                     </div>
                 </div>
 
-                <!-- Stats Pills com dots coloridos em círculos perfeitos -->
+                <!-- Stats Pills com dots coloridos em cÃ­rculos perfeitos -->
                 <div class="panel-stats">
                     <div class="stat-pill active-filter" onclick="filterByStatus('all', this)">
                         <span class="status-dot dot-all"></span>
@@ -1148,7 +1146,7 @@
                         <button class="map-btn" onclick="toggleTracking()" data-tip="Pausar/Retomar Tracking">
                             <i class="fas fa-play" id="trackingIcon"></i>
                         </button>
-                        <button class="map-btn" onclick="centerMapOnVehicles()" data-tip="Centralizar veículos">
+                        <button class="map-btn" onclick="centerMapOnVehicles()" data-tip="Centralizar veí­culos">
                             <i class="fas fa-crosshairs"></i>
                         </button>
                         <button class="map-btn" onclick="toggleFullscreen()" data-tip="Tela cheia">
@@ -1160,7 +1158,7 @@
                 <div class="vehicle-popup" id="vehiclePopup">
                     <div class="popup-header">
                         <h3 id="popupTitle">Monitoramento</h3>
-                        <button class="popup-close" onclick="closePopup()">×</button>
+                        <button class="popup-close" onclick="closePopup()">Ã—</button>
                     </div>
                     <div class="popup-body" id="popupBody"></div>
                 </div>
@@ -1182,7 +1180,7 @@
             <div class="filter-modal-body">
                 <!-- Filtro por Status -->
                 <div class="filter-section">
-                    <label class="filter-label"><i class="fas fa-circle"></i> Status do Veículo</label>
+                    <label class="filter-label"><i class="fas fa-circle"></i> Status do Veí­culo</label>
                     <div class="filter-options" id="statusFilterGroup">
                         <label class="filter-checkbox">
                             <input type="checkbox" value="active" checked>
@@ -1207,23 +1205,23 @@
                     <label class="filter-label"><i class="fas fa-tachometer-alt"></i> Velocidade (km/h)</label>
                     <div class="filter-speed-range">
                         <div class="speed-input-group">
-                            <label>Mínima:</label>
+                            <label>MÃ­nima:</label>
                             <input type="number" id="minSpeedFilter" value="0" min="0" step="10">
                         </div>
                         <div class="speed-input-group">
-                            <label>Máxima:</label>
+                            <label>MÃ¡xima:</label>
                             <input type="number" id="maxSpeedFilter" placeholder="Sem limite" min="0" step="10">
                         </div>
                     </div>
                 </div>
 
-                <!-- Filtro por Tipo de Veículo -->
+                <!-- Filtro por Tipo de Veí­culo -->
                 <div class="filter-section">
-                    <label class="filter-label"><i class="fas fa-truck"></i> Tipo de Veículo</label>
+                    <label class="filter-label"><i class="fas fa-truck"></i> Tipo de Veí­culo</label>
                     <div class="filter-options" id="typeFilterGroup">
                         <label class="filter-checkbox">
                             <input type="checkbox" value="bus" checked>
-                            <i class="fas fa-bus"></i> Ônibus
+                            <i class="fas fa-bus"></i> Ã”nibus
                         </label>
                         <label class="filter-checkbox">
                             <input type="checkbox" value="truck" checked>
@@ -1295,6 +1293,7 @@
             }
 
             await authenticateAndLoadVehicles();
+            await loadInitialPositions(); // Carrega posições iniciais
             startRealTimeTracking();
         });
 
@@ -1305,7 +1304,7 @@
 
         async function authenticateAndLoadVehicles() {
             try {
-                showToast('🔄 Conectando ao servidor...');
+                showToast('ðŸ”„ Conectando ao servidor...');
 
                 const statusResponse = await fetch(`${API}/status`);
                 const statusData = await statusResponse.json();
@@ -1326,7 +1325,7 @@
 
             } catch (error) {
                 console.error('Erro na autenticação:', error);
-                showToast('❌ Erro ao conectar ao servidor. Usando dados simulados.', 'error');
+                showToast('âŒ Erro ao conectar ao servidor. Usando dados simulados.', 'error');
                 loadSimulatedData();
             }
         }
@@ -1343,7 +1342,7 @@
                         id: unit.id,
                         name: unit.name,
                         plate: unit.label || unit.name.split(' ').pop() || `PLACA-${unit.id}`,
-                        driver: '—',
+                        driver: '-',
                         status: 'active',
                         speed: 0,
                         maxSpeed: 80,
@@ -1354,7 +1353,7 @@
                         event: null,
                         lat: null,
                         lng: null,
-                        icon: '🚛'
+                        icon: 'ðŸš›'
                     }));
 
                     updateStats();
@@ -1369,14 +1368,14 @@
 
         function loadSimulatedData() {
             vehicles = [
-                { id: 1, name: '1658 - M.B. - OF 1722', plate: 'ABC-1D34', driver: 'Carlos Silva', status: 'active', speed: 62, maxSpeed: 80, location: 'Av. Brasil, 4520 - Centro', lastUpdate: '14:37:18', odometer: '128.450 km', ignition: 'Ligado', event: null, lat: -22.2568, lng: -45.7035, icon: '🚌' },
-                { id: 2, name: '1659 - M.B. - OF 1418', plate: 'DEF-5E78', driver: 'Ana Oliveira', status: 'active', speed: 87, maxSpeed: 80, location: 'Rod. BR-116, km 42', lastUpdate: '14:37:20', odometer: '214.320 km', ignition: 'Ligado', event: 'Exc. Velocidade', lat: -22.2578, lng: -45.7045, icon: '🚌' },
-                { id: 3, name: '3000 - M.B. - OF 1722', plate: 'GHI-9F12', driver: 'Pedro Santos', status: 'active', speed: 45, maxSpeed: 80, location: 'Rua das Flores, 210', lastUpdate: '14:37:15', odometer: '98.760 km', ignition: 'Ligado', event: null, lat: -22.2558, lng: -45.7025, icon: '🚌' },
-                { id: 4, name: '3001 - VW - 17-230 OD', plate: 'JKL-3G56', driver: 'Maria Lima', status: 'active', speed: 31, maxSpeed: 60, location: 'Terminal Norte - Garagem', lastUpdate: '14:37:05', odometer: '56.120 km', ignition: 'Ligado', event: 'Acel. Brusca', lat: -22.2548, lng: -45.7015, icon: '🚛' },
-                { id: 5, name: '3002 - Scania - R 450', plate: 'MNO-7H90', driver: 'João Costa', status: 'idle', speed: 0, maxSpeed: 90, location: 'Garagem Central', lastUpdate: '14:32:44', odometer: '302.880 km', ignition: 'Ligado', event: null, lat: -22.2538, lng: -45.7005, icon: '🚛' },
-                { id: 6, name: '3003 - Volvo - FH 460', plate: 'PQR-1I22', driver: 'Luiz Ferreira', status: 'idle', speed: 0, maxSpeed: 90, location: 'Pátio Interno - Dep. Sul', lastUpdate: '14:29:11', odometer: '441.600 km', ignition: 'Ligado', event: null, lat: -22.2528, lng: -45.6995, icon: '🚛' },
-                { id: 7, name: '3004 - Ford - Cargo 2429', plate: 'STU-3J44', driver: '—', status: 'off', speed: 0, maxSpeed: 80, location: 'Garagem Central', lastUpdate: '08:14:03', odometer: '73.990 km', ignition: 'Desligado', event: null, lat: -22.2518, lng: -45.6985, icon: '🚚' },
-                { id: 8, name: '3005 - Iveco - Daily 70C17', plate: 'VWX-5K66', driver: '—', status: 'off', speed: 0, maxSpeed: 70, location: 'Filial Leste', lastUpdate: '07:50:28', odometer: '19.340 km', ignition: 'Desligado', event: null, lat: -22.2508, lng: -45.6975, icon: '🚐' },
+                { id: 1, name: '1658 - M.B. - OF 1722', plate: 'ABC-1D34', driver: 'Carlos Silva', status: 'active', speed: 62, maxSpeed: 80, location: 'Av. Brasil, 4520 - Centro', lastUpdate: '14:37:18', odometer: '128.450 km', ignition: 'Ligado', event: null, lat: -22.2568, lng: -45.7035, icon: 'ðŸšŒ' },
+                { id: 2, name: '1659 - M.B. - OF 1418', plate: 'DEF-5E78', driver: 'Ana Oliveira', status: 'active', speed: 87, maxSpeed: 80, location: 'Rod. BR-116, km 42', lastUpdate: '14:37:20', odometer: '214.320 km', ignition: 'Ligado', event: 'Exc. Velocidade', lat: -22.2578, lng: -45.7045, icon: 'ðŸšŒ' },
+                { id: 3, name: '3000 - M.B. - OF 1722', plate: 'GHI-9F12', driver: 'Pedro Santos', status: 'active', speed: 45, maxSpeed: 80, location: 'Rua das Flores, 210', lastUpdate: '14:37:15', odometer: '98.760 km', ignition: 'Ligado', event: null, lat: -22.2558, lng: -45.7025, icon: 'ðŸšŒ' },
+                { id: 4, name: '3001 - VW - 17-230 OD', plate: 'JKL-3G56', driver: 'Maria Lima', status: 'active', speed: 31, maxSpeed: 60, location: 'Terminal Norte - Garagem', lastUpdate: '14:37:05', odometer: '56.120 km', ignition: 'Ligado', event: 'Acel. Brusca', lat: -22.2548, lng: -45.7015, icon: 'ðŸš›' },
+                { id: 5, name: '3002 - Scania - R 450', plate: 'MNO-7H90', driver: 'João Costa', status: 'idle', speed: 0, maxSpeed: 90, location: 'Garagem Central', lastUpdate: '14:32:44', odometer: '302.880 km', ignition: 'Ligado', event: null, lat: -22.2538, lng: -45.7005, icon: 'ðŸš›' },
+                { id: 6, name: '3003 - Volvo - FH 460', plate: 'PQR-1I22', driver: 'Luiz Ferreira', status: 'idle', speed: 0, maxSpeed: 90, location: 'PÃ¡tio Interno - Dep. Sul', lastUpdate: '14:29:11', odometer: '441.600 km', ignition: 'Ligado', event: null, lat: -22.2528, lng: -45.6995, icon: 'ðŸš›' },
+                { id: 7, name: '3004 - Ford - Cargo 2429', plate: 'STU-3J44', driver: '-', status: 'off', speed: 0, maxSpeed: 80, location: 'Garagem Central', lastUpdate: '08:14:03', odometer: '73.990 km', ignition: 'Desligado', event: null, lat: -22.2518, lng: -45.6985, icon: 'ðŸšš' },
+                { id: 8, name: '3005 - Iveco - Daily 70C17', plate: 'VWX-5K66', driver: '-', status: 'off', speed: 0, maxSpeed: 70, location: 'Filial Leste', lastUpdate: '07:50:28', odometer: '19.340 km', ignition: 'Desligado', event: null, lat: -22.2508, lng: -45.6975, icon: 'ðŸš' },
             ];
 
             renderVehicleList();
@@ -1387,16 +1386,43 @@
         async function fetchAllVehiclesPosition() {
             if (!isTracking) return;
 
+            const now = Math.floor(Date.now() / 1000);
+            const thirtySecondsAgo = now - 30; // 30 segundos atrás
+
             for (const vehicle of vehicles) {
-                if (vehicle.status !== 'off') {
-                    await fetchVehiclePosition(vehicle.id);
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                }
+                await fetchVehicleMessages(vehicle.id, thirtySecondsAgo, now);
+                await new Promise(resolve => setTimeout(resolve, 100)); // pequeno delay entre requisições
             }
 
             renderAllMarkers();
             renderVehicleList(document.getElementById('searchInput')?.value || '', currentStatusFilter);
             updateLastUpdateTime();
+        }
+
+        async function fetchVehicleMessages(unitId, timeFrom, timeTo) {
+            try {
+                const response = await fetch(`${API}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        unitId: unitId,
+                        timeFrom: timeFrom,
+                        timeTo: timeTo,
+                        msgType: 1,
+                        maxCount: 1,
+                        flags: 0x0001
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.messages && data.messages.length > 0) {
+                    const latestMsg = data.messages[0];
+                    updateVehicleFromMessage(unitId, latestMsg);
+                }
+            } catch (error) {
+                console.error(`Erro na telemetria do veículo ${unitId}:`, error);
+            }
         }
 
         async function fetchVehiclePosition(unitId) {
@@ -1421,7 +1447,7 @@
                     updateVehicleFromMessage(unitId, latestMsg);
                 }
             } catch (error) {
-                console.error(`Erro na telemetria do veículo ${unitId}:`, error);
+                console.error(`Erro na telemetria do veí­culo ${unitId}:`, error);
             }
         }
 
@@ -1429,10 +1455,34 @@
             const vehicle = vehicles.find(v => v.id == unitId);
             if (!vehicle || !msg.pos) return;
 
+            // Extrair longitude e latitude diretamente do objeto pos
+            // pos.x = longitude, pos.y = latitude
             vehicle.lat = msg.pos.y;
             vehicle.lng = msg.pos.x;
             vehicle.speed = Math.round(msg.pos.s || 0);
             vehicle.lastUpdate = new Date(msg.t * 1000).toLocaleTimeString('pt-BR');
+
+            // Gerar localização baseada nas coordenadas
+            vehicle.location = `${msg.pos.y.toFixed(6)}, ${msg.pos.x.toFixed(6)}`;
+
+            // Determinar status baseado na velocidade
+            if (vehicle.speed > 0) {
+                vehicle.status = 'active';
+                vehicle.ignition = 'Ligado';
+            } else if (vehicle.speed === 0 && msg.t > (Date.now() / 1000 - 300)) { // último movimento há menos de 5min
+                vehicle.status = 'idle';
+                vehicle.ignition = 'Ligado';
+            } else {
+                vehicle.status = 'off';
+                vehicle.ignition = 'Desligado';
+            }
+
+            // Verificar excesso de velocidade (assumindo limite de 80km/h)
+            if (vehicle.speed > 80 && vehicle.status === 'active') {
+                vehicle.event = 'Exc. Velocidade';
+            } else {
+                vehicle.event = null;
+            }
 
             if (vehicleMarkers[unitId]) {
                 vehicleMarkers[unitId].setLatLng([vehicle.lat, vehicle.lng]);
@@ -1445,7 +1495,7 @@
         }
 
         function startRealTimeTracking() {
-            const INTERVALO_UM_MINUTO = 60000;
+            const INTERVALO_TRINTA_SEGUNDOS = 60000; // 30 segundos
 
             if (trackingInterval) clearInterval(trackingInterval);
 
@@ -1457,15 +1507,57 @@
                 if (isTracking) {
                     fetchAllVehiclesPosition();
                 }
-            }, INTERVALO_UM_MINUTO);
+            }, INTERVALO_TRINTA_SEGUNDOS);
 
             setInterval(updateClock, 1000);
+        }
+        async function loadInitialPositions() {
+            const now = Math.floor(Date.now() / 1000);
+            const oneDayAgo = now - (24 * 60 * 60); // últimas 24 horas
+
+            for (const vehicle of vehicles) {
+                try {
+                    const response = await fetch(`${API}/messages`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            unitId: vehicle.id,
+                            timeFrom: oneDayAgo,
+                            timeTo: now,
+                            msgType: 1,
+                            maxCount: 1,
+                            flags: 0x0001
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.messages && data.messages.length > 0) {
+                        const latestMsg = data.messages[0];
+                        updateVehicleFromMessage(vehicle.id, latestMsg);
+                    }
+                } catch (error) {
+                    console.error(`Erro ao carregar posição inicial do veículo ${vehicle.id}:`, error);
+                }
+            }
+
+            renderAllMarkers();
+            renderVehicleList();
+            updateStats();
         }
 
         function updateLastUpdateTime() {
             lastUpdateTime = Date.now();
             const date = new Date();
             document.getElementById('lastUpdate').innerHTML = `<i class="far fa-clock" style="margin-right: 4px;"></i> ${date.toLocaleTimeString()}`;
+
+            // Piscar o status dot para indicar atualização
+            const statusDot = document.querySelector('.upd-dot');
+            if (statusDot) {
+                statusDot.style.animation = 'none';
+                statusDot.offsetHeight; // força reflow
+                statusDot.style.animation = 'pulse 1.5s infinite';
+            }
         }
 
         function updateClock() {
@@ -1475,7 +1567,7 @@
 
         function toggleTracking() {
             isTracking = !isTracking;
-            showToast(isTracking ? '▶ Tracking ativado' : '⏸ Tracking pausado');
+            showToast(isTracking ? 'â–¶ Tracking ativado' : 'â¸ Tracking pausado');
 
             const statusDot = document.querySelector('.upd-dot');
             if (statusDot) {
@@ -1524,7 +1616,10 @@
                 vehicleMarkers[vehicle.id] = marker;
             });
 
-            if (vehiclesWithPosition.length > 0 && !selectedVehicleId) {
+            // Se não houver veículos com posição, centralizar em um ponto padrão
+            if (vehiclesWithPosition.length === 0) {
+                map.setView([-22.2568, -45.7035], 13);
+            } else if (vehiclesWithPosition.length > 0 && !selectedVehicleId) {
                 centerMapOnVehicles();
             }
         }
@@ -1636,7 +1731,7 @@
                             </span>
                         </div>
                         <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                            <span style="color: var(--text-secondary);">Última atualização:</span>
+                            <span style="color: var(--text-secondary);">última atualização:</span>
                             <span>${vehicle.lastUpdate}</span>
                         </div>
                         ${vehicle.event ? `
@@ -1650,7 +1745,7 @@
                                 font-weight: bold;
                                 text-align: center;
                             ">
-                                ⚠️ ${vehicle.event}
+                                âš ï¸ ${vehicle.event}
                             </div>
                         ` : ''}
                     </div>
@@ -1661,13 +1756,18 @@
         function centerMapOnVehicles() {
             const vehiclesWithPosition = vehicles.filter(v => v.lat != null && v.lng != null);
 
-            if (vehiclesWithPosition.length === 0) return;
+            if (vehiclesWithPosition.length === 0) {
+                showToast('Nenhum veículo com posição disponível para centralizar');
+                return;
+            }
 
             if (vehiclesWithPosition.length === 1) {
                 map.setView([vehiclesWithPosition[0].lat, vehiclesWithPosition[0].lng], 15);
+                showToast(`Centralizando em: ${vehiclesWithPosition[0].name}`);
             } else {
                 const bounds = L.latLngBounds(vehiclesWithPosition.map(v => [v.lat, v.lng]));
                 map.fitBounds(bounds, { padding: [50, 50] });
+                showToast(`Centralizando ${vehiclesWithPosition.length} veículos no mapa`);
             }
         }
 
@@ -1686,7 +1786,7 @@
             });
 
             if (filtered.length === 0) {
-                list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><br>Nenhum veículo encontrado.</div>';
+                list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-search" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><br>Nenhum veí­culo encontrado.</div>';
                 return;
             }
 
@@ -1713,14 +1813,14 @@
                 else if (v.name && v.name.includes('3002')) garage = 'Garagem Central';
                 else if (v.name && v.name.includes('3003')) garage = 'Garagem Central';
 
-                // Extrair apenas o número do carro (primeira parte do nome)
+                // Extrair apenas o nÃºmero do carro (primeira parte do nome)
                 const carNumber = v.name.split(' ')[0] || v.id;
                 div.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <!-- Bolinha de status -->
                         <span class="vi-status-dot ${v.status}" style="background:${statusColorMap[v.status]}; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;"></span>
                         
-                        <!-- Número do veículo -->
+                        <!-- NÃºmero do veí­culo -->
                         <div style="font-weight: 700; color: var(--brand-orange); font-size: 14px; flex-shrink: 0;">
                             N° ${carNumber}
                         </div>
@@ -1749,10 +1849,10 @@
             const idle = vehicles.filter(v => v.status === 'idle').length;
             const off = vehicles.filter(v => v.status === 'off').length;
 
-            // Removendo os números dos botões - mantendo apenas os textos
+            // Removendo os nÃºmeros dos botÃµes - mantendo apenas os textos
             const statPills = document.querySelectorAll('.stat-pill');
             if (statPills.length >= 4) {
-                // Remove os números e mantém apenas os textos
+                // Remove os nÃºmeros e mantÃ©m apenas os textos
                 statPills[0].innerHTML = `<span class="status-dot dot-all"></span><span>Todos</span>`;
                 statPills[1].innerHTML = `<span class="status-dot dot-active"></span><span>Ativos</span>`;
                 statPills[2].innerHTML = `<span class="status-dot dot-idle"></span><span>Parados</span>`;
@@ -1833,7 +1933,7 @@
                 </div>
                 <div class="popup-row">
                     <span class="lbl"><i class="fas fa-tachometer-alt"></i> Velocidade</span>
-                    <span class="val ${speedClass}">${v.status === 'off' ? '—' : v.speed + ' km/h'}</span>
+                    <span class="val ${speedClass}">${v.status === 'off' ? '-' : v.speed + ' km/h'}</span>
                 </div>
                 <div class="popup-row">
                     <span class="lbl"><i class="fas fa-key"></i> Ignição</span>
@@ -1844,7 +1944,7 @@
                     <span class="val" style="font-size: 10.5px;">${v.location}</span>
                 </div>
                 <div class="popup-row">
-                    <span class="lbl"><i class="fas fa-road"></i> Hodômetro</span>
+                    <span class="lbl"><i class="fas fa-road"></i> HodÃ´metro</span>
                     <span class="val">${v.odometer}</span>
                 </div>
                 <div class="popup-row">
@@ -1854,7 +1954,7 @@
                 ${v.event ? `
                 <div class="popup-row">
                     <span class="lbl"><i class="fas fa-exclamation-triangle"></i> Evento</span>
-                    <span class="val red">⚠ ${v.event}</span>
+                    <span class="val red">âš  ${v.event}</span>
                 </div>` : ''}
             `;
 
@@ -1966,7 +2066,7 @@
             showToast('Filtros aplicados com sucesso!');
         }
 
-        // Função para aplicar filtros na lista de veículos
+        // Função para aplicar filtros na lista de veí­culos
         function applyFiltersToList() {
             const searchTerm = document.getElementById('searchInput')?.value || '';
             const filteredVehicles = vehicles.filter(vehicle => {
@@ -1984,11 +2084,11 @@
                 if (vehicle.speed < window.activeFilters.minSpeed) return false;
                 if (window.activeFilters.maxSpeed !== null && vehicle.speed > window.activeFilters.maxSpeed) return false;
 
-                // Filtro por tipo (baseado no ícone/nome do veículo)
+                // Filtro por tipo (baseado no Ã­cone/nome do veí­culo)
                 let vehicleType = 'bus';
-                if (vehicle.icon === '🚛' || vehicle.name.includes('Cargo') || vehicle.name.includes('Scania')) {
+                if (vehicle.icon === 'ðŸš›' || vehicle.name.includes('Cargo') || vehicle.name.includes('Scania')) {
                     vehicleType = 'truck';
-                } else if (vehicle.icon === '🚐' || vehicle.name.includes('Daily')) {
+                } else if (vehicle.icon === 'ðŸš' || vehicle.name.includes('Daily')) {
                     vehicleType = 'van';
                 }
 
@@ -2008,7 +2108,7 @@
             list.innerHTML = '';
 
             if (filteredVehicles.length === 0) {
-                list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-filter" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><br>Nenhum veículo encontrado com os filtros selecionados.</div>';
+                list.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fas fa-filter" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i><br>Nenhum veí­culo encontrado com os filtros selecionados.</div>';
                 return;
             }
 
@@ -2037,14 +2137,14 @@
                 else if (v.name && v.name.includes('3002')) garage = 'Garagem Central';
                 else if (v.name && v.name.includes('3003')) garage = 'Garagem Central';
 
-                // Extrair apenas o número do carro
+                // Extrair apenas o nÃºmero do carro
                 const carNumber = v.name.split(' ')[0] || v.id;
                 div.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 12px;">
                         <!-- Bolinha de status -->
                         <span class="vi-status-dot ${v.status}" style="background:${statusColorMap[v.status] || '#999'}; width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;"></span>
                         
-                        <!-- Número do veículo -->
+                        <!-- NÃºmero do veí­culo -->
                         <div style="font-weight: 700; color: var(--brand-orange); font-size: 14px; flex-shrink: 0;">
                             N° ${carNumber}
                         </div>

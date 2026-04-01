@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../global.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="../../components/topnav.js"></script>
+    <script src="../../components/organization.js"></script>
     <style>
         /* ==================== LAYOUT PRINCIPAL ==================== */
         .drivers-container-page {
@@ -1180,10 +1181,7 @@
 
             <div class="org-selector">
                 <span><i class="far fa-building"></i> Organização:</span>
-                <select id="orgSelector" onchange="changeOrganization(this)">
-                    <option value="1">Track7 BR - Betânia</option>
-                    <option value="2">Track7 BR - Sul</option>
-                    <option value="3">Track7 BR - Norte</option>
+                <select id="companySelect" onchange="updateSelectedCompany(this.value)">
                 </select>
             </div>
         </div>

@@ -12,12 +12,45 @@ Endpoints:
   POST /api/logout    — encerra a sessao
 """
 
+from datetime import datetime, time
+import datetime
 import json
+import sqlite3
 import requests
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
 
+app = Flask(__name__)
+CORS(app)
+
+# Serve a raiz do projeto
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+
+@app.route('/')
+def index():
+    return send_from_directory(PROJECT_ROOT, 'index.html')
+
+# Serve qualquer arquivo estático da pasta do projeto
+@app.route('/<path:filename>')
+def static_files(filename):
+    return send_from_directory(PROJECT_ROOT, filename)
+
+@app.route('/api/units')
+def get_units_from_db():
+    conn = sqlite3.connect('tracking.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    
+    # Busca unidades já vinculadas aos seus grupos e clientes
+    query = """
+        SELECT u.id, u.name, g.name as group_name, c.name as client_name 
+        FROM units u
+        LEFT JOIN groups g ON u.group_id = g.id
+        LEFT JOIN clients c ON u.client_id = c.id
+    """
+    rows = cursor.execute(query).fetchall()
+    return jsonify([dict(row) for row in rows])
 # ------------------------------------------------------------------ #
 #  CONFIG                                                              #
 # ------------------------------------------------------------------ #
@@ -194,7 +227,177 @@ def api_logout():
         pass
     _session["sid"] = None
     return jsonify({"ok": True})
+@app.route('/api/route-history', methods=['GET'])
+def get_route_history():
+    # Inicializa resultados como lista vazia para evitar "not defined"
+    resultados = [] 
+    
+    try:
+        imei = request.args.get('imei')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
 
+        # Agora o datetime.strptime funcionará porque importamos a classe
+        if start_date and end_date:
+            dt_from = datetime.strptime(start_date, "%Y-%m-%d")
+            dt_to = datetime.strptime(end_date, "%Y-%m-%d")
+            
+            # --- Lógica de busca no Wialon ---
+            # resultados = sua_funcao_wialon(imei, dt_from, dt_to)
+            # ---------------------------------
+        
+        return jsonify(resultados)
+
+    except Exception as e:
+        print(f"Erro detalhado: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+def build_trip(positions, trip_id):
+    """
+    Constrói objeto de viagem a partir das posições.
+    Sub-viagens = trechos com speed > 0 (veículo em movimento).
+    """
+    import math
+    from datetime import datetime
+
+    def haversine(lat1, lng1, lat2, lng2):
+        R = 6371.0
+        phi1, phi2 = math.radians(lat1), math.radians(lat2)
+        dphi = math.radians(lat2 - lat1)
+        dlam = math.radians(lng2 - lng1)
+        a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlam/2)**2
+        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+    def parse_ts(ts):
+        for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S'):
+            try:
+                return datetime.strptime(ts, fmt)
+            except:
+                pass
+        return datetime.now()
+
+    start_ts = parse_ts(positions[0]['timestamp'])
+    end_ts   = parse_ts(positions[-1]['timestamp'])
+    duration_secs = (end_ts - start_ts).total_seconds()
+    hours   = int(duration_secs // 3600)
+    minutes = int((duration_secs % 3600) // 60)
+    seconds = int(duration_secs % 60)
+
+    # Calcula distância e velocidades totais
+    total_dist = 0.0
+    max_speed  = 0.0
+    speed_sum  = 0
+    speed_count= 0
+    events     = 0
+    SPEED_LIMIT = 80  # km/h — ajuste conforme necessário
+
+    for i in range(1, len(positions)):
+        p1 = positions[i-1]
+        p2 = positions[i]
+        if p1.get('lat') and p2.get('lat'):
+            total_dist += haversine(p1['lat'], p1['lng'], p2['lat'], p2['lng'])
+        spd = p2['speed'] or 0
+        if spd > max_speed:
+            max_speed = spd
+        speed_sum   += spd
+        speed_count += 1
+        if spd > SPEED_LIMIT:
+            events += 1  # conta excesso de velocidade como evento
+
+    avg_speed = round(speed_sum / speed_count, 1) if speed_count else 0
+
+    # ── Detecta sub-viagens (trechos com speed > 0) ────────────────────────
+    SPEED_THRESHOLD = 2  # km/h mínimo para considerar "em movimento"
+    subtrips = []
+    in_subtrip = False
+    sub_positions = []
+
+    for pos in positions:
+        spd = pos.get('speed') or 0
+        if spd > SPEED_THRESHOLD and not in_subtrip:
+            in_subtrip = True
+            sub_positions = [pos]
+        elif spd > SPEED_THRESHOLD and in_subtrip:
+            sub_positions.append(pos)
+        elif spd <= SPEED_THRESHOLD and in_subtrip:
+            # Veículo parou → fecha sub-viagem
+            sub_positions.append(pos)
+            in_subtrip = False
+            if len(sub_positions) >= 2:
+                sub = build_subtrip(sub_positions, haversine)
+                subtrips.append(sub)
+            sub_positions = []
+
+    # Sub-viagem sem fechamento
+    if in_subtrip and len(sub_positions) >= 2:
+        sub = build_subtrip(sub_positions, haversine)
+        subtrips.append(sub)
+
+    stops = len(subtrips) - 1 if len(subtrips) > 1 else 0
+
+    return {
+        'id':       trip_id,
+        'start':    positions[0]['timestamp'],
+        'end':      positions[-1]['timestamp'],
+        'duration': f"{hours:02d}:{minutes:02d}:{seconds:02d}",
+        'distance': round(total_dist, 1),
+        'maxSpeed': round(max_speed, 1),
+        'avgSpeed': avg_speed,
+        'stops':    stops,
+        'events':   events,
+        'subtrips': subtrips,
+        'rawPositions': [
+            {'lat': p['lat'], 'lng': p['lng'],
+             'speed': p['speed'], 'timestamp': p['timestamp']}
+            for p in positions
+            if p.get('lat') and p.get('lng')
+        ]
+    }
+
+def build_subtrip(positions, haversine_fn):
+    """Constrói objeto de sub-viagem (trecho em movimento)."""
+    from datetime import datetime
+
+    def parse_ts(ts):
+        for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S'):
+            try:
+                return datetime.strptime(ts, fmt)
+            except:
+                pass
+        return datetime.now()
+
+    start_ts = parse_ts(positions[0]['timestamp'])
+    end_ts   = parse_ts(positions[-1]['timestamp'])
+    dur_secs = (end_ts - start_ts).total_seconds()
+    h = int(dur_secs // 3600)
+    m = int((dur_secs % 3600) // 60)
+    s = int(dur_secs % 60)
+
+    dist = 0.0
+    max_spd = 0.0
+    for i in range(1, len(positions)):
+        p1 = positions[i-1]
+        p2 = positions[i]
+        if p1.get('lat') and p2.get('lat'):
+            dist += haversine_fn(p1['lat'], p1['lng'], p2['lat'], p2['lng'])
+        spd = positions[i].get('speed') or 0
+        if spd > max_spd:
+            max_spd = spd
+
+    return {
+        'partida':       positions[0]['timestamp'],
+        'chegada':       positions[-1]['timestamp'],
+        'duracao':       f"{h:02d}:{m:02d}:{s:02d}",
+        'distancia':     round(dist, 1),
+        'velocidadeMax': round(max_spd, 1),
+        'rawPositions':  [
+            {'lat': p['lat'], 'lng': p['lng'],
+             'speed': p['speed'], 'timestamp': p['timestamp']}
+            for p in positions
+            if p.get('lat') and p.get('lng')
+        ]
+    }
 
 # ------------------------------------------------------------------ #
 #  MAIN                                                                #
@@ -215,4 +418,4 @@ if __name__ == "__main__":
         print(f"  AVISO: login falhou ao iniciar — {e}")
         print("  O servidor ainda sera iniciado. Use /api/login para autenticar.")
 
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=True)

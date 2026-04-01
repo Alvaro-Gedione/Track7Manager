@@ -970,7 +970,6 @@
             <div class="org-selector">
                 <span><i class="far fa-building"></i> Organização:</span>
                 <select id="companySelect" onchange="updateSelectedCompany(this.value)">
-                    <option value="">Todas as Empresas</option>
                 </select>
             </div>
         </div>
@@ -1127,30 +1126,6 @@
         let currentTab = 'groups';
         let currentGroupId = 1;
         let currentClientId = 1;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme') || 'dark';
-            document.body.className = `theme-${savedTheme}`;
-
-            loadCompanies();
-            loadGroups();
-            loadClients();
-            loadTags();
-            setupEventListeners();
-
-            // NÃO força a seleção da aba de clientes mais
-            // Mantém a aba que estiver ativa no HTML (que é 'clients' por padrão)
-
-            // Seleciona o primeiro cliente por padrão
-            if (clients.length > 0) {
-                selectClient(clients[0].id);
-            }
-
-            // Se a aba de grupos estiver ativa, atualiza as métricas
-            if (currentTab === 'groups') {
-                updateClientMetricsInGroupsTab();
-            }
-        });
 
         document.addEventListener('themeChanged', (e) => {
             document.body.className = `theme-${e.detail.theme}`;
@@ -1572,31 +1547,6 @@
             groupCompanySelect.innerHTML = options;
         }
 
-        function filterByCompany(id) {
-            if (id) {
-                const companyId = parseInt(id);
-
-                if (currentTab === 'clients') {
-                    // Agora loadClients já faz o trabalho de "arrancar" os outros da lista
-                    loadClients();
-                    selectClient(companyId);
-                } else if (currentTab === 'groups') {
-                    currentClientId = companyId;
-                    updateGroupsForSelectedClient();
-                    updateClientMetricsInGroupsTab();
-                }
-
-                showToast(`Filtrando por: ${clients.find(c => c.id == id)?.tradeName}`);
-            } else {
-                // Quando "Todas as Empresas" é selecionado
-                showToast("Visualizando todas as organizações");
-                loadClients(); // Recarrega todos
-                loadGroups();  // Recarrega todos
-
-                if (clients.length > 0) selectClient(clients[0].id);
-            }
-        }
-
         function filterClientsList(companyId) {
             const clientItems = document.querySelectorAll('.client-item');
 
@@ -1783,17 +1733,128 @@
                 });
             }
         });
-        // Adicione este código no DOMContentLoaded para sincronizar com o componente externo
+        // ADICIONE ESTAS FUNÇÕES ANTES DO DOMContentLoaded
+
+        // Função para salvar a organização selecionada no localStorage
+        function saveSelectedOrganization(companyId) {
+            if (companyId) {
+                localStorage.setItem('selectedOrganization', companyId);
+                console.log('Organização salva:', companyId);
+            } else {
+                localStorage.removeItem('selectedOrganization');
+                console.log('Organização removida (todas empresas)');
+            }
+        }
+
+        // Função para carregar a organização salva
+        function loadSelectedOrganization() {
+            const savedCompanyId = localStorage.getItem('selectedOrganization');
+            const companySelect = document.getElementById('companySelect');
+
+            if (savedCompanyId && companySelect) {
+                // Verifica se o valor salvo existe no select
+                const optionExists = Array.from(companySelect.options).some(opt => opt.value === savedCompanyId);
+
+                if (optionExists) {
+                    companySelect.value = savedCompanyId;
+                    // Aplica o filtro com a organização salva
+                    if (typeof filterByCompany === "function") {
+                        filterByCompany(savedCompanyId);
+                    }
+                    console.log('Organização carregada:', savedCompanyId);
+                    return savedCompanyId;
+                }
+            }
+
+            // Se não houver organização salva ou ela não existir mais, mantém "Todas as Empresas"
+            if (companySelect) {
+                companySelect.value = "";
+                if (typeof filterByCompany === "function") {
+                    filterByCompany("");
+                }
+            }
+            return null;
+        }
+
+        // MODIFIQUE A FUNÇÃO filterByCompany para salvar a seleção
+        function filterByCompany(id) {
+            if (id) {
+                const companyId = parseInt(id);
+
+                if (currentTab === 'clients') {
+                    // Agora loadClients já faz o trabalho de "arrancar" os outros da lista
+                    loadClients();
+                    selectClient(companyId);
+                } else if (currentTab === 'groups') {
+                    currentClientId = companyId;
+                    updateGroupsForSelectedClient();
+                    updateClientMetricsInGroupsTab();
+                }
+
+                // SALVA A ORGANIZAÇÃO NO LOCALSTORAGE
+                saveSelectedOrganization(companyId);
+
+                showToast(`Filtrando por: ${clients.find(c => c.id == id)?.tradeName}`);
+            } else {
+                // Quando "Todas as Empresas" é selecionado
+                showToast("Visualizando todas as organizações");
+
+                // SALVA "VAZIO" NO LOCALSTORAGE (remove a organização salva)
+                saveSelectedOrganization(null);
+
+                loadClients(); // Recarrega todos
+                loadGroups();  // Recarrega todos
+
+                if (clients.length > 0) selectClient(clients[0].id);
+            }
+        }
+
+        // MODIFIQUE O DOMContentLoaded para carregar a organização salva
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.body.className = `theme-${savedTheme}`;
+
+            loadCompanies();
+            loadGroups();
+            loadClients();
+            loadTags();
+            setupEventListeners();
+
+            // CARREGA A ORGANIZAÇÃO SALVA PRIMEIRO
+            loadSelectedOrganization();
+
+            // NÃO força a seleção da aba de clientes mais
+            // Mantém a aba que estiver ativa no HTML (que é 'clients' por padrão)
+
+            // Seleciona o primeiro cliente por padrão APENAS SE NÃO HOUVER ORGANIZAÇÃO SALVA
+            const savedOrg = localStorage.getItem('selectedOrganization');
+            if (!savedOrg && clients.length > 0) {
+                selectClient(clients[0].id);
+            }
+
+            // Se a aba de grupos estiver ativa, atualiza as métricas
+            if (currentTab === 'groups') {
+                updateClientMetricsInGroupsTab();
+            }
+        });
+
+        // MODIFIQUE O EVENT LISTENER DO organizationChanged para usar localStorage
         document.addEventListener('organizationChanged', (e) => {
             const companyId = e.detail.companyId;
-            if (companyId) {
-                const companySelect = document.getElementById('companySelect');
-                if (companySelect) {
-                    companySelect.value = companyId;
+            const companySelect = document.getElementById('companySelect');
+
+            if (companySelect && companySelect.value !== companyId) {
+                companySelect.value = companyId;
+
+                // SALVA NO LOCALSTORAGE
+                saveSelectedOrganization(companyId);
+
+                if (typeof filterByCompany === "function") {
                     filterByCompany(companyId);
                 }
             }
         });
+
     </script>
 </body>
 

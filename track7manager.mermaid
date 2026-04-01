@@ -1,0 +1,413 @@
+erDiagram
+    %% Classes Existentes
+    acl_profiles {
+        BigInt id PK
+        String name
+        String slug
+        Json default_permissions
+    }
+    
+    acl_users {
+        BigInt id PK
+        BigInt acl_profile_id
+        BigInt user_id UK
+        Json permissions
+        Boolean active
+    }
+    
+    alerts {
+        BigInt id PK
+        String title
+        String message
+        String location
+        DateTime created_at
+        DateTime updated_at
+    }
+    
+    alerted {
+        BigInt id PK
+        BigInt alert_id FK
+        BigInt user_id FK
+        Int read
+    }
+    
+    asked_questions {
+        String id PK
+        String title
+        String answer
+        DateTime created_at
+        DateTime updated_at
+    }
+    
+    assets {
+        BigInt asset_id PK
+        BigInt asset_type_id
+        BigInt group_id FK
+        BigInt site_id
+        String description
+        String fuel_type
+        DateTime created_at
+        DateTime updated_at
+        String device_imei UK
+    }
+    
+    groups {
+        BigInt group_id PK
+        String group_type
+        String name
+        String timezone
+        Boolean is_premium
+    }
+    
+    subgroups {
+        BigInt subgroup_id PK
+        BigInt group_id FK
+        String name
+        DateTime created_at
+    }
+    
+    users {
+        BigInt id PK
+        String name
+        BigInt group_id FK
+        BigInt subgroup_id FK
+        String email
+        String role
+        Boolean is_instructor
+        Boolean is_rankiable_driver
+    }
+    
+    events {
+        BigInt event_id PK
+        BigInt asset_id FK
+        BigInt driver_id FK
+        BigInt group_id FK
+        BigInt event_type_id
+        DateTime date_from PK
+        DateTime date_to
+        Decimal value
+    }
+    
+    trips {
+        BigInt trip_id PK
+        DateTime date_from PK
+        BigInt asset_id FK
+        BigInt driver_id FK
+        BigInt group_id FK
+        Decimal distance_kilometers
+    }
+    
+    subtrips {
+        BigInt subtrip_id PK
+        BigInt trip_id FK
+        BigInt asset_id FK
+        BigInt driver_id FK
+        BigInt group_id FK
+        DateTime date_from
+        DateTime date_to
+    }
+    
+    positions {
+        BigInt position_id PK
+        BigInt asset_id FK
+        BigInt driver_id FK
+        String timestamp
+        Decimal latitude
+        Decimal longitude
+    }
+    
+    group_events {
+        BigInt id PK
+        BigInt group_id FK
+        BigInt event_type_id
+        String description
+        Decimal weight
+        String display
+    }
+    
+    average_driver {
+        BigInt id PK
+        BigInt driver_id FK
+        String date_from
+        String date_to
+        Decimal average
+        Decimal distance
+    }
+    
+    average_driver_events {
+        BigInt id PK
+        BigInt average_driver_id FK
+        BigInt event_id
+        Int count
+        Decimal weight
+    }
+    
+    classification_drive_week {
+        BigInt id PK
+        BigInt driver_id FK
+        String week
+    }
+    
+    classification_drive {
+        BigInt id PK
+        BigInt classification_drive_week_id FK
+        Decimal distance
+        String letter_classification_week
+    }
+    
+    notifications {
+        BigInt id PK
+        BigInt notification_id FK
+        String title
+        String message
+        DateTime date_start
+        DateTime date_end
+    }
+    
+    notified {
+        BigInt id PK
+        BigInt user_id FK
+        BigInt group_id FK
+        BigInt notification_id FK
+        Boolean read
+    }
+    
+    conversations {
+        BigInt id PK
+        BigInt driver_id FK
+        BigInt instructor_id FK
+    }
+    
+    conversation_messages {
+        BigInt id PK
+        BigInt conversation_id FK
+        BigInt sender_id FK
+        String message
+        Boolean read
+    }
+    
+    mural {
+        BigInt id PK
+        BigInt group_id FK
+    }
+    
+    mural_messages {
+        BigInt id PK
+        BigInt mural_id FK
+        BigInt user_id FK
+        String message
+    }
+    
+    ai_conversations {
+        BigInt id PK
+        BigInt user_id FK
+    }
+    
+    ai_messages {
+        BigInt id PK
+        BigInt user_id FK
+        BigInt conversation_id FK
+        String message
+    }
+    
+    refresh_tokens {
+        BigInt id PK
+        String refresh_token
+        BigInt user_id FK
+    }
+    
+    user_sessions {
+        BigInt id PK
+        BigInt user_id FK
+        String device_id
+    }
+    
+    permissions {
+        BigInt id PK
+        String name
+        String permission
+        Json actions
+    }
+    
+    subgroup_permissions {
+        BigInt id PK
+        BigInt group_id FK
+        BigInt subgroup_id FK
+        Boolean visible
+    }
+    
+    radar {
+        BigInt id PK
+        BigInt group_id FK
+        String name
+    }
+    
+    %% NOVAS CLASSES - Sistema de Telemetria dos Dispositivos
+    device {
+        BigInt id PK
+        String imei UK
+        DateTime last_connection
+        DateTime created_at
+        DateTime updated_at
+    }
+    
+    device_driver {
+        BigInt id PK
+        BigInt device_id FK
+        BigInt driver_id
+        DateTime created_at
+    }
+    
+    device_trip {
+        BigInt id PK
+        BigInt device_id FK
+        BigInt driver_id
+        DateTime start_time
+        DateTime created_at
+    }
+    
+    device_telemetry_30s {
+        BigInt id PK
+        BigInt device_id FK
+        BigInt trip_id FK
+        Decimal latitude
+        Decimal longitude
+        Int speed
+        HdopStatus hdop_status
+        Boolean are_coordinates_valid
+        DateTime timestamp
+        DateTime created_at
+    }
+    
+    device_trip_event {
+        BigInt id PK
+        BigInt device_id FK
+        BigInt trip_id FK
+        Int event_id
+        Int duration_seconds
+        Decimal peak_value
+        DateTime event_time
+        DateTime created_at
+    }
+    
+    device_trip_second {
+        BigInt id PK
+        BigInt device_id FK
+        BigInt trip_id FK
+        Int rpm
+        Int speed
+        Decimal voltage
+        Boolean ignition
+        Boolean sensor_clutch
+        Boolean sensor_brake
+        Boolean sensor_throttle
+        BigInt odometer
+        DateTime timestamp
+        DateTime created_at
+    }
+    
+    device_trip_summary {
+        BigInt id PK
+        BigInt trip_id FK
+        BigInt device_id FK
+        BigInt driver_id
+        Decimal total_distance
+        Int total_events
+        DateTime start_time
+        DateTime end_time
+        Int max_speed
+        Decimal avg_speed
+        Int total_duration_seconds
+        DateTime created_at
+        DateTime updated_at
+    }
+    
+    device_packet_log {
+        BigInt id PK
+        BigInt device_id FK
+        PacketType packet_type
+        String raw_data
+        Boolean processed
+        DateTime received_at
+        DateTime created_at
+    }
+    
+    %% Relacionamentos Existentes
+    acl_users ||--o{ users : "acl_profile_id"
+    acl_profiles ||--o{ acl_users : "id"
+    
+    alerts ||--o{ alerted : "id"
+    users ||--o{ alerted : "id"
+    
+    groups ||--o{ assets : "group_id"
+    groups ||--o{ users : "group_id"
+    groups ||--o{ subgroups : "group_id"
+    groups ||--o{ group_events : "group_id"
+    groups ||--o{ notifications : "group_id"
+    groups ||--o{ mural : "group_id"
+    groups ||--o{ radar : "group_id"
+    
+    subgroups ||--o{ users : "subgroup_id"
+    subgroups ||--o{ subgroup_permissions : "subgroup_id"
+    
+    users ||--o{ positions : "driver_id"
+    users ||--o{ average_driver : "driver_id"
+    users ||--o{ classification_drive_week : "driver_id"
+    users ||--o{ notified : "user_id"
+    users ||--o{ refresh_tokens : "user_id"
+    users ||--o{ user_sessions : "user_id"
+    users ||--o{ ai_conversations : "user_id"
+    users ||--o{ conversations : "driver_id"
+    users ||--o{ conversations : "instructor_id"
+    users ||--o{ conversation_messages : "sender_id"
+    users ||--o{ mural_messages : "user_id"
+    users ||--o{ device_driver : "id"
+    
+    assets ||--o{ positions : "asset_id"
+    assets ||--o{ subtrips : "asset_id"
+    assets ||--o{ events : "asset_id"
+    assets ||--o{ trips : "asset_id"
+    assets ||--o| device : "device_imei"
+    
+    trips ||--o{ subtrips : "trip_id"
+    
+    group_events ||--o| groups : "group_id"
+    
+    average_driver ||--o{ average_driver_events : "id"
+    
+    classification_drive_week ||--o{ classification_drive : "id"
+    
+    notifications ||--o{ notified : "id"
+    notifications ||--o{ notifications : "notification_id"
+    
+    conversations ||--o{ conversation_messages : "id"
+    
+    mural ||--o{ mural_messages : "id"
+    
+    ai_conversations ||--o{ ai_messages : "id"
+    
+    subgroup_permissions ||--o{ users : "subgroup_permission_id"
+    
+    positions ||--o{ subtrips : "start_position_id"
+    positions ||--o{ subtrips : "end_position_id"
+    
+    %% NOVOS RELACIONAMENTOS - Sistema de Telemetria
+    device ||--o{ device_driver : "id"
+    device ||--o{ device_trip : "id"
+    device ||--o{ device_telemetry_30s : "id"
+    device ||--o{ device_trip_event : "id"
+    device ||--o{ device_trip_second : "id"
+    device ||--o{ device_trip_summary : "id"
+    device ||--o{ device_packet_log : "id"
+    
+    device_trip ||--o{ device_telemetry_30s : "id"
+    device_trip ||--o{ device_trip_event : "id"
+    device_trip ||--o{ device_trip_second : "id"
+    device_trip ||--o| device_trip_summary : "id"
+    
+    device_driver ||--o| users : "driver_id"
+    device_driver ||--o| device : "device_id"
+    
+    %% Notas para Enums
+    %% HdopStatus: EXCELLENT, GOOD, MODERATE, POOR
+    %% PacketType: TRIP_START, TELEMETRY_30S, TRIP_EVENTS, TRIP_SECONDS

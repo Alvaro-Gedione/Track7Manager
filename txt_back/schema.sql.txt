@@ -1,0 +1,38 @@
+-- Clientes (Organizações)
+CREATE TABLE IF NOT EXISTS clients (
+    id INTEGER PRIMARY KEY, -- ID da Wialon ou Interno
+    name TEXT NOT NULL,
+    contact_info TEXT
+);
+
+-- Grupos de Veículos
+CREATE TABLE IF NOT EXISTS groups (
+    id INTEGER PRIMARY KEY,
+    name TEXT NOT NULL,
+    client_id INTEGER,
+    FOREIGN KEY(client_id) REFERENCES clients(id)
+);
+
+-- Veículos (Units)
+CREATE TABLE IF NOT EXISTS units (
+    id INTEGER PRIMARY KEY, -- ID exato da Wialon
+    name TEXT NOT NULL,
+    group_id INTEGER,
+    client_id INTEGER,
+    last_update INTEGER,
+    FOREIGN KEY(group_id) REFERENCES groups(id),
+    FOREIGN KEY(client_id) REFERENCES clients(id)
+);
+
+-- Histórico de Mensagens/Eventos
+CREATE TABLE IF NOT EXISTS positions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    unit_id INTEGER,
+    timestamp INTEGER,
+    lat REAL,
+    lon REAL,
+    speed INTEGER,
+    ignition INTEGER,    -- p_user_d0
+    event_code INTEGER,  -- p_user_d3
+    FOREIGN KEY(unit_id) REFERENCES units(id)
+);
