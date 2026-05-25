@@ -1,0 +1,1766 @@
+erDiagram
+    %% Classes Existentes (Mantidas)
+    acl_profiles {
+        BigInt id PK
+        String name
+        String slug
+        Json default_permissions
+    }
+    
+    acl_users {
+        BigInt id PK
+        BigInt acl_profile_id
+        BigInt user_id UK
+        Json permissions
+        Boolean active
+    }
+    
+    alerts {
+        BigInt id PK
+        String title
+        String message
+        String location
+        DateTime created_at
+        DateTime updated_at
+    }
+    
+    alerted {
+        BigInt id PK
+        BigInt alert_id FK
+        BigInt user_id FK
+        Int read
+    }
+    
+    asked_questions {
+        String id PK
+        String title
+        String answer
+        DateTime created_at
+        DateTime updated_at
+    }
+    
+    assets {
+        BigInt asset_id PK
+        BigInt asset_type_id
+        BigInt group_id FK
+        BigInt site_id
+        String description
+        String fuel_type
+        DateTime created_at
+        DateTime updated_at
+        String device_imei UK
+    }
+    
+    groups {
+        BigInt group_id PK
+        String group_type
+        String name
+        String timezone
+        Boolean is_premium
+    }
+    
+    subgroups {
+        BigInt subgroup_id PK
+        BigInt group_id FK
+        String name
+        DateTime created_at
+    }
+    
+    users {
+        BigInt id PK
+        String name
+        BigInt group_id FK
+        BigInt subgroup_id FK
+        String email
+        String role
+        Boolean is_instructor
+        Boolean is_rankiable_driver
+    }
+    
+    events {
+        BigInt event_id PK
+        BigInt asset_id FK
+        BigInt driver_id FK
+        BigInt group_id FK
+        BigInt event_type_id
+        DateTime date_from PK
+        DateTime date_to
+        Decimal value
+    }
+    
+    trips {
+        BigInt trip_id PK
+        DateTime date_from PK
+        BigInt asset_id FK
+        BigInt driver_id FK
+        BigInt group_id FK
+        Decimal distance_kilometers
+    }
+    
+    subtrips {
+        BigInt subtrip_id PK
+        BigInt trip_id FK
+        BigInt asset_id FK
+        BigInt driver_id FK
+        BigInt group_id FK
+        DateTime date_from
+        DateTime date_to
+    }
+    
+    positions {
+        BigInt position_id PK
+        BigInt asset_id FK
+        BigInt driver_id FK
+        String timestamp
+        Decimal latitude
+        Decimal longitude
+    }
+    
+    group_events {
+        BigInt id PK
+        BigInt group_id FK
+        BigInt event_type_id
+        String description
+        Decimal weight
+        String display
+    }
+    
+    average_driver {
+        BigInt id PK
+        BigInt driver_id FK
+        String date_from
+        String date_to
+        Decimal average
+        Decimal distance
+    }
+    
+    average_driver_events {
+        BigInt id PK
+        BigInt average_driver_id FK
+        BigInt event_id
+        Int count
+        Decimal weight
+    }
+    
+    classification_drive_week {
+        BigInt id PK
+        BigInt driver_id FK
+        String week
+    }
+    
+    classification_drive {
+        BigInt id PK
+        BigInt classification_drive_week_id FK
+        Decimal distance
+        String letter_classification_week
+    }
+    
+    notifications {
+        BigInt id PK
+        BigInt notification_id FK
+        String title
+        String message
+        DateTime date_start
+        DateTime date_end
+    }
+    
+    notified {
+        BigInt id PK
+        BigInt user_id FK
+        BigInt group_id FK
+        BigInt notification_id FK
+        Boolean read
+    }
+    
+    conversations {
+        BigInt id PK
+        BigInt driver_id FK
+        BigInt instructor_id FK
+    }
+    
+    conversation_messages {
+        BigInt id PK
+        BigInt conversation_id FK
+        BigInt sender_id FK
+        String message
+        Boolean read
+    }
+    
+    mural {
+        BigInt id PK
+        BigInt group_id FK
+    }
+    
+    mural_messages {
+        BigInt id PK
+        BigInt mural_id FK
+        BigInt user_id FK
+        String message
+    }
+    
+    ai_conversations {
+        BigInt id PK
+        BigInt user_id FK
+    }
+    
+    ai_messages {
+        BigInt id PK
+        BigInt user_id FK
+        BigInt conversation_id FK
+        String message
+    }
+    
+    refresh_tokens {
+        BigInt id PK
+        String refresh_token
+        BigInt user_id FK
+    }
+    
+    user_sessions {
+        BigInt id PK
+        BigInt user_id FK
+        String device_id
+    }
+    
+    permissions {
+        BigInt id PK
+        String name
+        String permission
+        Json actions
+    }
+    
+    subgroup_permissions {
+        BigInt id PK
+        BigInt group_id FK
+        BigInt subgroup_id FK
+        Boolean visible
+    }
+    
+    radar {
+        BigInt id PK
+        BigInt group_id FK
+        String name
+    }
+    
+    device {
+        BigInt id PK
+        String imei UK
+        DateTime last_connection
+        DateTime created_at
+        DateTime updated_at
+    }
+    
+    device_driver {
+        BigInt id PK
+        BigInt device_id FK
+        BigInt driver_id
+        DateTime created_at
+    }
+    
+    device_trip {
+        BigInt id PK
+        BigInt device_id FK
+        BigInt driver_id
+        DateTime start_time
+        DateTime created_at
+    }
+    
+    device_telemetry_30s {
+        BigInt id PK
+        BigInt device_id FK
+        BigInt trip_id FK
+        Decimal latitude
+        Decimal longitude
+        Int speed
+        HdopStatus hdop_status
+        Boolean are_coordinates_valid
+        Boolean ignition
+        DateTime timestamp
+        DateTime created_at
+    }
+    
+    device_trip_event {
+        BigInt id PK
+        BigInt device_id FK
+        BigInt trip_id FK
+        Int event_id
+        Int duration_seconds
+        Decimal peak_value
+        DateTime event_time
+        DateTime created_at
+    }
+    
+    device_trip_second {
+        BigInt id PK
+        BigInt device_id FK
+        BigInt trip_id FK
+        Int rpm
+        Int speed
+        DateTime timestamp
+        DateTime created_at
+    }
+    
+    device_trip_summary {
+        BigInt id PK
+        BigInt trip_id FK
+        BigInt device_id FK
+        BigInt driver_id
+        Decimal total_distance
+        Int total_events
+        DateTime start_time
+        DateTime end_time
+        Int max_speed
+        Decimal avg_speed
+        Int total_duration_seconds
+        Decimal voltage
+        Boolean sensor_clutch
+        Boolean sensor_brake
+        Boolean sensor_throttle
+        BigInt odometer
+        DateTime created_at
+        DateTime updated_at
+    }
+    
+    device_packet_log {
+        BigInt id PK
+        BigInt device_id FK
+        PacketType packet_type
+        String raw_data
+        Boolean processed
+        DateTime received_at
+        DateTime created_at
+    }
+
+    %% ========== NOVAS CLASSES DO SWAGGER ==========
+    
+    %% Active Events
+    active_events {
+        BigInt event_id PK
+        BigInt asset_id FK
+        BigInt driver_id FK
+        BigInt event_type_id
+        Int priority
+        Boolean armed
+        DateTime event_date_time
+        DateTime received_date_time
+        Decimal odometer_kilometres
+        Decimal value
+        String value_type
+        String value_units
+        Float speed_limit
+    }
+    
+    %% Event Filter
+    event_filters {
+        BigInt id PK
+        String menu_id
+        DateTime created_at
+    }
+    
+    event_filter_entities {
+        BigInt id PK
+        BigInt event_filter_id FK
+        BigInt entity_id
+    }
+    
+    event_filter_event_types {
+        BigInt id PK
+        BigInt event_filter_id FK
+        BigInt event_type_id
+    }
+    
+    %% Asset Management
+    asset_types {
+        BigInt asset_type_id PK
+        String name
+        String default_image
+    }
+    
+    asset_additional_details {
+        BigInt id PK
+        BigInt asset_id FK
+        BigInt detail_item_id FK
+    }
+    
+    additional_detail_items {
+        BigInt id PK
+        String label
+        String value
+    }
+    
+    asset_states {
+        BigInt asset_state_id PK
+        BigInt asset_id FK
+        String state
+        String created_by
+        String notes
+        DateTime state_expiry_date
+        DateTime create_date
+    }
+    
+    asset_diagnostics {
+        BigInt id PK
+        BigInt asset_id FK
+        DateTime last_config
+        String firmware_version
+        String apn
+        String ddm_version
+        String server_port
+        String server_address
+    }
+    
+    trailers {
+        BigInt id PK
+        BigInt asset_id PK
+        BigInt site_id
+        String description
+        String registration_number
+        Int trailer_id
+        String hex_trailer_id
+        DateTime trailer_id_date
+        Decimal set_odometer
+        DateTime set_odometer_date
+        BigInt last_asset_id
+        DateTime connect_date
+        DateTime disconnect_date
+    }
+    
+    asset_services {
+        BigInt asset_service_id PK
+        BigInt asset_id FK
+        DateTime service_date
+        Decimal odometer
+        Int engine_seconds
+        String reference
+        Decimal transaction_cost
+        String transaction_currency
+        Decimal base_cost
+        String base_currency
+        String notes
+    }
+    
+    %% Custom Groups
+    custom_groups {
+        BigInt custom_group_id PK
+        BigInt organisation_id
+        String name
+        String description
+        Boolean is_driver_group
+    }
+    
+    custom_group_members {
+        BigInt id PK
+        BigInt custom_group_id FK
+        String entity_type
+        BigInt entity_id
+    }
+    
+    %% Customers and Delivery Points
+    customers {
+        BigInt customer_id PK
+        BigInt organisation_group_id
+        String name
+        String account_number
+        String tax_number
+        BigInt location_id
+        String physical_address
+        String postal_address
+        String email_address
+        String telephone_number
+        String payment_terms
+        DateTime contract_start_date
+        String external_reference
+        Boolean disabled
+    }
+    
+    coordinates {
+        BigInt id PK
+        BigInt customer_id FK
+        Decimal longitude
+        Decimal latitude
+    }
+    
+    delivery_points {
+        BigInt delivery_point_id PK
+        BigInt organisation_group_id
+        BigInt customer_id FK
+        BigInt location_id
+        String description
+        TimeSpan dwell_time
+        String external_reference
+    }
+    
+    delivery_windows {
+        BigInt delivery_window_id PK
+        BigInt delivery_point_id FK
+        String day_of_week
+        TimeSpan time_from
+        TimeSpan time_to
+    }
+    
+    %% Device Configuration
+    mobile_unit_device_configurations {
+        BigInt id PK
+        BigInt asset_id FK
+        String configuration_group
+        String mobile_device_type
+        DateTime last_change_date
+    }
+    
+    connected_peripherals {
+        BigInt id PK
+        BigInt asset_id FK
+        String wire_name
+        String connection
+    }
+    
+    mobile_unit_camera_settings {
+        BigInt id PK
+        BigInt asset_id FK
+    }
+    
+    video_cameras {
+        BigInt id PK
+        BigInt camera_settings_id FK
+        Int camera_id
+        String description
+    }
+    
+    mobile_unit_configuration_states {
+        BigInt id PK
+        BigInt mobile_unit_id FK
+        String last_config
+        String driver_set_version
+        String driver_set_load_date
+    }
+    
+    mobile_unit_communication_settings {
+        BigInt id PK
+        BigInt mobile_unit_id FK
+        String gprs_context
+        String pin_code
+        String sms_number
+        String modem_initialisation_string
+    }
+    
+    mobile_unit_mobile_device_info {
+        BigInt id PK
+        BigInt asset_id FK
+        String mobile_device_type
+        String configuration_group
+    }
+    
+    %% Driver Certification
+    driver_certifications {
+        BigInt id PK
+        BigInt driver_id FK
+        Int certification_type_id
+        DateTime obtained
+        String instructor
+        Boolean is_instructor_qualified
+    }
+    
+    certification_types {
+        Int certification_type_id PK
+        String description
+        Int validity_in_months
+        Boolean is_mandatory
+        Int reminder_period_in_weeks
+        Int drivers_using_certification
+        Int assets_using_certification
+    }
+    
+    %% Driver Licence
+    driver_licences {
+        BigInt id PK
+        BigInt driver_id FK
+        Int licence_category_id
+        String licence_code
+        String licence_code_country
+        String licence_number
+        String issued_state
+        DateTime obtained
+        DateTime expires
+    }
+    
+    licence_categories {
+        Int licence_category_id PK
+        String licence_code
+        String description
+        String country_code
+        Int validity_in_months
+        Int reminder_period_in_weeks
+        Int drivers_using_licence
+        Int assets_using_licence
+    }
+    
+    %% Drivers
+    drivers {
+        BigInt driver_id PK
+        BigInt site_id
+        String name
+        String image_uri
+        Int fm_driver_id
+        String employee_number
+        Boolean is_system_driver
+        String mobile_number
+        String email
+        String extended_driver_id
+        String extended_driver_id_type
+        String country
+    }
+    
+    driver_additional_detail_fields {
+        Int id PK
+        Int driver_id FK
+        String label
+        String help_text
+        Boolean is_required
+        String value
+    }
+    
+    %% DTC Faults
+    faulted_assets {
+        BigInt id PK
+        BigInt asset_id FK
+        String max_severity
+    }
+    
+    asset_faults {
+        BigInt id PK
+        BigInt asset_id FK
+    }
+    
+    fault_status {
+        BigInt id PK
+        BigInt asset_id FK
+        DateTime timestamp
+        String fault_code
+        String category
+        String description
+        String severity
+        Boolean is_faulted
+        DateTime first_seen
+        DateTime last_seen
+        Int count
+        String symptom
+        String action
+        DateTime date_cleared
+    }
+    
+    fault_messages {
+        BigInt id PK
+        BigInt asset_id FK
+        DateTime timestamp
+        String fault_code
+        String category
+        String description
+        String severity
+        Boolean is_faulted
+        String symptom
+        String action
+        DateTime date_cleared
+    }
+    
+    %% Fuel Transactions
+    fuel_transactions {
+        Int fuel_transaction_id PK
+        BigInt asset_id FK
+        DateTime fill_date
+        Decimal fill_odometer_kilometres
+        Decimal litres
+        Int fill_engine_seconds
+        String currency
+        Decimal cost
+        String base_currency
+        Decimal base_cost
+        String location
+    }
+    
+    fuel_insert_carriers {
+        BigInt id PK
+        BigInt fuel_transaction_id FK
+        String error_message
+        Boolean record_added
+    }
+    
+    %% Journeys
+    journeys {
+        BigInt journey_id PK
+        Int journey_reference
+        String description
+        String purpose
+        BigInt group_id
+        BigInt site_id
+        BigInt owner_driver_id
+        String job_id
+        String journey_status
+        Boolean is_hazardous
+        Boolean is_oversize_vehicle
+        Boolean is_oversize_load
+    }
+    
+    journey_assets {
+        BigInt id PK
+        BigInt journey_id FK
+        BigInt asset_id FK
+    }
+    
+    journey_asset_drivers {
+        BigInt id PK
+        BigInt journey_id FK
+        BigInt asset_id FK
+        BigInt driver_id FK
+    }
+    
+    journey_asset_external_passengers {
+        BigInt journey_asset_passenger_id PK
+        BigInt journey_id FK
+        BigInt journey_asset_id FK
+        BigInt asset_id FK
+        String passenger_name
+        String mobile_number
+        String email
+    }
+    
+    journey_asset_trailers {
+        BigInt id PK
+        BigInt journey_id FK
+        BigInt asset_id FK
+        BigInt trailer_id FK
+    }
+    
+    journey_resources {
+        BigInt id PK
+        BigInt journey_id FK
+        BigInt entity_id
+        Int entity_type
+    }
+    
+    journey_routes {
+        BigInt id PK
+        BigInt journey_id FK
+        String route_id
+        Boolean truck_routing
+        Decimal max_truck_weight
+        String routing_boat_ferry
+        String routing_dirt_road
+        String routing_motorway
+        String routing_rail_ferry
+        String routing_toll_road
+        String routing_traffic_mode
+        String routing_tunnel
+        String routing_type
+        Boolean is_return_journey
+        Boolean specify_times
+        DateTime departure_date_time
+        DateTime arrival_date_time
+    }
+    
+    route_locations {
+        BigInt id PK
+        BigInt journey_route_id FK
+        String route_id
+        Int route_order
+        Decimal latitude
+        Decimal longitude
+        Boolean rest_stop
+        Boolean fuel_stop
+        Boolean loading_stop
+        Boolean off_loading_stop
+        Int stop_duration
+        String reverse_geo
+        String location_id
+        BigInt delivery_point_id
+        String stop_activity_instructions
+        DateTime departure_date_time
+        DateTime arrival_date_time
+    }
+    
+    journey_id_status {
+        BigInt id PK
+        BigInt journey_id FK
+        String status
+        DateTime last_update_date_utc
+    }
+    
+    bulk_add_journeys {
+        BigInt id PK
+        String add_reference
+        String description
+        String purpose
+        BigInt group_id
+        BigInt site_id
+        BigInt owner_driver_id
+        String job_id
+        Boolean is_hazardous
+        Boolean is_oversize_vehicle
+        Boolean is_oversize_load
+        String correlation_id
+    }
+    
+    automated_monitoring {
+        BigInt id PK
+        BigInt journey_id FK
+        String journey_status
+        String time_based_status
+        String position_based_status
+        String overdue_update
+    }
+    
+    routes {
+        BigInt id PK
+        String route_id
+        String site_id
+        String route_description
+        String start_location
+        String end_location
+    }
+    
+    journey_in_progress_current_status {
+        BigInt id PK
+        BigInt journey_id FK
+        String description
+        String journey_status
+        BigInt owner_driver_id
+        String position_progress_status
+        BigInt site_id
+        String time_progress_status
+        BigInt vehicle_id
+        DateTime position_date_time
+        Decimal position_latitude
+        Decimal position_longitude
+        DateTime time_date_time
+        Decimal time_latitude
+        Decimal time_longitude
+    }
+    
+    journey_route_info {
+        BigInt id PK
+        BigInt journey_id FK
+        Decimal planned_time_in_minutes
+        Decimal planned_distance_in_metres
+        Decimal actual_total_distance_in_metres
+        Decimal actual_total_time_in_minutes
+        BigInt saved_route_id
+    }
+    
+    journey_route_locations {
+        BigInt journey_route_location_id PK
+        BigInt journey_route_id FK
+        Int route_order
+        Decimal latitude
+        Decimal longitude
+        Int stop_duration
+        String reverse_geo
+        BigInt dmx_location_id
+        BigInt delivery_point_id
+        DateTimeOffset actual_departure_date
+        DateTimeOffset actual_arrival_date
+        DateTimeOffset adjusted_departure_date
+        DateTimeOffset adjusted_arrival_date
+        String stop_activity_instructions
+        Decimal departure_odometer
+        Decimal arrival_odometer
+    }
+    
+    journey_asset_passengers {
+        BigInt journey_asset_passenger_id PK
+        BigInt journey_asset_id FK
+        BigInt asset_id FK
+        Int passenger_count
+        BigInt passenger_id
+        String passenger_name
+        Int journey_asset_passenger_type_key
+        String journey_asset_passenger_type
+        Boolean is_deleted
+    }
+    
+    journey_states {
+        BigInt id PK
+        BigInt journey_id FK
+        String error_message
+    }
+    
+    %% Library Events
+    library_events {
+        BigInt id PK
+        BigInt event_type_id
+        String description
+        String event_type
+        String display_units
+        String format_type
+        String value_name
+    }
+    
+    %% Locations
+    locations {
+        BigInt location_id PK
+        BigInt organisation_id
+        BigInt group_id
+        String name
+        String address
+        String location_type
+        String shape_type
+        Decimal radius
+        String shape_wkt
+        Boolean is_deleted
+        String colour_on_map
+        Decimal opacity_on_map
+        Boolean is_temporary
+        String external_reference
+    }
+    
+    location_contacts {
+        BigInt id PK
+        BigInt location_id FK
+        String contact_name
+        String home_phone
+        String mobile_phone
+        String work_phone
+        String email
+    }
+    
+    location_legacy {
+        BigInt id PK
+        BigInt location_id FK
+        Int location_legacy_id
+    }
+    
+    %% Loggable Data
+    event_menu_filters {
+        BigInt id PK
+        String menu_id
+        String menu_item_code
+    }
+    
+    loggable_data_carriers {
+        BigInt event_id PK
+        BigInt group_id
+        String group_type
+        Int group_legacy_id
+        BigInt asset_id
+        String asset_type
+        Int asset_legacy_id
+        BigInt driver_id
+        Int driver_legacy_id
+        BigInt device_id
+        String device_type
+        DateTime event_date
+        String menu_id
+        String menu_item_code
+        Byte value_type
+        String string_value
+        String event_category
+    }
+    
+    rovi_message_carriers {
+        BigInt event_id PK
+        BigInt group_id
+        String group_type
+        Int group_legacy_id
+        BigInt asset_id
+        String asset_type
+        Int asset_legacy_id
+        BigInt driver_id
+        Int driver_legacy_id
+        BigInt device_id
+        String device_type
+        DateTime event_date
+        String menu_id
+        String menu_item_code
+        Byte value_type
+        Float number_value
+        String string_value
+        String event_category
+    }
+    
+    %% Messages
+    messages {
+        Int message_id PK
+        BigInt asset_id
+        BigInt org_id
+        Int recipient_id
+        Int active_message_id
+        String state
+        String message_type
+        Boolean critical
+        String transport
+        String origin
+        DateTime expires
+        DateTime starts
+        String notes
+        String parameters
+        DateTime processed
+    }
+    
+    message_state_history {
+        BigInt id PK
+        Int message_id FK
+        String state
+        DateTime date_entered
+        String notes
+        String description
+        Int active_message_id
+        DateTime time_stamp
+        Boolean from_unit
+    }
+    
+    send_free_text_message_carriers {
+        BigInt id PK
+        Int vehicle_id
+        BigInt asset_id
+        String subject
+        String body
+        Boolean urgent
+        DateTime expiry_date
+        Boolean notify_when_read
+        Boolean notify_when_replied_to
+        Boolean notify_when_deleted
+        String transport
+    }
+    
+    send_message_results {
+        BigInt id PK
+        Boolean result
+        Int message_id
+        Boolean vehicle_has_required_device
+        Boolean is_message_to_unit_limit_reached
+    }
+    
+    %% Reminders
+    asset_reminders {
+        BigInt id PK
+        BigInt asset_id FK
+    }
+    
+    asset_licence_reminders {
+        BigInt id PK
+        BigInt asset_id FK
+        Boolean enable_reminder
+        DateTime valid_from
+        DateTime expiry_date
+        Int license_duration_months
+        Int reminder_period_weeks
+    }
+    
+    asset_service_reminders {
+        BigInt id PK
+        BigInt asset_id FK
+        Boolean is_connected_trailer
+        Boolean enable_on_distance
+        Float last_service_recorded_km
+        Float next_service_due_at_km
+        Float service_interval_km
+        Float reminder_interval_km
+        Boolean enable_on_duration
+        DateTime last_service_recorded_at
+        DateTime next_service_due_at
+        Int service_interval_months
+        Int reminder_interval_weeks
+        Boolean enable_on_engine_hours
+        Int last_service_on_hours
+        Int next_service_due_on_hours
+        Int engine_hours_interval
+        Int engine_hours_reminder_period
+    }
+    
+    asset_roadworthy_certificate_reminders {
+        BigInt id PK
+        BigInt asset_id FK
+        Boolean enable_reminder
+        DateTime valid_from
+        DateTime expiry_date
+        Int certificate_duration_months
+        Int reminder_period_weeks
+    }
+    
+    %% Scoring
+    report_queries {
+        BigInt id PK
+        BigInt organisation_id
+        String from_date
+        String to_date
+        String aggregation_period
+    }
+    
+    report_flexible_drivers {
+        BigInt id PK
+        BigInt report_query_id FK
+    }
+    
+    score_flexible_drivers {
+        BigInt id PK
+        BigInt report_flexible_driver_id FK
+        BigInt driver_id
+        BigInt site_id
+        Decimal site_total_score
+        Boolean is_scored
+        Decimal total_score
+        Int site_rank
+        Int organisation_rank
+        Decimal trips_max_speed
+        Boolean site_is_scored
+        Decimal trips_driving_time
+        Decimal trips_distance
+        Int trips_count
+        String unit_of_measure
+        String period
+        DateTime date_key
+        Decimal trips_duration
+    }
+    
+    penalty_scores_by_event_type {
+        BigInt id PK
+        BigInt score_flexible_driver_id FK
+        String event_description
+        Int occurrences
+        Int event_count
+        Decimal duration
+        Decimal penalty_points
+        Decimal score
+    }
+    
+    scoring_templates {
+        BigInt template_id PK
+        BigInt organisation_id
+        String template_type
+        String model_type
+        DateTime date_valid_from
+    }
+    
+    model_settings_flexible_driver {
+        BigInt id PK
+        BigInt scoring_template_id FK
+        Decimal total_score_amber_band_start
+        Decimal total_score_amber_band_end
+        Decimal min_distance
+        String rank_order
+        String rank_type
+    }
+    
+    score_settings_flexible_driver {
+        BigInt id PK
+        BigInt model_setting_id FK
+        String description
+        Decimal penalty_points
+        Int cumulative_violation_time
+        Decimal amber_band_start
+        Decimal amber_band_end
+    }
+    
+    %% Tacho Data
+    tacho_data {
+        BigInt id PK
+        BigInt asset_id FK
+        DateTime start_date_time
+        DateTime end_date_time
+    }
+    
+    tacho_parameter_definitions {
+        BigInt id PK
+        BigInt tacho_data_id FK
+        Byte key
+        BigInt device_id
+        BigInt parameter_id
+        String line_name
+    }
+    
+    tacho_intervals {
+        BigInt id PK
+        BigInt tacho_data_id FK
+        DateTime interval_date_time
+    }
+    
+    tacho_parameter_values {
+        BigInt id PK
+        BigInt tacho_interval_id FK
+        Byte key
+        Decimal value
+    }
+    
+    %% Time Entry
+    time_approver_imports {
+        BigInt id PK
+        BigInt organisation_id
+    }
+    
+    approvers {
+        BigInt id PK
+        BigInt time_approver_import_id FK
+        String approver_id
+        String display_name
+    }
+    
+    driver_approver_levels {
+        BigInt id PK
+        BigInt time_approver_import_id FK
+        Int approver_level
+    }
+    
+    driver_allowed_approvers {
+        BigInt id PK
+        BigInt driver_approver_level_id FK
+        String hos_driver_id
+    }
+    
+    group_substatus {
+        BigInt id PK
+        Byte event_type_id
+        Byte event_status_id
+        String status_code
+        String description
+    }
+    
+    %% HOS Data
+    hos_event_data_requests {
+        BigInt id PK
+        String entity_type_id
+    }
+    
+    hos_events {
+        BigInt event_id PK
+        DateTime start_date_time
+        BigInt driver_id
+        BigInt asset_id
+        BigInt position_id
+        Byte event_type_id
+        Byte event_status_id
+        Byte source_id
+        String remarks
+        String state_code
+    }
+    
+    hos_event_driver_summaries {
+        BigInt id PK
+        BigInt driver_id
+    }
+    
+    hos_event_daily_summaries {
+        BigInt id PK
+        BigInt hos_event_driver_summary_id FK
+        DateTime day
+    }
+    
+    hos_event_summaries {
+        BigInt id PK
+        BigInt hos_event_daily_summary_id FK
+        Byte event_type_id
+        Byte event_status_id
+        Int count
+        TimeSpan total_duration
+    }
+    
+    hos_violations {
+        BigInt id PK
+        BigInt driver_id
+        String violation_name
+        String violation_description
+        Int violation_rule_id
+        DateTime initial_start_date_time
+        DateTime start_date_time
+        DateTime end_date_time
+        Boolean is_ongoing_violation
+    }
+    
+    hos_available_hours {
+        BigInt id PK
+        BigInt driver_id
+        String rule_set_name
+        Byte current_status
+        String current_status_description
+        DateTime current_status_start_date_time
+        Boolean is_on_duty
+        DateTime last_calculation
+    }
+    
+    available_times {
+        BigInt id PK
+        BigInt hos_available_hours_id FK
+        Int rule_id
+        Int available_time_type
+        String name
+        TimeSpan full_available_time
+        TimeSpan current_available_time
+        Boolean has_split_value
+        TimeSpan split_value
+        String override_description
+        DateTime date_time_value
+        Boolean is_date_time_value
+    }
+    
+    rule_set_summaries {
+        BigInt id PK
+        Int fm_rule_set_id
+        String description
+        String region
+        Boolean has_oil_field_rules
+        Boolean driver_is_exempt
+    }
+    
+    hos_work_state_details {
+        BigInt id PK
+        String description
+        String abbreviation
+        String timeline_label
+        Byte order
+        Boolean is_oil_field
+        Int renderer_key
+    }
+    
+    hos_driver_time_approvers {
+        BigInt id PK
+        BigInt driver_id
+        BigInt approver_id
+        String approver_code
+        String display_name
+        Int approver_level
+        Boolean is_selected
+        DateTime date_created
+    }
+    
+    hos_event_type_categories {
+        BigInt id PK
+        String description
+    }
+    
+    event_types {
+        BigInt id PK
+        BigInt hos_event_type_category_id FK
+        Byte event_type_id
+        String description
+    }
+    
+    hos_driver_info_summaries {
+        BigInt id PK
+        BigInt driver_id
+        BigInt organisation_id
+        Int fm_rule_set_id
+        Byte start_of_day
+        BigInt home_map_location_id
+        String hos_id
+        String time_zone_id
+        String remarks
+        DateTime eld_enabled_on
+        Boolean allow_personal_conveyance
+        Boolean allow_yard_movement
+        Boolean is_time_entry_enabled
+    }
+    
+    hos_event_start_date_time_by_hour_changed_since {
+        BigInt id PK
+        BigInt driver_id
+    }
+    
+    %% Trip Amendments
+    trip_amendments {
+        BigInt id PK
+        BigInt trip_id FK
+        String amendment_type
+        DateTime amendment_date
+        BigInt new_driver_id
+    }
+    
+    %% Event Amendments
+    event_amendments {
+        BigInt id PK
+        BigInt event_id FK
+        String amendment_type
+        DateTime amendment_date
+        BigInt new_driver_id
+    }
+    
+    %% InfoHub Actions
+    active_event_actions {
+        BigInt id PK
+        BigInt active_event_id FK
+        DateTime action_date
+        String action_comment
+        String actioned_by
+    }
+    
+    %% GeoData
+    geodata_asset_movements {
+        BigInt id PK
+        BigInt group_id
+        DateTime from_date
+        DateTime to_date
+        String format
+        Byte file_data
+    }
+    
+    %% AEMP
+    fleet_snapshots {
+        BigInt id PK
+        DateTime snapshot_time
+        Int version
+    }
+    
+    links {
+        BigInt id PK
+        BigInt fleet_snapshot_id FK
+        String rel
+        String href
+    }
+    
+    equipment_snapshots {
+        BigInt id PK
+        BigInt fleet_snapshot_id FK
+    }
+    
+    equipment_headers {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime unit_install_date_time
+        String oem_name
+        String model
+        String equipment_id
+        String serial_number
+        String pin
+    }
+    
+    aemp_locations {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Decimal latitude
+        Decimal longitude
+        Decimal altitude
+        String altitude_units
+    }
+    
+    cumulative_operating_hours {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Decimal hour
+    }
+    
+    fuel_used {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Int fuel_consumed_litres
+        String fuel_units
+    }
+    
+    distances {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Float odometer_kilometre
+        String odometer_units
+    }
+    
+    cumulative_idle_hours {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Float hour
+    }
+    
+    fuel_remaining {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Float percent
+        Int tank_capacity
+        String fuel_tank_capacity_units
+    }
+    
+    def_remaining {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Float percent
+        Float tank_capacity
+        String def_tank_capacity_units
+    }
+    
+    engine_status {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        String engine_number
+        Boolean running
+    }
+    
+    cumulative_power_take_off_hours {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Decimal hour
+    }
+    
+    average_load_factor_last_24 {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Float percent
+    }
+    
+    cumulative_load_counts {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Int count
+    }
+    
+    cumulative_payload_totals {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Decimal payload_kilograms
+        String payload_units
+    }
+    
+    cumulative_active_regeneration_hours {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Decimal hour
+    }
+    
+    cumulative_idle_non_operating_hours {
+        BigInt id PK
+        BigInt equipment_snapshot_id FK
+        DateTime datetime
+        Decimal hour
+    }
+
+    %% Relacionamentos Existentes (Mantidos)
+    acl_users ||--o{ users : "acl_profile_id"
+    acl_profiles ||--o{ acl_users : "id"
+    
+    alerts ||--o{ alerted : "id"
+    users ||--o{ alerted : "id"
+    
+    groups ||--o{ assets : "group_id"
+    groups ||--o{ users : "group_id"
+    groups ||--o{ subgroups : "group_id"
+    groups ||--o{ group_events : "group_id"
+    groups ||--o{ notifications : "group_id"
+    groups ||--o{ mural : "group_id"
+    groups ||--o{ radar : "group_id"
+    
+    subgroups ||--o{ users : "subgroup_id"
+    subgroups ||--o{ subgroup_permissions : "subgroup_id"
+    
+    users ||--o{ positions : "driver_id"
+    users ||--o{ average_driver : "driver_id"
+    users ||--o{ classification_drive_week : "driver_id"
+    users ||--o{ notified : "user_id"
+    users ||--o{ refresh_tokens : "user_id"
+    users ||--o{ user_sessions : "user_id"
+    users ||--o{ ai_conversations : "user_id"
+    users ||--o{ conversations : "driver_id"
+    users ||--o{ conversations : "instructor_id"
+    users ||--o{ conversation_messages : "sender_id"
+    users ||--o{ mural_messages : "user_id"
+    users ||--o{ device_driver : "id"
+    
+    assets ||--o{ positions : "asset_id"
+    assets ||--o{ subtrips : "asset_id"
+    assets ||--o{ events : "asset_id"
+    assets ||--o{ trips : "asset_id"
+    assets ||--o| device : "device_imei"
+    
+    trips ||--o{ subtrips : "trip_id"
+    
+    group_events ||--o| groups : "group_id"
+    
+    average_driver ||--o{ average_driver_events : "id"
+    
+    classification_drive_week ||--o{ classification_drive : "id"
+    
+    notifications ||--o{ notified : "id"
+    notifications ||--o{ notifications : "notification_id"
+    
+    conversations ||--o{ conversation_messages : "id"
+    
+    mural ||--o{ mural_messages : "id"
+    
+    ai_conversations ||--o{ ai_messages : "id"
+    
+    subgroup_permissions ||--o{ users : "subgroup_permission_id"
+    
+    positions ||--o{ subtrips : "start_position_id"
+    positions ||--o{ subtrips : "end_position_id"
+    
+    %% Relacionamentos de Telemetria (Mantidos)
+    device ||--o{ device_driver : "id"
+    device ||--o{ device_trip : "id"
+    device ||--o{ device_telemetry_30s : "id"
+    device ||--o{ device_trip_event : "id"
+    device ||--o{ device_trip_second : "id"
+    device ||--o{ device_trip_summary : "id"
+    device ||--o{ device_packet_log : "id"
+    
+    device_trip ||--o{ device_telemetry_30s : "id"
+    device_trip ||--o{ device_trip_event : "id"
+    device_trip ||--o{ device_trip_second : "id"
+    device_trip ||--o| device_trip_summary : "id"
+    
+    device_driver ||--o| users : "driver_id"
+    device_driver ||--o| device : "device_id"
+
+    %% NOVOS RELACIONAMENTOS DO SWAGGER
+    
+    %% Active Events
+    active_events ||--o| assets : "asset_id"
+    active_events ||--o| users : "driver_id"
+    active_events ||--o| positions : "position_id"
+    
+    event_filters ||--o{ event_filter_entities : "id"
+    event_filters ||--o{ event_filter_event_types : "id"
+    
+    %% Asset Management
+    assets ||--o{ asset_additional_details : "asset_id"
+    assets ||--o{ asset_states : "asset_id"
+    assets ||--o{ asset_diagnostics : "asset_id"
+    assets ||--o{ trailers : "asset_id"
+    assets ||--o{ asset_services : "asset_id"
+    assets ||--o{ mobile_unit_device_configurations : "asset_id"
+    assets ||--o{ connected_peripherals : "asset_id"
+    assets ||--o{ mobile_unit_camera_settings : "asset_id"
+    assets ||--o{ mobile_unit_mobile_device_info : "asset_id"
+    assets ||--o{ asset_licence_reminders : "asset_id"
+    assets ||--o{ asset_service_reminders : "asset_id"
+    assets ||--o{ asset_roadworthy_certificate_reminders : "asset_id"
+    assets ||--o{ tacho_data : "asset_id"
+    
+    asset_additional_details ||--o{ additional_detail_items : "detail_item_id"
+    
+    mobile_unit_camera_settings ||--o{ video_cameras : "camera_settings_id"
+    
+    mobile_unit_device_configurations ||--o{ connected_peripherals : "asset_id"
+    
+    %% Custom Groups
+    custom_groups ||--o{ custom_group_members : "custom_group_id"
+    
+    %% Customers
+    customers ||--o{ coordinates : "customer_id"
+    customers ||--o{ delivery_points : "customer_id"
+    
+    delivery_points ||--o{ delivery_windows : "delivery_point_id"
+    
+    %% Driver Certification
+    users ||--o{ driver_certifications : "driver_id"
+    
+    %% Driver Licence
+    users ||--o{ driver_licences : "driver_id"
+    
+    %% Drivers
+    users ||--o{ drivers : "driver_id"
+    drivers ||--o{ driver_additional_detail_fields : "driver_id"
+    drivers ||--o{ hos_events : "driver_id"
+    drivers ||--o{ hos_violations : "driver_id"
+    drivers ||--o{ hos_available_hours : "driver_id"
+    drivers ||--o{ hos_driver_info_summaries : "driver_id"
+    
+    %% DTC Faults
+    assets ||--o{ faulted_assets : "asset_id"
+    assets ||--o{ asset_faults : "asset_id"
+    assets ||--o{ fault_messages : "asset_id"
+    
+    asset_faults ||--o{ fault_status : "asset_id"
+    
+    %% Fuel
+    assets ||--o{ fuel_transactions : "asset_id"
+    
+    fuel_transactions ||--o{ fuel_insert_carriers : "fuel_transaction_id"
+    
+    %% Journeys
+    journeys ||--o{ journey_assets : "journey_id"
+    journeys ||--o{ journey_asset_drivers : "journey_id"
+    journeys ||--o{ journey_asset_external_passengers : "journey_id"
+    journeys ||--o{ journey_asset_trailers : "journey_id"
+    journeys ||--o{ journey_resources : "journey_id"
+    journeys ||--o{ journey_routes : "journey_id"
+    journeys ||--o{ journey_id_status : "journey_id"
+    journeys ||--o{ automated_monitoring : "journey_id"
+    journeys ||--o{ journey_in_progress_current_status : "journey_id"
+    journeys ||--o{ journey_route_info : "journey_id"
+    journeys ||--o{ journey_states : "journey_id"
+    
+    journey_routes ||--o{ route_locations : "id"
+    journey_route_info ||--o{ journey_route_locations : "id"
+    
+    journey_assets ||--o{ journey_asset_passengers : "journey_asset_id"
+    
+    %% Library Events
+    library_events ||--o{ events : "event_type_id"
+    
+    %% Locations
+    groups ||--o{ locations : "group_id"
+    locations ||--o{ location_contacts : "location_id"
+    locations ||--o{ location_legacy : "location_id"
+    
+    %% Loggable Data
+    event_menu_filters ||--o{ loggable_data_carriers : "id"
+    event_menu_filters ||--o{ rovi_message_carriers : "id"
+    
+    %% Messages
+    assets ||--o{ messages : "asset_id"
+    messages ||--o{ message_state_history : "message_id"
+    
+    %% Reminders
+    assets ||--o{ asset_reminders : "asset_id"
+    
+    %% Scoring
+    report_queries ||--o{ report_flexible_drivers : "id"
+    report_flexible_drivers ||--o{ score_flexible_drivers : "id"
+    
+    score_flexible_drivers ||--o{ penalty_scores_by_event_type : "id"
+    
+    scoring_templates ||--o{ model_settings_flexible_driver : "template_id"
+    model_settings_flexible_driver ||--o{ score_settings_flexible_driver : "id"
+    
+    %% Tacho
+    tacho_data ||--o{ tacho_parameter_definitions : "id"
+    tacho_data ||--o{ tacho_intervals : "id"
+    
+    tacho_intervals ||--o{ tacho_parameter_values : "id"
+    
+    %% Time Entry
+    time_approver_imports ||--o{ approvers : "id"
+    time_approver_imports ||--o{ driver_approver_levels : "id"
+    
+    driver_approver_levels ||--o{ driver_allowed_approvers : "id"
+    
+    %% HOS
+    hos_event_data_requests ||--o{ hos_events : "id"
+    
+    hos_event_driver_summaries ||--o{ hos_event_daily_summaries : "id"
+    hos_event_daily_summaries ||--o{ hos_event_summaries : "id"
+    
+    hos_available_hours ||--o{ available_times : "id"
+    
+    hos_event_type_categories ||--o{ event_types : "id"
+    
+    %% Amendments
+    events ||--o{ event_amendments : "event_id"
+    trips ||--o{ trip_amendments : "trip_id"
+    
+    %% InfoHub
+    active_events ||--o{ active_event_actions : "event_id"
+    
+    %% AEMP
+    fleet_snapshots ||--o{ links : "id"
+    fleet_snapshots ||--o{ equipment_snapshots : "id"
+    
+    equipment_snapshots ||--o{ equipment_headers : "id"
+    equipment_snapshots ||--o{ aemp_locations : "id"
+    equipment_snapshots ||--o{ cumulative_operating_hours : "id"
+    equipment_snapshots ||--o{ fuel_used : "id"
+    equipment_snapshots ||--o{ distances : "id"
+    equipment_snapshots ||--o{ cumulative_idle_hours : "id"
+    equipment_snapshots ||--o{ fuel_remaining : "id"
+    equipment_snapshots ||--o{ def_remaining : "id"
+    equipment_snapshots ||--o{ engine_status : "id"
+    equipment_snapshots ||--o{ cumulative_power_take_off_hours : "id"
+    equipment_snapshots ||--o{ average_load_factor_last_24 : "id"
+    equipment_snapshots ||--o{ cumulative_load_counts : "id"
+    equipment_snapshots ||--o{ cumulative_payload_totals : "id"
+    equipment_snapshots ||--o{ cumulative_active_regeneration_hours : "id"
+    equipment_snapshots ||--o{ cumulative_idle_non_operating_hours : "id"

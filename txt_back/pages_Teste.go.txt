@@ -1,0 +1,362 @@
+package main
+
+import (
+	"fmt"
+	"net"
+	"time"
+)
+
+// ============================================
+// CONSTANTES DO PROTOCOLO CUSTOMIZADO
+// ============================================
+
+const (
+	HEADER_INICIO_VIAGEM   = 0 // 000
+	HEADER_IDENT_MOTORISTA = 1 // 001
+	HEADER_30_SEGUNDOS     = 2 // 010
+	HEADER_FINAL_VIAGEM_01 = 3 // 011
+	HEADER_FINAL_VIAGEM_02 = 4 // 100
+	HEADER_MULTI_EVENTOS   = 5 // 101
+	HEADER_MULTI_DADOS     = 6 // 110
+)
+
+// ============================================
+// ESTRUTURAS DE DADOS
+// ============================================
+
+type TelemetriaRecord struct {
+	IMEI        string                 `json:"imei"`
+	Timestamp   time.Time              `json:"timestamp"`
+	Latitude    float64                `json:"latitude,omitempty"`
+	Longitude   float64                `json:"longitude,omitempty"`
+	Velocidade  float32                `json:"velocidade,omitempty"`
+	RPM         int                    `json:"rpm,omitempty"`
+	CoordsValid bool                   `json:"coords_valid"`
+	Atributos   map[string]interface{} `json:"atributos"`
+}
+
+type EventoRecord struct {
+	IMEI      string    `json:"imei"`
+	Tipo      int       `json:"tipo"`
+	Duracao   int       `json:"duracao"`
+	Pico      int       `json:"pico"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+type ViagemRecord struct {
+	IMEI      string    `json:"imei"`
+	Inicio    time.Time `json:"inicio"`
+	Motorista int       `json:"motorista"`
+	Latitude  float64   `json:"latitude"`
+	Longitude float64   `json:"longitude"`
+	Distancia int       `json:"distancia"`
+}
+
+// ============================================
+// BIT BUFFER (PARA DECODIFICAÇÃO)
+// ============================================
+
+type BitReader struct {
+	data []byte
+	pos  int
+	bit  int
+}
+
+func NewBitReader(data []byte) *BitReader {
+	return &BitReader{data: data, pos: 0, bit: 0}
+}
+
+func (b *BitReader) ReadBits(n int) uint32 {
+	var result uint32 = 0
+	for i := 0; i < n; i++ {
+		result <<= 1
+		if b.pos < len(b.data) {
+			bit := (b.data[b.pos] >> (7 - b.bit)) & 0x01
+			result |= uint32(bit)
+			b.bit++
+			if b.bit >= 8 {
+				b.bit = 0
+				b.pos++
+			}
+		}
+	}
+	return result
+}
+
+func (b *BitReader) RemainingBits() int {
+	return (len(b.data)-b.pos)*8 - b.bit
+}
+
+func (b *BitReader) SkipBytes(n int) {
+	b.pos += n
+	b.bit = 0
+}
+
+// ============================================
+// DECODIFICADORES DO PROTOCOLO CUSTOMIZADO
+// ============================================
+
+func DecodeIMEI(high, low uint32) string {
+	return fmt.Sprintf("%d%08d", high, low)
+}
+
+func DecodeInicioViagem(data []byte, imeiHigh, imeiLow uint32) (ViagemRecord, int, error) {
+	reader := NewBitReader(data)
+	reader.SkipBytes(6) // Pula IMEI
+
+	timestamp := reader.ReadBits(32)
+	lonRaw := int32(reader.ReadBits(32))
+	latRaw := int32(reader.ReadBits(32))
+
+	viagem := ViagemRecord{
+		IMEI:      DecodeIMEI(imeiHigh, imeiLow),
+		Inicio:    time.Unix(int64(timestamp), 0).UTC(),
+		Longitude: float64(lonRaw) / 1000000.0,
+		Latitude:  float64(latRaw) / 1000000.0,
+	}
+
+	return viagem, reader.pos, nil
+}
+
+func DecodeIdentMotorista(data []byte, imeiHigh, imeiLow uint32) (int, time.Time, int, error) {
+	reader := NewBitReader(data)
+	reader.SkipBytes(6) // Pula IMEI
+
+	motoristaID := int(reader.ReadBits(32))
+	timestamp := reader.ReadBits(32)
+	timestampTime := time.Unix(int64(timestamp), 0).UTC()
+
+	return motoristaID, timestampTime, reader.pos, nil
+}
+
+func Decode30Segundos(data []byte, imeiHigh, imeiLow uint32) (TelemetriaRecord, int, error) {
+	reader := NewBitReader(data)
+	reader.SkipBytes(6) // Pula IMEI
+
+	coordsValid := reader.ReadBits(1) == 1
+
+	lonRaw := int32(reader.ReadBits(32))
+	latRaw := int32(reader.ReadBits(32))
+	speed := reader.ReadBits(8)
+	timestamp := reader.ReadBits(32)
+
+	record := TelemetriaRecord{
+		IMEI:        DecodeIMEI(imeiHigh, imeiLow),
+		Timestamp:   time.Unix(int64(timestamp), 0).UTC(),
+		Velocidade:  float32(speed),
+		CoordsValid: coordsValid,
+		Atributos:   make(map[string]interface{}),
+	}
+
+	if coordsValid {
+		record.Latitude = float64(latRaw) / 1000000.0
+		record.Longitude = float64(lonRaw) / 1000000.0
+	}
+
+	record.Atributos["coords_valid"] = coordsValid
+	record.Atributos["tipo"] = "periodico_30s"
+
+	return record, reader.pos, nil
+}
+
+func DecodeMultiEventos(data []byte, imeiHigh, imeiLow uint32) ([]EventoRecord, int, error) {
+	reader := NewBitReader(data)
+	reader.SkipBytes(6) // Pula IMEI
+
+	_ = int(reader.ReadBits(32)) // Lê a distância e descarta na visualização
+	eventCount := int(reader.ReadBits(16))
+
+	eventos := make([]EventoRecord, 0, eventCount)
+
+	for i := 0; i < eventCount; i++ {
+		eventoID := int(reader.ReadBits(7))
+		duracao := int(reader.ReadBits(17))
+		pico := int(reader.ReadBits(13))
+		timestamp := reader.ReadBits(32)
+
+		evento := EventoRecord{
+			IMEI:      DecodeIMEI(imeiHigh, imeiLow),
+			Tipo:      eventoID,
+			Duracao:   duracao,
+			Pico:      pico,
+			Timestamp: time.Unix(int64(timestamp), 0).UTC(),
+		}
+		eventos = append(eventos, evento)
+	}
+
+	return eventos, reader.pos, nil
+}
+
+func DecodeMultiDados(data []byte, imeiHigh, imeiLow uint32) ([]TelemetriaRecord, int, error) {
+	reader := NewBitReader(data)
+	reader.SkipBytes(6) // Pula IMEI
+
+	sensores := reader.ReadBits(8)
+	recordCount := int(reader.ReadBits(16))
+
+	registros := make([]TelemetriaRecord, 0, recordCount)
+
+	for i := 0; i < recordCount; i++ {
+		rpm := int(reader.ReadBits(13))
+		speed := int(reader.ReadBits(8))
+		timestamp := reader.ReadBits(32)
+
+		record := TelemetriaRecord{
+			IMEI:        DecodeIMEI(imeiHigh, imeiLow),
+			Timestamp:   time.Unix(int64(timestamp), 0).UTC(),
+			Velocidade:  float32(speed),
+			RPM:         rpm,
+			CoordsValid: false,
+			Atributos:   make(map[string]interface{}),
+		}
+
+		record.Atributos["sensores"] = map[string]bool{
+			"freio":      (sensores & 0x01) != 0,
+			"acelerador": (sensores & 0x02) != 0,
+			"embreagem":  (sensores & 0x04) != 0,
+		}
+		record.Atributos["fonte"] = "CAN_batch"
+		record.Atributos["tipo"] = "dados_motor"
+
+		registros = append(registros, record)
+	}
+
+	return registros, reader.pos, nil
+}
+
+// ============================================
+// SERVIDOR PRINCIPAL
+// ============================================
+
+func main() {
+	fmt.Println("=== SERVIDOR GALILEOSKY - MODO DEBUG/PRINT ===")
+	fmt.Println("Aguardando conexões na porta 4040...")
+
+	ln, err := net.Listen("tcp", "0.0.0.0:4040")
+	if err != nil {
+		fmt.Printf("Erro ao iniciar servidor: %v\n", err)
+		return
+	}
+	defer ln.Close()
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Printf("Erro na conexão: %v\n", err)
+			continue
+		}
+		go handleConnection(conn)
+	}
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+	addr := conn.RemoteAddr().String()
+	fmt.Printf("\n🟢 [%s] NOVA CONEXÃO ESTABELECIDA\n", addr)
+
+	buffer := make([]byte, 65536)
+	var pendingData []byte
+	var imeiHigh, imeiLow uint32
+
+	for {
+		n, err := conn.Read(buffer)
+		if err != nil {
+			fmt.Printf("🔴 [%s] DESCONECTADO\n", addr)
+			return
+		}
+
+		pendingData = append(pendingData, buffer[:n]...)
+
+		for len(pendingData) >= 1 {
+			reader := NewBitReader(pendingData)
+
+			if reader.RemainingBits() < 3 {
+				break
+			}
+
+			header := reader.ReadBits(3)
+
+			switch int(header) {
+			case HEADER_INICIO_VIAGEM:
+				if reader.RemainingBits() < (24 + 27 + 32 + 32 + 32) {
+					break
+				}
+				imeiHigh = reader.ReadBits(24)
+				imeiLow = reader.ReadBits(27)
+				viagem, bytesUsed, _ := DecodeInicioViagem(pendingData[reader.pos:], imeiHigh, imeiLow)
+				
+				fmt.Printf("🚀 [INÍCIO DE VIAGEM] IMEI: %s | Início: %s | GPS: %.6f, %.6f\n",
+					viagem.IMEI, viagem.Inicio.Format("2006-01-02 15:04:05"), viagem.Latitude, viagem.Longitude)
+				
+				pendingData = pendingData[bytesUsed+1:]
+
+			case HEADER_IDENT_MOTORISTA:
+				if reader.RemainingBits() < (24 + 27 + 32 + 32) {
+					break
+				}
+				imeiHigh = reader.ReadBits(24)
+				imeiLow = reader.ReadBits(27)
+				motoristaID, timestamp, bytesUsed, _ := DecodeIdentMotorista(pendingData[reader.pos:], imeiHigh, imeiLow)
+				
+				fmt.Printf("👤 [MOTORISTA] ID: %d | Time: %s\n", motoristaID, timestamp.Format("15:04:05"))
+				
+				pendingData = pendingData[bytesUsed+1:]
+
+			case HEADER_30_SEGUNDOS:
+				if reader.RemainingBits() < (24 + 27 + 1 + 32 + 32 + 8 + 32) {
+					break
+				}
+				imeiHigh = reader.ReadBits(24)
+				imeiLow = reader.ReadBits(27)
+				record, bytesUsed, _ := Decode30Segundos(pendingData[reader.pos:], imeiHigh, imeiLow)
+				
+				statusGPS := "INVÁLIDO"
+				if record.CoordsValid {
+					statusGPS = fmt.Sprintf("%.6f, %.6f", record.Latitude, record.Longitude)
+				}
+				fmt.Printf("📍 [30 SEGUNDOS] %s | Vel: %.0f km/h | GPS: %s\n",
+					record.Timestamp.Format("15:04:05"), record.Velocidade, statusGPS)
+				
+				pendingData = pendingData[bytesUsed+1:]
+
+			case HEADER_MULTI_EVENTOS:
+				if reader.RemainingBits() < (24 + 27 + 32 + 16) {
+					break
+				}
+				imeiHigh = reader.ReadBits(24)
+				imeiLow = reader.ReadBits(27)
+				eventos, bytesUsed, _ := DecodeMultiEventos(pendingData[reader.pos:], imeiHigh, imeiLow)
+				
+				fmt.Printf("⚠️  [MULTI-EVENTOS] Recebidos %d eventos em lote:\n", len(eventos))
+				for _, evt := range eventos {
+					fmt.Printf("   -> Tipo: %d | Dur: %ds | Pico: %d | Time: %s\n",
+						evt.Tipo, evt.Duracao, evt.Pico, evt.Timestamp.Format("15:04:05"))
+				}
+				
+				pendingData = pendingData[bytesUsed+1:]
+
+			case HEADER_MULTI_DADOS:
+				if reader.RemainingBits() < (24 + 27 + 8 + 16) {
+					break
+				}
+				imeiHigh = reader.ReadBits(24)
+				imeiLow = reader.ReadBits(27)
+				registros, bytesUsed, _ := DecodeMultiDados(pendingData[reader.pos:], imeiHigh, imeiLow)
+				
+				fmt.Printf("💾 [MULTI-DADOS CAN] Recebidos %d registros no lote:\n", len(registros))
+				for _, rec := range registros {
+					sensores := rec.Atributos["sensores"].(map[string]bool)
+					fmt.Printf("   -> %s | Vel: %.0f km/h | RPM: %d | Freio: %t, Acel: %t, Embr: %t\n",
+						rec.Timestamp.Format("15:04:05"), rec.Velocidade, rec.RPM, 
+						sensores["freio"], sensores["acelerador"], sensores["embreagem"])
+				}
+				
+				pendingData = pendingData[bytesUsed+1:]
+
+			default:
+				// Pula 1 byte se o header for desconhecido para não travar o buffer
+				pendingData = pendingData[1:]
+			}
+		}
+	}
+}

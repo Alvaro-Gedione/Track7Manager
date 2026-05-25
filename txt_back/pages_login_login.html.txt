@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track7 - Acesso ao Sistema</title>
+    <style>
+        /* ============================================ */
+        /* ESTILOS BASEADOS NO SITE DA TRACK7 (TRATADOS) */
+        /* ============================================ */
+        
+        /* Reset e Fontes */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0a0a0a;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+            color: #e0e0e0;
+        }
+
+        /* Container de Vídeo de Fundo (igual à página inicial) */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .video-background iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            object-fit: cover;
+        }
+        
+        /* Overlay escuro para melhor contraste e legibilidade (igual ao site) */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0,0,0,0.85) 0%, rgba(10,10,10,0.9) 100%);
+            z-index: 1;
+        }
+        
+        /* Container Principal do Login */
+        .login-wrapper {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        /* Card de Login (estilo refinado) */
+        .login-card {
+            background: rgba(20, 20, 20, 0.75);
+            backdrop-filter: blur(15px);
+            border-radius: 32px;
+            padding: 48px 44px;
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid rgba(190, 96, 4, 0.3);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: fadeInUp 0.8s ease-out;
+        }
+        
+        .login-card:hover {
+            border-color: rgba(190, 96, 4, 0.6);
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -15px rgba(190, 96, 4, 0.2);
+        }
+        
+        /* Logo e Título */
+        .logo-area {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+        
+        .logo-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #BE6004, #ff8c52);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 800;
+            color: white;
+            box-shadow: 0 8px 20px rgba(190, 96, 4, 0.3);
+        }
+        
+        .logo-text {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #e0e0e0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+        
+        .logo-text span {
+            background: linear-gradient(135deg, #BE6004, #ff8c52);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .tagline {
+            font-size: 13px;
+            color: #9e9e9e;
+            margin-top: 12px;
+            text-align: center;
+            letter-spacing: 0.3px;
+        }
+        
+        /* Formulário */
+        .form-group {
+            margin-bottom: 28px;
+        }
+        
+        .input-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #b0b0b0;
+            margin-bottom: 10px;
+            letter-spacing: 0.3px;
+        }
+        
+        .input-label i {
+            color: #BE6004;
+            font-size: 14px;
+        }
+        
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .input-wrapper input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(30, 30, 30, 0.9);
+            border: 1px solid #3a3a3a;
+            border-radius: 16px;
+            font-size: 15px;
+            color: #ffffff;
+            transition: all 0.3s ease;
+            outline: none;
+            font-family: inherit;
+        }
+        
+        .input-wrapper input:focus {
+            border-color: #BE6004;
+            box-shadow: 0 0 0 3px rgba(190, 96, 4, 0.15);
+            background: rgba(35, 35, 35, 0.95);
+        }
+        
+        .input-wrapper input::placeholder {
+            color: #666;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9e9e9e;
+            cursor: pointer;
+            font-size: 18px;
+            transition: color 0.3s ease;
+        }
+        
+        .toggle-password:hover {
+            color: #BE6004;
+        }
+        
+        /* Botão de Acesso */
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #BE6004, #ff8c52);
+            border: none;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn-login:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(190, 96, 4, 0.4);
+        }
+        
+        .btn-login:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-login .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+        
+        /* Links e Informações Adicionais */
+        .demo-info {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        
+        .demo-info p {
+            font-size: 12px;
+            color: #9e9e9e;
+            margin-bottom: 12px;
+        }
+        
+        .token-hint {
+            background: rgba(30, 30, 30, 0.8);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-family: monospace;
+            font-size: 11px;
+            color: #ff8c52;
+            word-break: break-all;
+            border: 1px solid #3a3a3a;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .token-hint:hover {
+            border-color: #BE6004;
+            background: #252525;
+            transform: translateY(-1px);
+        }
+        
+        .token-hint i {
+            font-size: 12px;
+        }
+        
+        /* Mensagem de Status do Servidor */
+        .server-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #9e9e9e;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #e74c3c;
+            transition: background-color 0.3s ease;
+        }
+        
+        .status-dot.online {
+            background-color: #27ae60;
+            box-shadow: 0 0 8px rgba(39, 174, 96, 0.5);
+        }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid #BE6004;
+            padding: 14px 24px;
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 2000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: slideInRight 0.3s ease;
+            font-size: 13px;
+            color: #e0e0e0;
+        }
+        
+        .toast.error {
+            border-left-color: #e74c3c;
+        }
+        
+        .toast.success {
+            border-left-color: #27ae60;
+        }
+        
+        /* Animações */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsividade */
+        @media (max-width: 550px) {
+            .login-card {
+                padding: 32px 24px;
+            }
+            
+            .logo-text {
+                font-size: 28px;
+            }
+            
+            .logo-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 24px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .token-hint {
+                font-size: 10px;
+                padding: 10px 12px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Vídeo de fundo (mesmo da página inicial da Track7) -->
+    <div class="video-background">
+        <iframe 
+            src="https://www.youtube.com/embed/59iQLQK1TN0?autoplay=1&mute=1&loop=1&playlist=59iQLQK1TN0&controls=0&modestbranding=1&showinfo=0&rel=0"
+            frameborder="0"
+            allow="autoplay; encrypted-media"
+            allowfullscreen>
+        </iframe>
+    </div>
+    <div class="overlay"></div>
+    
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="logo-area">
+                <a href="#" class="logo">
+                    <div class="logo-icon">T7</div>
+                    <div class="logo-text">Track<span>7</span></div>
+                </a>
+                <div class="tagline">Sua frota sob controle</div>
+            </div>
+            
+            <form id="loginForm" onsubmit="return false;">
+                <div class="form-group">
+                    <div class="input-label">
+                        <i class="fas fa-key"></i>
+                        <span>Token de Acesso Wialon</span>
+                    </div>
+                    <div class="input-wrapper">
+                        <input type="password" 
+                               id="tokenInput" 
+                               placeholder="Cole seu token Wialon aqui..."
+                               autocomplete="off">
+                        <button type="button" class="toggle-password" onclick="togglePassword()">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-login" id="loginBtn" onclick="handleLogin()">
+                    <span id="btnText">Acessar Plataforma</span>
+                    <div class="spinner" id="btnSpinner"></div>
+                    <i class="fas fa-arrow-right" id="btnIcon"></i>
+                </button>
+            </form>
+            
+            <div class="demo-info">
+                <p><i class="fas fa-info-circle"></i> Token padrão para demonstração:</p>
+                <div class="token-hint" onclick="copyToken()">
+                    <i class="fas fa-copy"></i> Clique para copiar o token de demonstração
+                </div>
+            </div>
+            
+            <div class="server-status" id="serverStatus">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Verificando servidor...</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">Operação realizada!</span>
+    </div>
+    
+    <script>
+        // Token padrão do sistema (mesmo do config.py)
+        const DEFAULT_TOKEN = "67eba42da80819eb285dd8794678964707481B6FFB3E065405FE46F889143875DE5B3C3A";
+        const API_BASE = 'http://localhost:5000/api';
+        
+        // Elementos
+        const tokenInput = document.getElementById('tokenInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const btnIcon = document.getElementById('btnIcon');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        
+        // Preencher token padrão para demo
+        tokenInput.value = DEFAULT_TOKEN;
+        
+        // Função para mostrar toast
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastIcon = toast.querySelector('i');
+            const toastMsg = document.getElementById('toastMessage');
+            
+            toastMsg.textContent = message;
+            toastIcon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+            toast.className = `toast ${type}`;
+            toast.style.display = 'flex';
+            
+            clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
+                toast.style.display = 'none';
+            }, 4000);
+        }
+        
+        // Alternar visibilidade da senha
+        function togglePassword() {
+            const type = tokenInput.type === 'password' ? 'text' : 'password';
+            tokenInput.type = type;
+            const icon = document.querySelector('.toggle-password i');
+            icon.className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+        }
+        
+        // Copiar token para área de transferência
+        function copyToken() {
+            const token = DEFAULT_TOKEN;
+            navigator.clipboard.writeText(token).then(() => {
+                showToast('Token copiado para a área de transferência!', 'success');
+            }).catch(() => {
+                showToast('Erro ao copiar token', 'error');
+            });
+        }
+        
+        // Atualizar status do servidor
+        async function updateServerStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDot.className = 'status-dot online';
+                    statusText.textContent = 'Servidor online • ' + (data.authenticated ? 'Sessão ativa' : 'Aguardando login');
+                } else {
+                    statusDot.className = 'status-dot';
+                    statusText.textContent = 'Servidor offline';
+                }
+            } catch (error) {
+                statusDot.className = 'status-dot';
+                statusText.textContent = 'Servidor offline';
+            }
+        }
+        
+        // Set loading state
+        function setLoading(isLoading) {
+            if (isLoading) {
+                loginBtn.disabled = true;
+                btnText.textContent = 'Autenticando...';
+                btnSpinner.style.display = 'block';
+                btnIcon.style.display = 'none';
+            } else {
+                loginBtn.disabled = false;
+                btnText.textContent = 'Acessar Plataforma';
+                btnSpinner.style.display = 'none';
+                btnIcon.style.display = 'block';
+            }
+        }
+        
+        // Verificar status do servidor primeiro
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    return { online: true, authenticated: data.authenticated };
+                }
+                return { online: false, authenticated: false };
+            } catch (error) {
+                return { online: false, authenticated: false };
+            }
+        }
+        
+        // Login handler
+        async function handleLogin() {
+            let token = tokenInput.value.trim();
+            
+            if (!token) {
+                showToast('Por favor, informe o token de acesso', 'error');
+                tokenInput.focus();
+                return;
+            }
+            
+            // Verificar servidor primeiro
+            const serverStatus = await checkServerStatus();
+            if (!serverStatus.online) {
+                showToast('Servidor offline. Certifique-se de que o servidor está rodando (python server.py)', 'error');
+                return;
+            }
+            
+            setLoading(true);
+            
+            try {
+                // Tentar login
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ token: token })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.ok) {
+                    // Login bem-sucedido
+                    localStorage.setItem('track7_token', token);
+                    localStorage.setItem('track7_user', data.user || 'Usuário');
+                    
+                    showToast(`Bem-vindo, ${data.user || 'Usuário'}! Redirecionando...`, 'success');
+                    
+                    // Pequeno delay para mostrar o toast
+                    setTimeout(() => {
+                        window.location.href = './pages/menu/menu.html';
+                    }, 1500);
+                } else {
+                    // Erro no login
+                    let errorMsg = data.error || 'Token inválido ou expirado';
+                    showToast(errorMsg, 'error');
+                }
+            } catch (error) {
+                console.error('Erro no login:', error);
+                showToast('Erro de conexão. Verifique se o servidor está rodando.', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
+        
+        // Verificar se já está logado ao carregar a página
+        async function checkExistingSession() {
+            const serverStatus = await checkServerStatus();
+            if (serverStatus.online && serverStatus.authenticated) {
+                showToast('Sessão ativa. Redirecionando...', 'success');
+                setTimeout(() => {
+                    window.location.href = './pages/menu/menu.html';
+                }, 1000);
+            }
+        }
+        
+        // Permitir login com Enter
+        tokenInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            updateServerStatus();
+            checkExistingSession();
+            // Atualizar status a cada 10 segundos
+            setInterval(updateServerStatus, 10000);
+        });
+    </script>
+</body>
+</html>

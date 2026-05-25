@@ -1,0 +1,541 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net"
+	"sync"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+// ============================================
+// CONSTANTES DO PROTOCOLO CUSTOMIZADO
+// ============================================
+
+const (
+	HEADER_INICIO_VIAGEM    = 0 // 000
+	HEADER_IDENT_MOTORISTA  = 1 // 001
+	HEADER_30_SEGUNDOS      = 2 // 010
+	HEADER_FINAL_VIAGEM_01  = 3 // 011
+	HEADER_FINAL_VIAGEM_02  = 4 // 100
+	HEADER_MULTI_EVENTOS    = 5 // 101
+	HEADER_MULTI_DADOS      = 6 // 110
+)
+
+// ============================================
+// ESTRUTURAS DE DADOS
+// ============================================
+
+type TelemetriaRecord struct {
+	IMEI        string                 `json:"imei"`
+	Timestamp   time.Time              `json:"timestamp"`
+	Latitude    float64                `json:"latitude,omitempty"`
+	Longitude   float64                `json:"longitude,omitempty"`
+	Velocidade  float32                `json:"velocidade,omitempty"`
+	RPM         int                    `json:"rpm,omitempty"`
+	CoordsValid bool                   `json:"coords_valid"`
+	Atributos   map[string]interface{} `json:"atributos"`
+}
+
+type EventoRecord struct {
+	IMEI      string    `json:"imei"`
+	Tipo      int       `json:"tipo"`
+	Duracao   int       `json:"duracao"`
+	Pico      int       `json:"pico"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+type ViagemRecord struct {
+	IMEI      string    `json:"imei"`
+	Inicio    time.Time `json:"inicio"`
+	Motorista int       `json:"motorista"`
+	Latitude  float64   `json:"latitude"`
+	Longitude float64   `json:"longitude"`
+	Distancia int       `json:"distancia"`
+}
+
+// ============================================
+// BATCH PROCESSOR
+// ============================================
+
+type BatchProcessor struct {
+	pool   *pgxpool.Pool
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
+	stats  BatchStats
+}
+
+type BatchStats struct {
+	TotalRecords    int64
+	TotalBatches    int64
+	FailedBatches   int64
+	SkippedNoCoords int64
+	LastBatchTime   time.Time
+	LastBatchSize   int
+	LastError       string
+	mu              sync.RWMutex
+}
+
+var batchProcessor *BatchProcessor
+
+func NewBatchProcessor(connString string) (*BatchProcessor, error) {
+	ctx := context.Background()
+
+	config, err := pgxpool.ParseConfig(connString)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao parsear connection string: %v", err)
+	}
+
+	config.MaxConns = 10
+	config.MinConns = 2
+
+	pool, err := pgxpool.NewWithConfig(ctx, config)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao criar pool: %v", err)
+	}
+
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("erro ao conectar: %v", err)
+	}
+
+	fmt.Println("✅ Conectado ao Supabase com sucesso!")
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	bp := &BatchProcessor{
+		pool:   pool,
+		ctx:    ctx,
+		cancel: cancel,
+	}
+
+	bp.wg.Add(1)
+	go bp.processWorker()
+
+	return bp, nil
+}
+
+func (bp *BatchProcessor) processWorker() {
+	defer bp.wg.Done()
+	<-bp.ctx.Done()
+}
+
+func (bp *BatchProcessor) AddTelemetria(record TelemetriaRecord) {
+	// Só insere se tiver coordenadas válidas OU velocidade > 0
+	if !record.CoordsValid && record.Velocidade == 0 {
+		bp.stats.mu.Lock()
+		bp.stats.SkippedNoCoords++
+		bp.stats.mu.Unlock()
+		// Comentado para não poluir o log
+		// fmt.Printf("⏭️ Registro ignorado (sem coordenadas): IMEI=%s, Speed=%.0f km/h\n", 
+		// 	record.IMEI, record.Velocidade)
+		return
+	}
+
+	query := `INSERT INTO telemetria_live (imei, timestamp, latitude, longitude, velocidade, rpm, atributos)
+			  VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)`
+
+	atributosJSON, _ := json.Marshal(record.Atributos)
+
+	_, err := bp.pool.Exec(context.Background(), query,
+		record.IMEI, record.Timestamp, record.Latitude, record.Longitude,
+		record.Velocidade, record.RPM, string(atributosJSON))
+
+	bp.stats.mu.Lock()
+	defer bp.stats.mu.Unlock()
+	bp.stats.LastBatchTime = time.Now()
+
+	if err != nil {
+		bp.stats.FailedBatches++
+		bp.stats.LastError = err.Error()
+		fmt.Printf("❌ Erro ao inserir: %v\n", err)
+	} else {
+		bp.stats.TotalRecords++
+		bp.stats.TotalBatches++
+		// Log mais limpo
+		if record.CoordsValid {
+			fmt.Printf("📍 [%s] GPS: %.6f,%.6f | Vel:%.0f km/h\n",
+				record.Timestamp.Format("15:04:05"), record.Latitude, record.Longitude, record.Velocidade)
+		} else if record.Velocidade > 0 {
+			fmt.Printf("🚗 [%s] CAN: Vel=%.0f km/h, RPM=%d\n",
+				record.Timestamp.Format("15:04:05"), record.Velocidade, record.RPM)
+		}
+	}
+}
+
+func (bp *BatchProcessor) AddEvento(evento EventoRecord) {
+	query := `INSERT INTO eventos (imei, tipo, duracao, pico, timestamp)
+			  VALUES ($1, $2, $3, $4, $5)`
+
+	_, err := bp.pool.Exec(context.Background(), query,
+		evento.IMEI, evento.Tipo, evento.Duracao, evento.Pico, evento.Timestamp)
+
+	if err != nil {
+		fmt.Printf("❌ Erro ao inserir evento: %v\n", err)
+	} else {
+		fmt.Printf("⚠️ EVENTO: IMEI=%s, Tipo=%d, Duração=%ds\n",
+			evento.IMEI, evento.Tipo, evento.Duracao)
+	}
+}
+
+func (bp *BatchProcessor) AddViagem(viagem ViagemRecord) {
+	query := `INSERT INTO viagens (imei, inicio, motorista, latitude, longitude, distancia)
+			  VALUES ($1, $2, $3, $4, $5, $6)`
+
+	_, err := bp.pool.Exec(context.Background(), query,
+		viagem.IMEI, viagem.Inicio, viagem.Motorista, viagem.Latitude, viagem.Longitude, viagem.Distancia)
+
+	if err != nil {
+		fmt.Printf("❌ Erro ao inserir viagem: %v\n", err)
+	} else {
+		fmt.Printf("🚀 VIAGEM INICIADA: IMEI=%s, Motorista=%d\n", viagem.IMEI, viagem.Motorista)
+	}
+}
+
+func (bp *BatchProcessor) GetStats() BatchStats {
+	bp.stats.mu.RLock()
+	defer bp.stats.mu.RUnlock()
+	return bp.stats
+}
+
+func (bp *BatchProcessor) Close() {
+	fmt.Println("🛑 Desligando BatchProcessor...")
+	bp.cancel()
+	bp.wg.Wait()
+	bp.pool.Close()
+	fmt.Println("✅ BatchProcessor desligado")
+}
+
+// ============================================
+// BIT BUFFER (PARA DECODIFICAÇÃO)
+// ============================================
+
+type BitReader struct {
+	data []byte
+	pos  int
+	bit  int
+}
+
+func NewBitReader(data []byte) *BitReader {
+	return &BitReader{data: data, pos: 0, bit: 0}
+}
+
+func (b *BitReader) ReadBits(n int) uint32 {
+	var result uint32 = 0
+	for i := 0; i < n; i++ {
+		result <<= 1
+		if b.pos < len(b.data) {
+			bit := (b.data[b.pos] >> (7 - b.bit)) & 0x01
+			result |= uint32(bit)
+			b.bit++
+			if b.bit >= 8 {
+				b.bit = 0
+				b.pos++
+			}
+		}
+	}
+	return result
+}
+
+func (b *BitReader) RemainingBits() int {
+	return (len(b.data)-b.pos)*8 - b.bit
+}
+
+func (b *BitReader) SkipBytes(n int) {
+	b.pos += n
+	b.bit = 0
+}
+
+// ============================================
+// DECODIFICADORES DO PROTOCOLO CUSTOMIZADO
+// ============================================
+
+func DecodeIMEI(high, low uint32) string {
+	return fmt.Sprintf("%d%08d", high, low)
+}
+
+func DecodeInicioViagem(data []byte, imeiHigh, imeiLow uint32) (ViagemRecord, int, error) {
+	reader := NewBitReader(data)
+	reader.SkipBytes(6) // Pula IMEI
+
+	timestamp := reader.ReadBits(32)
+	lonRaw := int32(reader.ReadBits(32))
+	latRaw := int32(reader.ReadBits(32))
+
+	viagem := ViagemRecord{
+		IMEI:      DecodeIMEI(imeiHigh, imeiLow),
+		Inicio:    time.Unix(int64(timestamp), 0).UTC(),
+		Longitude: float64(lonRaw) / 1000000.0,
+		Latitude:  float64(latRaw) / 1000000.0,
+	}
+
+	return viagem, reader.pos, nil
+}
+
+func DecodeIdentMotorista(data []byte, imeiHigh, imeiLow uint32) (int, time.Time, int, error) {
+	reader := NewBitReader(data)
+	reader.SkipBytes(6) // Pula IMEI
+
+	motoristaID := int(reader.ReadBits(32))
+	timestamp := reader.ReadBits(32)
+	timestampTime := time.Unix(int64(timestamp), 0).UTC()
+
+	_ = timestampTime // Usado para evitar erro "declared and not used"
+
+	return motoristaID, timestampTime, reader.pos, nil
+}
+
+func Decode30Segundos(data []byte, imeiHigh, imeiLow uint32) (TelemetriaRecord, int, error) {
+	reader := NewBitReader(data)
+	reader.SkipBytes(6) // Pula IMEI
+
+	coordsValid := reader.ReadBits(1) == 1
+
+	lonRaw := int32(reader.ReadBits(32))
+	latRaw := int32(reader.ReadBits(32))
+	speed := reader.ReadBits(8)
+	timestamp := reader.ReadBits(32)
+
+	record := TelemetriaRecord{
+		IMEI:        DecodeIMEI(imeiHigh, imeiLow),
+		Timestamp:   time.Unix(int64(timestamp), 0).UTC(),
+		Velocidade:  float32(speed),
+		CoordsValid: coordsValid,
+		Atributos:   make(map[string]interface{}),
+	}
+
+	if coordsValid {
+		record.Latitude = float64(latRaw) / 1000000.0
+		record.Longitude = float64(lonRaw) / 1000000.0
+	}
+
+	record.Atributos["coords_valid"] = coordsValid
+	record.Atributos["tipo"] = "periodico_30s"
+
+	return record, reader.pos, nil
+}
+
+func DecodeMultiEventos(data []byte, imeiHigh, imeiLow uint32) ([]EventoRecord, int, error) {
+	reader := NewBitReader(data)
+	reader.SkipBytes(6) // Pula IMEI
+
+	distancia := int(reader.ReadBits(32))
+	eventCount := int(reader.ReadBits(16))
+
+	eventos := make([]EventoRecord, 0, eventCount)
+
+	for i := 0; i < eventCount; i++ {
+		eventoID := int(reader.ReadBits(7))
+		duracao := int(reader.ReadBits(17))
+		pico := int(reader.ReadBits(13))
+		timestamp := reader.ReadBits(32)
+
+		evento := EventoRecord{
+			IMEI:      DecodeIMEI(imeiHigh, imeiLow),
+			Tipo:      eventoID,
+			Duracao:   duracao,
+			Pico:      pico,
+			Timestamp: time.Unix(int64(timestamp), 0).UTC(),
+		}
+		eventos = append(eventos, evento)
+	}
+
+	_ = distancia
+	return eventos, reader.pos, nil
+}
+
+func DecodeMultiDados(data []byte, imeiHigh, imeiLow uint32) ([]TelemetriaRecord, int, error) {
+	reader := NewBitReader(data)
+	reader.SkipBytes(6) // Pula IMEI
+
+	sensores := reader.ReadBits(8)
+	recordCount := int(reader.ReadBits(16))
+
+	registros := make([]TelemetriaRecord, 0, recordCount)
+
+	for i := 0; i < recordCount; i++ {
+		rpm := int(reader.ReadBits(13))
+		speed := int(reader.ReadBits(8))
+		timestamp := reader.ReadBits(32)
+
+		record := TelemetriaRecord{
+			IMEI:        DecodeIMEI(imeiHigh, imeiLow),
+			Timestamp:   time.Unix(int64(timestamp), 0).UTC(),
+			Velocidade:  float32(speed),
+			RPM:         rpm,
+			CoordsValid: false,
+			Atributos:   make(map[string]interface{}),
+		}
+
+		record.Atributos["sensores"] = map[string]bool{
+			"freio":      (sensores & 0x01) != 0,
+			"acelerador": (sensores & 0x02) != 0,
+			"embreagem":  (sensores & 0x04) != 0,
+		}
+		record.Atributos["fonte"] = "CAN_batch"
+		record.Atributos["tipo"] = "dados_motor"
+
+		registros = append(registros, record)
+	}
+
+	return registros, reader.pos, nil
+}
+
+// ============================================
+// SERVIDOR PRINCIPAL
+// ============================================
+
+func main() {
+	dbUser := "postgres.uoovvwxnerpqeksuogvi"
+	dbPassword := "r8xLrSZp7yY%25%23k%2A"
+	dbHost := "aws-1-sa-east-1.pooler.supabase.com"
+	dbPort := 6543
+	dbName := "postgres"
+
+	connString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=require&default_query_exec_mode=simple_protocol",
+		dbUser, dbPassword, dbHost, dbPort, dbName)
+
+	var err error
+	batchProcessor, err = NewBatchProcessor(connString)
+	if err != nil {
+		fmt.Printf("❌ Erro fatal ao conectar ao Supabase: %v\n", err)
+		return
+	}
+	defer batchProcessor.Close()
+
+	fmt.Println("=== SERVIDOR GALILEOSKY v5.1 ===")
+	fmt.Println("Aguardando conexões na porta 4040...")
+
+	ln, err := net.Listen("tcp", "0.0.0.0:4040")
+	if err != nil {
+		fmt.Printf("Erro ao iniciar servidor: %v\n", err)
+		return
+	}
+	defer ln.Close()
+
+	go showStats()
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Printf("Erro na conexão: %v\n", err)
+			continue
+		}
+		go handleConnection(conn)
+	}
+}
+
+func showStats() {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		if batchProcessor == nil {
+			return
+		}
+		stats := batchProcessor.GetStats()
+		fmt.Printf("\n📊 ESTATÍSTICAS:\n")
+		fmt.Printf("   Registros salvos: %d\n", stats.TotalRecords)
+		fmt.Printf("   Registros ignorados (sem GPS): %d\n", stats.SkippedNoCoords)
+		fmt.Printf("   Batches com erro: %d\n", stats.FailedBatches)
+		if stats.LastBatchTime.Unix() > 0 {
+			fmt.Printf("   Último insert: %s\n", stats.LastBatchTime.Format("15:04:05"))
+		}
+		fmt.Println()
+	}
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+	addr := conn.RemoteAddr().String()
+	fmt.Printf("[%s] Nova conexão\n", addr)
+
+	buffer := make([]byte, 65536)
+	var pendingData []byte
+	var imeiHigh, imeiLow uint32
+
+	for {
+		n, err := conn.Read(buffer)
+		if err != nil {
+			fmt.Printf("[%s] Desconectado\n", addr)
+			return
+		}
+
+		pendingData = append(pendingData, buffer[:n]...)
+
+		for len(pendingData) >= 1 {
+			reader := NewBitReader(pendingData)
+
+			if reader.RemainingBits() < 3 {
+				break
+			}
+
+			header := reader.ReadBits(3)
+
+			switch int(header) {
+			case HEADER_INICIO_VIAGEM:
+				if reader.RemainingBits() < (24 + 27 + 32 + 32 + 32) {
+					break
+				}
+				imeiHigh = reader.ReadBits(24)
+				imeiLow = reader.ReadBits(27)
+				viagem, bytesUsed, _ := DecodeInicioViagem(pendingData[reader.pos:], imeiHigh, imeiLow)
+				batchProcessor.AddViagem(viagem)
+				pendingData = pendingData[bytesUsed+1:]
+
+			case HEADER_IDENT_MOTORISTA:
+				if reader.RemainingBits() < (24 + 27 + 32 + 32) {
+					break
+				}
+				imeiHigh = reader.ReadBits(24)
+				imeiLow = reader.ReadBits(27)
+				motoristaID, _, bytesUsed, _ := DecodeIdentMotorista(pendingData[reader.pos:], imeiHigh, imeiLow)
+				fmt.Printf("[%s] 👤 Motorista ID: %d\n", addr, motoristaID)
+				pendingData = pendingData[bytesUsed+1:]
+
+			case HEADER_30_SEGUNDOS:
+				if reader.RemainingBits() < (24 + 27 + 1 + 32 + 32 + 8 + 32) {
+					break
+				}
+				imeiHigh = reader.ReadBits(24)
+				imeiLow = reader.ReadBits(27)
+				record, bytesUsed, _ := Decode30Segundos(pendingData[reader.pos:], imeiHigh, imeiLow)
+				batchProcessor.AddTelemetria(record)
+				pendingData = pendingData[bytesUsed+1:]
+
+			case HEADER_MULTI_EVENTOS:
+				if reader.RemainingBits() < (24 + 27 + 32 + 16) {
+					break
+				}
+				imeiHigh = reader.ReadBits(24)
+				imeiLow = reader.ReadBits(27)
+				eventos, bytesUsed, _ := DecodeMultiEventos(pendingData[reader.pos:], imeiHigh, imeiLow)
+				fmt.Printf("[%s] ⚠️ Recebidos %d eventos\n", addr, len(eventos))
+				for _, evento := range eventos {
+					batchProcessor.AddEvento(evento)
+				}
+				pendingData = pendingData[bytesUsed+1:]
+
+			case HEADER_MULTI_DADOS:
+				if reader.RemainingBits() < (24 + 27 + 8 + 16) {
+					break
+				}
+				imeiHigh = reader.ReadBits(24)
+				imeiLow = reader.ReadBits(27)
+				registros, bytesUsed, _ := DecodeMultiDados(pendingData[reader.pos:], imeiHigh, imeiLow)
+				fmt.Printf("[%s] 💾 Recebidos %d registros CAN\n", addr, len(registros))
+				for _, record := range registros {
+					batchProcessor.AddTelemetria(record)
+				}
+				pendingData = pendingData[bytesUsed+1:]
+
+			default:
+				pendingData = pendingData[1:]
+			}
+		}
+	}
+}

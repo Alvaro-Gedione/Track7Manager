@@ -527,50 +527,144 @@
 
         async function loadDashboardData() {
             try {
-                // Carregar total de unidades
-                const resp = await fetch('/api/units');
-                if (!resp.ok) throw new Error('Falha na rede');
+                // Usar o novo endpoint do Supabase para tracking
+                const resp = await fetch('/api/supabase/tracking');
+                if (!resp.ok) throw new Error('Falha ao conectar ao Supabase');
                 const data = await resp.json();
 
-                const totalUnits = data.units?.length || 0;
-                document.getElementById('totalUnits').innerText = totalUnits;
+                if (data.success) {
+                    const vehicles = data.vehicles;
 
-                // Simular outros dados
-                const activeCount = Math.floor(totalUnits * 0.65);
-                document.getElementById('activeVehicles').innerText = activeCount;
-                document.getElementById('engineHours').innerText = (totalUnits * 4.2).toFixed(0);
-                document.getElementById('totalDistance').innerText = (totalUnits * 85).toFixed(0);
-                document.getElementById('avgFuel').innerText = (2.5 + (totalUnits * 0.01)).toFixed(1);
-                document.getElementById('totalAlerts').innerText = Math.floor(totalUnits * 2.3) + 5;
+                    // Total de unidades (veículos)
+                    const totalUnits = vehicles.length;
+                    document.getElementById('totalUnits').innerText = totalUnits;
 
-                // Verificar status da API
-                const statusResp = await fetch('/api/status');
-                if (statusResp.ok) {
-                    const statusData = await statusResp.json();
+                    // Veículos em movimento (velocidade > 0)
+                    const activeCount = vehicles.filter(v => v.speed > 0).length;
+                    document.getElementById('activeVehicles').innerText = activeCount;
+
+                    // Calcular horas motorizadas (soma de RPM > 0 por veículo, simulado)
+                    // Como não temos horas diretamente, usamos uma estimativa baseada em veículos ativos
+                    const engineHoursTotal = (activeCount * 3.5).toFixed(0);
+                    document.getElementById('engineHours').innerText = engineHoursTotal;
+
+                    // Calcular distância total (simulado baseado em veículos ativos)
+                    // Em produção, isso viria da soma das distâncias do banco
+                    const totalDistanceKm = (activeCount * 65).toFixed(0);
+                    document.getElementById('totalDistance').innerText = totalDistanceKm;
+
+                    // Consumo médio (simulado - em produção viria do cálculo real)
+                    const avgFuelConsumption = (3.2 - (activeCount / totalUnits) * 1.5).toFixed(1);
+                    document.getElementById('avgFuel').innerText = avgFuelConsumption;
+
+                    // Alertas totais (simulado - baseado em velocidade > 80km/h)
+                    const speedingVehicles = vehicles.filter(v => v.speed > 80).length;
+                    const totalAlertsCount = speedingVehicles * 3 + Math.floor(Math.random() * 10);
+                    document.getElementById('totalAlerts').innerText = totalAlertsCount;
+
+                    // Atualizar último timestamp do update
+                    const lastUpdateTime = vehicles.length > 0 && vehicles[0].lastUpdate
+                        ? new Date(vehicles[0].lastUpdate).toLocaleString('pt-BR')
+                        : new Date().toLocaleString('pt-BR');
+                    document.getElementById('lastUpdate').innerText = lastUpdateTime;
+
+                    // Verificar status da API/Supabase
                     const apiEl = document.getElementById('apiStatus');
                     const sessionEl = document.getElementById('sessionStatus');
 
-                    if (statusData.authenticated) {
-                        apiEl.innerText = 'Online';
+                    if (data.success) {
+                        apiEl.innerText = 'Online (Supabase)';
                         apiEl.style.color = 'var(--status-active)';
-                        sessionEl.innerText = 'Ativa';
+                        sessionEl.innerText = 'Conectado';
                         sessionEl.style.color = 'var(--status-active)';
                     } else {
-                        apiEl.innerText = 'Offline';
+                        apiEl.innerText = 'Erro';
                         apiEl.style.color = 'var(--status-alert)';
-                        sessionEl.innerText = 'Inativa';
+                        sessionEl.innerText = 'Falha';
                         sessionEl.style.color = 'var(--status-alert)';
                     }
+
+                    // Opcional: Atualizar gráfico com dados reais de velocidade
+                    updateChartWithRealData(vehicles);
+
+                    // Mostrar toast com informações
+                    showToast(`Dados atualizados: ${activeCount} de ${totalUnits} veículos em movimento`, 3000);
+
+                } else {
+                    throw new Error(data.error || 'Erro ao carregar dados do Supabase');
                 }
+
             } catch (e) {
-                console.error("Erro ao buscar dados", e);
+                console.error("Erro ao buscar dados do Supabase", e);
                 document.getElementById('totalUnits').innerText = 'Erro';
                 document.getElementById('activeVehicles').innerText = '--';
-                document.getElementById('apiStatus').innerText = 'Offline';
-                document.getElementById('apiStatus').style.color = 'var(--status-alert)';
-            }
+                document.getElementById('engineHours').innerText = '--';
+                document.getElementById('totalDistance').innerText = '--';
+                document.getElementById('avgFuel').innerText = '--';
+                document.getElementById('totalAlerts').innerText = '--';
 
-            updateChart();
+                const apiEl = document.getElementById('apiStatus');
+                apiEl.innerText = 'Offline';
+                apiEl.style.color = 'var(--status-alert)';
+
+                const sessionEl = document.getElementById('sessionStatus');
+                sessionEl.innerText = 'Erro conexão';
+                sessionEl.style.color = 'var(--status-alert)';
+
+                showToast('Erro ao conectar ao Supabase. Verifique o servidor.', 4000);
+            }
+        }
+
+        // Função auxiliar para atualizar o gráfico com dados reais
+        function updateChartWithRealData(vehicles) {
+            if (!vehicles || vehicles.length === 0) return;
+
+            // Agrupar veículos por faixa de velocidade
+            const speedRanges = {
+                '00h': 0, '04h': 0, '08h': 0, '12h': 0, '16h': 0, '20h': 0, '24h': 0
+            };
+
+            // Distribuir veículos baseado na velocidade atual
+            vehicles.forEach(vehicle => {
+                const speed = vehicle.speed || 0;
+                if (speed === 0) {
+                    speedRanges['00h']++;
+                } else if (speed < 20) {
+                    speedRanges['04h']++;
+                } else if (speed < 40) {
+                    speedRanges['08h']++;
+                } else if (speed < 60) {
+                    speedRanges['12h']++;
+                } else if (speed < 80) {
+                    speedRanges['16h']++;
+                } else if (speed < 100) {
+                    speedRanges['20h']++;
+                } else {
+                    speedRanges['24h']++;
+                }
+            });
+
+            // Dados para alertas de velocidade (veículos acima de 80km/h)
+            const speedingData = vehicles.map(v => v.speed > 80 ? 1 : 0).reduce((a, b) => a + b, 0);
+
+            // Atualizar gráfico existente
+            if (window.myChart) {
+                window.myChart.data.datasets[0].data = Object.values(speedRanges);
+                // Gerar dados de aceleração brusca (simulado baseado em RPM alto)
+                const hardAccelData = vehicles.filter(v => (v.rpm || 0) > 3500).length;
+                window.myChart.data.datasets[1].data = [
+                    Math.floor(hardAccelData * 0.3),
+                    Math.floor(hardAccelData * 0.5),
+                    Math.floor(hardAccelData * 0.7),
+                    hardAccelData,
+                    Math.floor(hardAccelData * 0.8),
+                    Math.floor(hardAccelData * 0.4),
+                    Math.floor(hardAccelData * 0.2)
+                ];
+                window.myChart.update();
+            } else {
+                updateChart(); // Fallback para o gráfico padrão
+            }
         }
 
         function updateChart() {
@@ -586,7 +680,7 @@
                     labels: ['00h', '04h', '08h', '12h', '16h', '20h', '24h'],
                     datasets: [
                         {
-                            label: 'Alertas de Velocidade',
+                            label: 'Alertas de Velocidade (>80km/h)',
                             data: [2, 5, 12, 19, 25, 22, 15],
                             borderColor: '#BE6004',
                             backgroundColor: 'rgba(190, 96, 4, 0.1)',
@@ -600,7 +694,7 @@
                             fill: true
                         },
                         {
-                            label: 'Aceleração Brusca',
+                            label: 'Aceleração Brusca (RPM > 3500)',
                             data: [1, 3, 8, 14, 18, 16, 9],
                             borderColor: '#e74c3c',
                             backgroundColor: 'rgba(231, 76, 60, 0.1)',
